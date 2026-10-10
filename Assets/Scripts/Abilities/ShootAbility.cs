@@ -24,7 +24,13 @@ namespace Possession
                 if (projectilePrefab != null)
                 {
                     GameObject proj = Instantiate(projectilePrefab, firePoint.position, Quaternion.LookRotation(aimDir));
-                    // Projectile script handles its own movement
+                    var projectile = proj.GetComponent<Projectile>();
+                    if (projectile != null)
+                    {
+                        var col = GetComponent<Collider>();
+                        if (col == null) col = GetComponentInParent<Collider>();
+                        if (col != null) projectile.SetOwner(col);
+                    }
                 }
             }
         }
