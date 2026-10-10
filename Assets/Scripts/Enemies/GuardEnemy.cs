@@ -35,10 +35,10 @@ namespace Possession
 
         protected override void HandleHostileBehavior()
         {
-            var spirit = FindFirstObjectByType<SpiritController>();
-            if (spirit == null) return;
+            var target = GetSpiritTransform();
+            if (target == null) return;
 
-            Vector3 dir = (spirit.transform.position - transform.position);
+            Vector3 dir = (target.position - transform.position);
             dir.y = 0f;
             if (dir.magnitude < 1.5f) return;
 

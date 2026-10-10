@@ -13,6 +13,7 @@ namespace Possession
         protected bool isPossessed;
         protected bool isHostile;
         protected float hostileTimer;
+        protected Transform spiritTransform;
 
         public bool CanBePossessed => !isPossessed && !isHostile && currentHP > 0;
         public int CurrentHP => currentHP;
@@ -20,6 +21,16 @@ namespace Possession
         protected virtual void Awake()
         {
             currentHP = maxHP;
+        }
+
+        protected Transform GetSpiritTransform()
+        {
+            if (spiritTransform == null)
+            {
+                var spirit = FindFirstObjectByType<SpiritController>();
+                if (spirit != null) spiritTransform = spirit.transform;
+            }
+            return spiritTransform;
         }
 
         protected virtual void Update()
