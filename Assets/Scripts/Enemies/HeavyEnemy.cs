@@ -35,20 +35,21 @@ namespace Possession
 
         protected override void HandlePossessedMovement()
         {
-            float h = Input.GetAxisRaw("Horizontal");
-            float v = Input.GetAxisRaw("Vertical");
-            Vector3 dir = new Vector3(h, 0f, v).normalized;
-
-            if (dir.magnitude > 0.1f)
-                transform.rotation = Quaternion.LookRotation(dir);
-
-            // Heavy is slower when possessed too
-            transform.Translate(dir * moveSpeed * Time.deltaTime, Space.World);
+            base.HandlePossessedMovement();
         }
 
         protected override void HandleHostileBehavior()
         {
-            // TODO: charge toward spirit
+            var spirit = FindFirstObjectByType<SpiritController>();
+            if (spirit == null) return;
+
+            Vector3 dir = (spirit.transform.position - transform.position);
+            dir.y = 0f;
+            if (dir.magnitude < 2f) return;
+
+            dir.Normalize();
+            transform.rotation = Quaternion.LookRotation(dir);
+            transform.Translate(dir * moveSpeed * Time.deltaTime, Space.World);
         }
     }
 }
