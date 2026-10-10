@@ -58,6 +58,13 @@ namespace Possession
                 transform.rotation = Quaternion.LookRotation(dir);
 
             transform.Translate(dir * moveSpeed * Time.deltaTime, Space.World);
+
+            if (Input.GetMouseButtonDown(0))
+            {
+                var ability = GetComponent<Ability>();
+                if (ability != null)
+                    ability.TryExecute();
+            }
         }
 
         protected virtual void HandleHostileBehavior()
