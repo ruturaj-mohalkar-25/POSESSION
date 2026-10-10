@@ -1080,10 +1080,10 @@ GameObject:
   m_Component:
   - component: {fileID: 537892124}
   - component: {fileID: 537892123}
-  - component: {fileID: 537892122}
   - component: {fileID: 537892121}
   - component: {fileID: 537892120}
   - component: {fileID: 537892119}
+  - component: {fileID: 537892125}
   m_Layer: 6
   m_Name: Heavy
   m_TagString: Untagged
@@ -1121,11 +1121,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 853161baa85df408db19d555e03a8750, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Possession.HeavyEnemy
-  moveSpeed: 3
-  maxHP: 3
+  moveSpeed: 1.8
+  maxHP: 5
   waypoints:
   - {fileID: 1044134258}
   - {fileID: 2132764251}
+  detectionRange: 10
+  spiritLayer:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  waypointWaitTime: 0.75
+  waypointArrivalDistance: 0.3
+  chaseStopDistance: 1.5
 --- !u!23 &537892121
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1175,29 +1182,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!136 &537892122
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 537892118}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.5
-  m_Height: 2
-  m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!33 &537892123
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -1221,6 +1205,31 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!143 &537892125
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 537892118}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 2
+  m_Radius: 0.5
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.05
+  m_MinMoveDistance: 0
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!21 &562190187
 Material:
   serializedVersion: 8
