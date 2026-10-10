@@ -8,6 +8,7 @@ namespace Possession
         public static Action<EnemyBase, PlayerState> Possessed;
         public static Action<EnemyBase, bool> Ejected; // enemy, wasForcedEject
         public static Action<float, float> PossessTimerUpdated; // current, max
+        public static Action<bool> PossessPromptUpdated; // show/hide
 
         // Spirit
         public static Action<int, int> SpiritDamaged; // current, max
@@ -28,6 +29,7 @@ namespace Possession
             Possessed = null;
             Ejected = null;
             PossessTimerUpdated = null;
+            PossessPromptUpdated = null;
             SpiritDamaged = null;
             SpiritDied = null;
             TargetHit = null;

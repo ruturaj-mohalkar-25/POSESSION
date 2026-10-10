@@ -27,6 +27,7 @@ namespace Possession
             EventBus.PossessTimerUpdated += UpdatePossessTimer;
             EventBus.Possessed += OnPossessed;
             EventBus.Ejected += OnEjected;
+            EventBus.PossessPromptUpdated += OnPossessPrompt;
             EventBus.LevelCompleted += OnLevelComplete;
             EventBus.LevelFailed += OnLevelFailed;
         }
@@ -38,6 +39,7 @@ namespace Possession
             EventBus.PossessTimerUpdated -= UpdatePossessTimer;
             EventBus.Possessed -= OnPossessed;
             EventBus.Ejected -= OnEjected;
+            EventBus.PossessPromptUpdated -= OnPossessPrompt;
             EventBus.LevelCompleted -= OnLevelComplete;
             EventBus.LevelFailed -= OnLevelFailed;
         }
@@ -125,7 +127,7 @@ namespace Possession
             GameManager.Instance?.QuitToMenu();
         }
 
-        public void ShowPossessPrompt(bool show)
+        private void OnPossessPrompt(bool show)
         {
             if (possessPrompt != null) possessPrompt.SetActive(show);
         }
