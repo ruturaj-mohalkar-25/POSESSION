@@ -249,6 +249,7 @@ namespace Possession.Editor
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             go.name = "Heavy";
+            Object.DestroyImmediate(go.GetComponent<CapsuleCollider>());
             go.transform.position = new Vector3(-2, 1.3f, 30);
             go.transform.localScale = new Vector3(1.3f, 1.3f, 1.3f);
             go.layer = EnemyLayer;
