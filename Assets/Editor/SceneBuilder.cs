@@ -18,7 +18,7 @@ namespace Possession.Editor
         private static readonly Color GuardColor = new Color(0.85f, 0.2f, 0.2f);
         private static readonly Color HeavyColor = new Color(0.2f, 0.3f, 0.9f);
         private static readonly Color TargetColor = new Color(0.95f, 0.85f, 0.1f);
-        private static readonly Color DoorColor = new Color(0.1f, 0.8f, 0.2f);
+        private static readonly Color DoorColor = new Color(0.7f, 0.15f, 0.15f);
         private static readonly Color WallBreakColor = new Color(0.5f, 0.35f, 0.2f);
         private static readonly Color ExitColor = new Color(0.1f, 0.9f, 0.5f);
 
@@ -346,14 +346,13 @@ namespace Possession.Editor
             cam.backgroundColor = new Color(0.08f, 0.08f, 0.1f);
             camGO.tag = "MainCamera";
 
-            // Fixed isometric-ish view: 45 degrees down, looking at center of level
-            camGO.transform.position = new Vector3(0, 25f, 5f);
+            camGO.transform.position = new Vector3(0, 25f, -10f);
             camGO.transform.rotation = Quaternion.Euler(55f, 0f, 0f);
 
             cam.fieldOfView = 40f;
 
-            // Add AudioListener
             camGO.AddComponent<AudioListener>();
+            camGO.AddComponent<CameraFollow>();
         }
 
         // ======================== MANAGERS ========================
@@ -467,7 +466,6 @@ namespace Possession.Editor
             go.AddComponent<Projectile>();
             SetColor(go, new Color(1f, 0.6f, 0.1f));
 
-            go.SetActive(false);
             return go;
         }
 
@@ -480,6 +478,8 @@ namespace Possession.Editor
 
             var enemy = guard.GetComponent<GuardEnemy>();
             var so = new SerializedObject(enemy);
+            so.FindProperty("moveSpeed").floatValue = 3f;
+            so.FindProperty("maxHP").intValue = 3;
             var waypoints = so.FindProperty("waypoints");
             waypoints.arraySize = 2;
             waypoints.GetArrayElementAtIndex(0).objectReferenceValue = wp1.transform;
@@ -501,6 +501,8 @@ namespace Possession.Editor
 
             var enemy = heavy.GetComponent<HeavyEnemy>();
             var so = new SerializedObject(enemy);
+            so.FindProperty("moveSpeed").floatValue = 1.8f;
+            so.FindProperty("maxHP").intValue = 5;
             var waypoints = so.FindProperty("waypoints");
             waypoints.arraySize = 2;
             waypoints.GetArrayElementAtIndex(0).objectReferenceValue = wp1.transform;
