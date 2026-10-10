@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="850" height="1050" viewBox="0 0 850 1050">
+  <rect width="850" height="1050" fill="#fafafa"/>
+  <g font-family="Arial, sans-serif" fill="#20252b">
+    <text x="52" y="50" font-size="27" font-weight="bold">POSSESSION — Alpha layout sketch</text>
+    <text x="52" y="80" font-size="15">P4 proposal · top-down · X across, Z increases downward · 12 m × 36 m</text>
+    <rect x="160" y="115" width="360" height="840" fill="#e8eaed" stroke="#353a40" stroke-width="10"/>
+    <path d="M160 395 H292 M388 395 H520 M160 675 H292 M388 675 H520" stroke="#353a40" stroke-width="12"/>
+    <text x="185" y="150" font-size="20" font-weight="bold">01 · SPIRIT START</text>
+    <text x="185" y="178" font-size="15">WASD · SPACE · E possess</text>
+    <circle cx="340" cy="302" r="17" fill="white" stroke="#6a7481" stroke-width="3"/>
+    <text x="370" y="308" font-size="15">Spirit spawn</text>
+    <path d="M340 330 V375" stroke="#6a7481" stroke-width="3"/>
+    <path d="m332 363 8 12 8-12" fill="none" stroke="#6a7481" stroke-width="3"/>
+    <text x="185" y="432" font-size="20" font-weight="bold">02 · GUARD PUZZLE</text>
+    <path d="M250 488 430 582" stroke="#b64b4b" stroke-width="2" stroke-dasharray="7 5"/>
+    <circle cx="250" cy="488" r="5" fill="#b64b4b"/><circle cx="430" cy="582" r="5" fill="#b64b4b"/>
+    <circle cx="400" cy="535" r="17" fill="#c64545"/>
+    <text x="255" y="546" font-size="15">Guard</text>
+    <rect x="430" y="593" width="30" height="30" fill="#e5c83a" stroke="#806e19"/>
+    <text x="215" y="615" font-size="15">Shoot target →</text>
+    <rect x="292" y="668" width="96" height="14" fill="#c64545"/>
+    <path d="M445 630 V648 H398" fill="none" stroke="#a18a21" stroke-width="2" stroke-dasharray="5 4"/>
+    <text x="550" y="675" font-size="16" font-weight="bold">Locked door</text>
+    <text x="550" y="698" font-size="14">Target hit opens passage</text>
+    <text x="185" y="712" font-size="20" font-weight="bold">03 · HEAVY PUZZLE</text>
+    <path d="M250 768 430 862" stroke="#4d6aa8" stroke-width="2" stroke-dasharray="7 5"/>
+    <circle cx="250" cy="768" r="5" fill="#4d6aa8"/><circle cx="430" cy="862" r="5" fill="#4d6aa8"/>
+    <circle cx="280" cy="815" r="22" fill="#4266b2"/>
+    <text x="320" y="820" font-size="15">Heavy · face wall + LMB</text>
+    <path d="M160 885 H292 M388 885 H520" stroke="#353a40" stroke-width="12"/>
+    <rect x="292" y="878" width="96" height="14" fill="#9b704d"/>
+    <text x="550" y="880" font-size="16" font-weight="bold">Breakable wall</text>
+    <text x="550" y="903" font-size="14">Solid barriers seal both sides</text>
+    <rect x="280" y="917" width="120" height="23" fill="#79cda2"/>
+    <text x="305" y="934" font-size="14" font-weight="bold">SPIRIT EXIT</text>
+    <text x="550" y="940" font-size="14">Eject before completing</text>
+    <text x="52" y="996" font-size="15">Loop: Spirit → Guard → Target → Door → Heavy → Wall → Spirit → Exit</text>
+    <text x="52" y="1023" font-size="14" fill="#59636e">Graybox only. No Drone, extra levels, external art, or new configuration framework.</text>
+  </g>
+</svg>
