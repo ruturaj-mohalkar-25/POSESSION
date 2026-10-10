@@ -48,6 +48,8 @@ Automated PlayMode coverage is in `Assets/Tests/PlayMode/LevelPuzzleTests.cs`. I
 
 Validation on 2026-10-10 with Unity 6000.3.22f1: **26/26 PlayMode tests passed**, comprising 8 P4 checks and 18 existing Heavy regression tests. The editor compiled and saved the refined scene successfully. Full keyboard/mouse and WebGL playtests remain for team integration.
 
+Editor layout renders: [Room 1](P4-screenshots/room-1-start.png), [Room 2](P4-screenshots/room-2-guard.png), [Room 3](P4-screenshots/room-3-heavy.png). These show the saved geometry, not a WebGL session or the gameplay HUD.
+
 ## Existing integration issues to coordinate
 
 - Guard movement uses `Transform.Translate`, so it does not enforce solid-wall collision. Guard's owner should handle collision-safe movement.
