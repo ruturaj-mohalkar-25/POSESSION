@@ -128,8 +128,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 853161baa85df408db19d555e03a8750, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Possession.HeavyEnemy
-  moveSpeed: 3
-  maxHP: 3
+  moveSpeed: 1.8
+  maxHP: 5
   waypoints:
   - {fileID: 0}
   - {fileID: 0}

@@ -9,9 +9,6 @@ namespace Possession
         protected override void Awake()
         {
             base.Awake();
-            moveSpeed = 3f;
-            maxHP = 3;
-            currentHP = maxHP;
         }
 
         protected override void HandlePatrol()
@@ -35,7 +32,16 @@ namespace Possession
 
         protected override void HandleHostileBehavior()
         {
-            // TODO: chase spirit, fire projectile at spirit's position
+            var target = GetSpiritTransform();
+            if (target == null) return;
+
+            Vector3 dir = (target.position - transform.position);
+            dir.y = 0f;
+            if (dir.magnitude < 1.5f) return;
+
+            dir.Normalize();
+            transform.rotation = Quaternion.LookRotation(dir);
+            transform.Translate(dir * moveSpeed * Time.deltaTime, Space.World);
         }
     }
 }

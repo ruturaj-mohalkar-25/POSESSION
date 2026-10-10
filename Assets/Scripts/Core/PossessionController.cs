@@ -60,11 +60,13 @@ namespace Possession
 
         private void HandlePossessInput()
         {
-            if (!Input.GetKeyDown(KeyCode.E) || ejectCooldownTimer > 0f) return;
-
             EnemyBase nearest = FindNearestEnemy();
-            if (nearest != null)
-                Possess(nearest);
+            bool canPossess = nearest != null && ejectCooldownTimer <= 0f;
+
+            EventBus.PossessPromptUpdated?.Invoke(canPossess);
+
+            if (!Input.GetKeyDown(KeyCode.E) || !canPossess) return;
+            Possess(nearest);
         }
 
         private EnemyBase FindNearestEnemy()
