@@ -152,7 +152,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3b2550c52d7e749df9c4f637dc5c420b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Possession.Projectile
+  m_EditorClassIdentifier: Possession.Runtime::Possession.Projectile
   speed: 15
   lifetime: 3
   damage: 1

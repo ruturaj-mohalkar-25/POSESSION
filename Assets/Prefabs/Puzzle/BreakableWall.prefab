@@ -124,5 +124,5 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5a7f42c79252d4533a1a71d187d767f4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Possession.BreakableWall
+  m_EditorClassIdentifier: Possession.Runtime::Possession.BreakableWall
   hitsToBreak: 2

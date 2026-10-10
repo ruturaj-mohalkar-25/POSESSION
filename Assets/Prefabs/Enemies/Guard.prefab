@@ -128,7 +128,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fc1d0a7277bfc4c1984189b3d4eace5d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Possession.GuardEnemy
+  m_EditorClassIdentifier: Possession.Runtime::Possession.GuardEnemy
   moveSpeed: 3
   maxHP: 3
   waypoints:
@@ -145,7 +145,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c7c1235e5f5c45fabb8ee64b9e839e8, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Possession.ShootAbility
+  m_EditorClassIdentifier: Possession.Runtime::Possession.ShootAbility
   cooldown: 0.5
   projectilePrefab: {fileID: 5592161369493967507, guid: 279603b0de41b417aafaaf47adf9e5ed, type: 3}
   firePoint: {fileID: 6331462020824144332}

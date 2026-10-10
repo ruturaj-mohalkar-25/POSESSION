@@ -124,5 +124,5 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b7ed9d684f7d34167815ad664af64035, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Possession.Target
+  m_EditorClassIdentifier: Possession.Runtime::Possession.Target
   isHit: 0

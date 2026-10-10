@@ -9,6 +9,7 @@ namespace Possession
         [SerializeField] private int damage = 1;
 
         private float timer;
+        private Collider ownerCollider;
 
         private void Update()
         {
@@ -19,8 +20,14 @@ namespace Possession
                 Destroy(gameObject);
         }
 
+        public void SetOwner(Collider col)
+        {
+            ownerCollider = col;
+        }
+
         private void OnTriggerEnter(Collider other)
         {
+            if (other == ownerCollider) return;
             var damageable = other.GetComponent<IDamageable>();
             if (damageable != null)
             {
