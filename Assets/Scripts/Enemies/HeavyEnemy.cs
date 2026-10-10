@@ -21,11 +21,15 @@ namespace Possession
         public bool IsChasing => !isPossessed && chaseTarget != null
             && chaseTarget.isActiveAndEnabled;
 
-        protected override void Awake()
+        private void Reset()
         {
             // Guard currently moves at 3 units/s; Heavy uses 60% in both control modes.
             moveSpeed = 1.8f;
             maxHP = 5;
+        }
+
+        protected override void Awake()
+        {
             base.Awake();
             controller = GetComponent<CharacterController>();
 
@@ -96,6 +100,7 @@ namespace Possession
             Vector3 dir = new Vector3(h, 0f, v).normalized;
 
             Move(dir * moveSpeed * Time.deltaTime);
+            HandlePossessedAbility();
         }
 
         protected override void HandleHostileBehavior()

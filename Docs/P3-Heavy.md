@@ -7,7 +7,7 @@
 - Starts with 5 HP and deactivates on death through the inherited damage system.
 - Moves at 1.8 units/second: 0.6 times the current Guard's 3 units/second, both
   during AI movement and possessed WASD movement. If P1 changes Guard speed,
-  update Heavy speed in `Awake()` to maintain that ratio.
+  update the Heavy prefab/scene Move Speed in the Inspector to maintain that ratio.
 - Patrols assigned waypoints, pauses for 0.75 seconds at each, and loops.
   Empty routes and missing waypoint references are safe.
 - Uses `Physics.OverlapSphere` to detect the nearest active, living spirit
@@ -47,23 +47,27 @@ the prefab. An unconfigured Heavy idles but still detects and chases the spirit.
 The menu `Possession > P3 > Update Heavy Prefab and Level Component` can repeat
 the collider/HP migration without rebuilding the room layout.
 
-## P2 integration blocker in the existing repository
+## P2 integration
 
-`PossessionController` and `SpiritController` are on the same Spirit GameObject.
-`PossessionController.Possess()` calls `spirit.SetVisible(false)`, which currently
-calls `gameObject.SetActive(false)`. This disables the possession controller too,
-so its `Update()` cannot count down the 15-second timer or handle E to eject.
+Merged `origin/integration` at `015753c` into the local P3 branch. This brings in
+P2's spirit visibility fix, possession prompt events, Guard ability input,
+projectile prefab/wiring, hostile chase, Inspector-configurable stats, and
+camera-follow component.
 
-P2 should keep the possession controller active while hiding the spirit renderer,
-disabling spirit movement/collision, and freezing its Rigidbody. On ejection,
-move the spirit's Rigidbody to a safe, non-overlapping position before restoring
-collision and movement. Simply toggling the whole GameObject will not work.
-Heavy's forced-eject callback already supports P2's current order: the spirit
-can still be hidden when `OnForcedEject()` is called and be shown immediately after.
+The previous possession blocker is fixed: hiding the spirit now disables its
+renderer/collider and makes its Rigidbody kinematic while keeping the GameObject
+and possession controller active. The timer and ejection can continue running.
+The Heavy retains its collision-aware movement and uses the shared LMB ability
+handler, preserving P2's ability activation without restoring transform-based
+movement through walls.
 
-This issue is documented for P2; this branch does not change their controllers.
-The tests cover the Heavy callbacks directly, rather than claiming the full
-15-second possession loop works in the existing level.
+Open the merged Level_01 scene to test the complete sequence: possess Guard,
+shoot the target, eject with E, walk through the unlocked door as the visible
+Spirit, approach Heavy, possess it, move with WASD, and eject again. For a focused
+P3 test, move the Spirit directly to `(0, 1.1, 27)` during Play mode.
+
+The imported camera-follow script targets the Spirit. Tracking the possessed
+enemy instead of the hidden Spirit is not implemented by that script.
 
 ## Verification
 
@@ -71,8 +75,12 @@ Unity's Test Runner contains `Possession.Tests.HeavyEnemyTests` under PlayMode.
 The runtime assembly definition and Test Framework package allow these tests
 to run without putting test code in player builds.
 
-Validation on October 9, 2026: **12 PlayMode tests passed, 0 failed** in Unity
-6000.3.22f1, including the saved prefab and the existing Level_01 scene.
+Initial P3 validation on October 9, 2026: **12 PlayMode tests passed, 0 failed**
+in Unity 6000.3.22f1, including the saved prefab and the existing Level_01 scene.
+
+After merging P2: **15 PlayMode tests passed, 0 failed**, including three new
+checks for configurable stats and the shared possession/ejection loop. Validation
+ran in a separate copy while the working project stayed open in Unity.
 
 Run from the project root on this Mac:
 
@@ -89,8 +97,10 @@ Close this project's Unity editor before running the batch command. Tests cover
 HP/death, speed relative to Guard, waypoint arrival/wait/looping, missing routes,
 child-collider detection, returning to patrol, possession/ejection callbacks,
 hostility expiry, stopping distance, wall collision, layer filtering, pausing,
-the saved prefab, and the Heavy in Level_01. Actual keyboard input and the shared
-possession timer still need a manual playtest after P2 fixes the blocker above.
+the saved prefab, and the Heavy in Level_01. Additional integration tests cover the shared possession controller staying
+active, its timer counting down, manual and forced ejection, and Heavy hostility
+expiring. They use shortened timer values to keep the run quick. Actual keyboard
+and mouse input still need a manual playtest in the merged scene.
 
 ## External references for the GDD
 
