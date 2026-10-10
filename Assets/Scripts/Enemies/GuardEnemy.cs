@@ -35,7 +35,16 @@ namespace Possession
 
         protected override void HandleHostileBehavior()
         {
-            // TODO: chase spirit, fire projectile at spirit's position
+            var spirit = FindFirstObjectByType<SpiritController>();
+            if (spirit == null) return;
+
+            Vector3 dir = (spirit.transform.position - transform.position);
+            dir.y = 0f;
+            if (dir.magnitude < 1.5f) return;
+
+            dir.Normalize();
+            transform.rotation = Quaternion.LookRotation(dir);
+            transform.Translate(dir * moveSpeed * Time.deltaTime, Space.World);
         }
     }
 }
