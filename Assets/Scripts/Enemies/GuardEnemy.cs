@@ -9,9 +9,6 @@ namespace Possession
         protected override void Awake()
         {
             base.Awake();
-            moveSpeed = 3f;
-            maxHP = 3;
-            currentHP = maxHP;
         }
 
         protected override void HandlePatrol()
