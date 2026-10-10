@@ -66,11 +66,31 @@ namespace Possession
         public void SetVisible(bool visible)
         {
             isVisible = visible;
+            isGrounded = false;
             var renderer = GetComponent<Renderer>();
             if (renderer != null) renderer.enabled = visible;
             var col = GetComponent<Collider>();
             if (col != null) col.enabled = visible;
-            if (rb != null) rb.isKinematic = !visible;
+            if (rb != null)
+            {
+                // Clear velocity while dynamic, before hiding or after restoring.
+                // Otherwise pre-possession jump/fall momentum can survive ejection.
+                if (visible) rb.isKinematic = false;
+                if (!rb.isKinematic)
+                {
+                    rb.linearVelocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                }
+                if (!visible) rb.isKinematic = true;
+            }
+        }
+
+        public void RestoreAt(Vector3 position)
+        {
+            // Teleport the physics body while its collider is still disabled.
+            if (rb != null) rb.position = position;
+            transform.position = position;
+            SetVisible(true);
         }
 
         public int CurrentHP => currentHP;

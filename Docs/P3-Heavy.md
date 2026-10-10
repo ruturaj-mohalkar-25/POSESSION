@@ -69,6 +69,26 @@ P3 test, move the Spirit directly to `(0, 1.1, 27)` during Play mode.
 The imported camera-follow script targets the Spirit. Tracking the possessed
 enemy instead of the hidden Spirit is not implemented by that script.
 
+## Ejection physics fix
+
+Ejection previously placed the Spirit at the enemy's exact center and enabled
+its collider there. The overlapping Heavy and Spirit could push the Spirit
+upward during physics resolution. The earlier integration tests used a frozen
+Spirit Rigidbody and did not catch that interaction.
+
+Ejection now searches for a grounded, unoccupied position beside the enemy,
+including alternate sides when a wall blocks the first choice. It can return to
+the pre-possession position if that is clear. If there is no safe position, it
+keeps the body possessed until space becomes available. The Spirit's Rigidbody
+is teleported while hidden, then restored with zero linear/angular velocity and
+reset grounded state. This applies to manual and forced ejection.
+
+A regression test failed on the previous code because Spirit/enemy horizontal
+separation was zero. After the fix, **18 PlayMode tests passed, 0 failed**, including
+a gravity-enabled Spirit, a scaled Heavy, blocked ejection positions, and stale
+jump velocity. The forced-ejection test uses a short timer but checks real physics
+for the same ejection path used at 15 seconds.
+
 ## Verification
 
 Unity's Test Runner contains `Possession.Tests.HeavyEnemyTests` under PlayMode.

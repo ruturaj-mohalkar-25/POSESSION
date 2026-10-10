@@ -150,6 +150,77 @@ namespace Possession.Tests
         }
 
         [UnityTest]
+        public IEnumerator ForcedEjectionDoesNotSpawnSpiritInsideHeavyOrLaunchIt()
+        {
+            heavy.transform.localScale = Vector3.one * 1.3f;
+            var spirit = CreateSpirit(new Vector3(3f, 1.1f, 0f));
+            var rb = spirit.GetComponent<Rigidbody>();
+            rb.constraints = RigidbodyConstraints.FreezeRotation;
+            rb.useGravity = true;
+            var possession = spirit.gameObject.AddComponent<PossessionController>();
+            Set(possession, "possessDuration", 0.1f);
+            Invoke(possession, "Possess", heavy);
+            float deadline = Time.time + 1f;
+            while (possession.CurrentState != PlayerState.Spirit && Time.time < deadline)
+                yield return null;
+            Assert.That(possession.CurrentState, Is.EqualTo(PlayerState.Spirit));
+            Vector3 separation = spirit.transform.position - heavy.transform.position;
+            separation.y = 0f;
+            Assert.That(separation.magnitude, Is.GreaterThanOrEqualTo(1.2f),
+                "Ejection must place the Spirit beside the Heavy, not inside its capsule.");
+            float peakHeight = spirit.transform.position.y;
+            deadline = Time.time + 0.5f;
+            while (Time.time < deadline)
+            {
+                peakHeight = Mathf.Max(peakHeight, spirit.transform.position.y);
+                yield return null;
+            }
+            Assert.That(peakHeight, Is.LessThan(1.6f),
+                "Spirit should stay near floor height after ejection.");
+        }
+
+        [UnityTest]
+        public IEnumerator ManualEjectionChoosesClearSpaceWhenAnEnemySideIsBlocked()
+        {
+            var wall = Create("Eject obstacle", new Vector3(0f, 1.5f, 1.5f));
+            wall.AddComponent<BoxCollider>().size = new Vector3(3f, 3f, 0.2f);
+            var spirit = CreateSpirit(new Vector3(3f, 1.1f, 0f));
+            var possession = spirit.gameObject.AddComponent<PossessionController>();
+            Invoke(possession, "Possess", heavy);
+            Physics.SyncTransforms();
+            Invoke(possession, "Eject", false);
+            Assert.That(possession.CurrentState, Is.EqualTo(PlayerState.Spirit));
+            var capsule = spirit.GetComponent<CapsuleCollider>();
+            Physics.SyncTransforms();
+            Assert.That(Physics.ComputePenetration(capsule, spirit.transform.position,
+                spirit.transform.rotation, wall.GetComponent<Collider>(), wall.transform.position,
+                wall.transform.rotation, out _, out _), Is.False);
+            Vector3 separation = spirit.transform.position - heavy.transform.position;
+            separation.y = 0f;
+            Assert.That(separation.magnitude, Is.GreaterThan(1f));
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator PossessionClearsOldVelocityAndEjectionRestoresDynamicBody()
+        {
+            var spirit = CreateSpirit(new Vector3(3f, 1.1f, 0f));
+            var rb = spirit.GetComponent<Rigidbody>();
+            rb.constraints = RigidbodyConstraints.FreezeRotation;
+            rb.linearVelocity = new Vector3(0f, 8f, 0f);
+            rb.angularVelocity = new Vector3(0f, 2f, 0f);
+            var possession = spirit.gameObject.AddComponent<PossessionController>();
+            Invoke(possession, "Possess", heavy);
+            Assert.That(rb.isKinematic, Is.True);
+            Invoke(possession, "Eject", false);
+            Assert.That(possession.CurrentState, Is.EqualTo(PlayerState.Spirit));
+            Assert.That(rb.isKinematic, Is.False);
+            Assert.That(rb.linearVelocity, Is.EqualTo(Vector3.zero));
+            Assert.That(rb.angularVelocity, Is.EqualTo(Vector3.zero));
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator PatrolMovesAtSixtyPercentOfGuardSpeed()
         {
             var guard = Create("Guard", new Vector3(0f, 1f, 20f)).AddComponent<GuardEnemy>();
