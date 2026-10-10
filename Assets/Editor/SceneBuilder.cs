@@ -30,6 +30,11 @@ namespace Possession.Editor
             BuildLighting();
             BuildFloorAndWalls();
 
+            var projectileGO = BuildProjectile();
+            SavePrefab(projectileGO, "Assets/Prefabs", "Projectile.prefab");
+            var projectilePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Projectile.prefab");
+            Object.DestroyImmediate(projectileGO);
+
             var spirit = BuildSpirit();
             var guard = BuildGuard();
             var heavy = BuildHeavy();
@@ -38,7 +43,7 @@ namespace Possession.Editor
             var wall = BuildBreakableWall();
             var exit = BuildExit();
 
-            WireGuardFields(guard);
+            WireGuardFields(guard, projectilePrefab);
             WireHeavyFields(heavy);
             WireSpiritFields(spirit);
             WireDoorFields(door, target);
@@ -445,9 +450,30 @@ namespace Possession.Editor
             return panel;
         }
 
+        static GameObject BuildProjectile()
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            go.name = "Projectile";
+            go.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+
+            var col = go.GetComponent<Collider>();
+            if (col is SphereCollider sc)
+                sc.isTrigger = true;
+
+            var rb = go.AddComponent<Rigidbody>();
+            rb.useGravity = false;
+            rb.isKinematic = true;
+
+            go.AddComponent<Projectile>();
+            SetColor(go, new Color(1f, 0.6f, 0.1f));
+
+            go.SetActive(false);
+            return go;
+        }
+
         // ======================== WIRING ========================
 
-        static void WireGuardFields(GameObject guard)
+        static void WireGuardFields(GameObject guard, GameObject projectilePrefab)
         {
             var wp1 = GameObject.Find("Guard_WP1");
             var wp2 = GameObject.Find("Guard_WP2");
@@ -464,6 +490,7 @@ namespace Possession.Editor
             var shootSO = new SerializedObject(shoot);
             var firePoint = guard.transform.Find("FirePoint");
             shootSO.FindProperty("firePoint").objectReferenceValue = firePoint;
+            shootSO.FindProperty("projectilePrefab").objectReferenceValue = projectilePrefab;
             shootSO.ApplyModifiedPropertiesWithoutUndo();
         }
 
