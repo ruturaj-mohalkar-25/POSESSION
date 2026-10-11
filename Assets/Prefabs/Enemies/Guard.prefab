@@ -45,8 +45,8 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 868572046455526024}
   m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
---- !u!136 &6419968575370186397
-CapsuleCollider:
+--- !u!143 &6419968575370186397
+CharacterController:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -60,13 +60,15 @@ CapsuleCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.5
+  serializedVersion: 3
   m_Height: 2
-  m_Direction: 1
+  m_Radius: 0.5
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.05
+  m_MinMoveDistance: 0
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &3197512805193639062
 MeshRenderer:
@@ -131,9 +133,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Possession.Runtime::Possession.GuardEnemy
   moveSpeed: 3
   maxHP: 3
-  waypoints:
-  - {fileID: 0}
-  - {fileID: 0}
+  waypoints: []
+  detectionRange: 10
+  spiritLayer:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  waypointIdleTime: 0.75
+  waypointArrivalDistance: 0.3
+  chaseStopDistance: 1.5
 --- !u!114 &668861777506591573
 MonoBehaviour:
   m_ObjectHideFlags: 0
