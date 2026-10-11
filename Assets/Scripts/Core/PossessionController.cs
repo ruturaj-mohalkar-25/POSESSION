@@ -80,6 +80,7 @@ namespace Possession
             {
                 var enemy = hit.GetComponent<EnemyBase>();
                 if (enemy == null || !enemy.CanBePossessed) continue;
+                if (!HasLineOfSight(enemy)) continue;
 
                 float dist = Vector3.Distance(transform.position, hit.transform.position);
                 if (dist < bestDist)
@@ -90,6 +91,17 @@ namespace Possession
             }
 
             return nearest;
+        }
+
+        // Stops possessing an enemy through walls or a locked door
+        private bool HasLineOfSight(EnemyBase enemy)
+        {
+            if (!Physics.Linecast(transform.position, enemy.transform.position, out RaycastHit hit,
+                    ~0, QueryTriggerInteraction.Ignore))
+                return true;
+
+            return hit.collider.GetComponentInParent<EnemyBase>() == enemy
+                || hit.collider.transform.IsChildOf(transform);
         }
 
         private void Possess(EnemyBase enemy)
