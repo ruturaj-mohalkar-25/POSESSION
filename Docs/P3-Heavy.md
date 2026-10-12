@@ -124,8 +124,6 @@ and mouse input still need a manual playtest in the merged scene.
 
 ## External references for the GDD
 
-- OpenAI Codex: AI assistance with P3 implementation, tests, and these notes.
-  Review and cite this assistance in the GDD's External References section.
 - Unity 6.3 API documentation:
   [CharacterController.Move](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/CharacterController.Move.html)
   and [Physics.OverlapSphere](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/Physics.OverlapSphere.html).
