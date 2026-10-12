@@ -224,6 +224,7 @@ namespace Possession.Editor
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             go.name = "Guard";
+            Object.DestroyImmediate(go.GetComponent<CapsuleCollider>());
             go.transform.position = new Vector3(2, 1.1f, 18);
             go.layer = EnemyLayer;
 
