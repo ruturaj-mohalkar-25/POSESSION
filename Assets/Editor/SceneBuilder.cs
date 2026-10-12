@@ -22,7 +22,7 @@ namespace Possession.Editor
         private static readonly Color WallBreakColor = new Color(0.5f, 0.35f, 0.2f);
         private static readonly Color ExitColor = new Color(0.1f, 0.9f, 0.5f);
 
-        [MenuItem("Possession/Build Level_01 Scene")]
+        [MenuItem("Possession/P2/Build Level_01 Scene")]
         public static void BuildLevel01()
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -78,7 +78,7 @@ namespace Possession.Editor
             Debug.Log("Level_01 built. Prefabs saved. Scene added to Build Settings.");
         }
 
-        [MenuItem("Possession/Build MainMenu Scene")]
+        [MenuItem("Possession/P2/Build MainMenu Scene")]
         public static void BuildMainMenu()
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -207,7 +207,7 @@ namespace Possession.Editor
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             go.name = "Spirit";
-            go.transform.position = new Vector3(0, 1.1f, 3);
+            go.transform.position = new Vector3(0, 1.1f, 3f);
 
             var rb = go.AddComponent<Rigidbody>();
             rb.constraints = RigidbodyConstraints.FreezeRotation;
