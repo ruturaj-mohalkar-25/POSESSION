@@ -39,7 +39,7 @@ namespace Possession.Editor
             Barrier(layout.transform, "WallPuzzle_Left", -3.8f);
             Barrier(layout.transform, "WallPuzzle_Right", 3.8f);
 
-            Require("Spirit").transform.position = new Vector3(0f, 1.15f, 8f);
+            Require("Spirit").transform.position = new Vector3(0f, 1.15f, 3.5f);
             // Projectile travels at FirePoint height (1.6 m), so make its target easy to read/hit.
             Resize("Target", new Vector3(3.5f, 1.6f, 21f), new Vector3(1.2f, 1.2f, 0.6f));
 

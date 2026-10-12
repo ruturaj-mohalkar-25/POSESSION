@@ -14,7 +14,7 @@ namespace Possession
     {
         [Header("Possession Settings")]
         [SerializeField] private float possessRange = 5f;
-        [SerializeField] private float possessDuration = 15f;
+        [SerializeField] private float possessDuration = 10f;
         [SerializeField] private float ejectCooldown = 0.5f;
         [SerializeField] private float hostileTime = 5f;
         [SerializeField] private LayerMask enemyLayer;
