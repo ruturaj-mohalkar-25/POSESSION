@@ -172,7 +172,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.PossessionController
   possessRange: 5
-  possessDuration: 15
+  possessDuration: 10
   ejectCooldown: 0.5
   hostileTime: 5
   enemyLayer:
