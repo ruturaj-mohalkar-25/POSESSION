@@ -7,11 +7,13 @@ namespace Possession
         [SerializeField] private GameObject projectilePrefab;
         [SerializeField] private Transform firePoint;
 
+        private Camera mainCam;
+
         protected override void Execute()
         {
-            // Aim: raycast from camera through mouse onto ground plane
+            if (mainCam == null) mainCam = Camera.main;
             Plane groundPlane = new Plane(Vector3.up, 0f);
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Ray ray = mainCam.ScreenPointToRay(Input.mousePosition);
 
             if (groundPlane.Raycast(ray, out float distance))
             {
@@ -22,7 +24,13 @@ namespace Possession
                 if (projectilePrefab != null)
                 {
                     GameObject proj = Instantiate(projectilePrefab, firePoint.position, Quaternion.LookRotation(aimDir));
-                    // Projectile script handles its own movement
+                    var projectile = proj.GetComponent<Projectile>();
+                    if (projectile != null)
+                    {
+                        var col = GetComponent<Collider>();
+                        if (col == null) col = GetComponentInParent<Collider>();
+                        if (col != null) projectile.SetOwner(col);
+                    }
                 }
             }
         }

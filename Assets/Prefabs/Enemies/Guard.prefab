@@ -10,8 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 8292971788617692090}
   - component: {fileID: 4199133465744412913}
-  - component: {fileID: 6419968575370186397}
   - component: {fileID: 3197512805193639062}
+  - component: {fileID: 6419968575370186397}
   - component: {fileID: 2102161009283349970}
   - component: {fileID: 668861777506591573}
   m_Layer: 6
@@ -45,29 +45,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 868572046455526024}
   m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
---- !u!136 &6419968575370186397
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 868572046455526024}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.5
-  m_Height: 2
-  m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &3197512805193639062
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -117,6 +94,31 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!143 &6419968575370186397
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 868572046455526024}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 2
+  m_Radius: 0.5
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.05
+  m_MinMoveDistance: 0
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &2102161009283349970
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -128,12 +130,17 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fc1d0a7277bfc4c1984189b3d4eace5d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Possession.GuardEnemy
+  m_EditorClassIdentifier: Possession.Runtime::Possession.GuardEnemy
   moveSpeed: 3
   maxHP: 3
-  waypoints:
-  - {fileID: 0}
-  - {fileID: 0}
+  waypoints: []
+  detectionRange: 10
+  spiritLayer:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  waypointIdleTime: 0.75
+  waypointArrivalDistance: 0.3
+  chaseStopDistance: 1.5
 --- !u!114 &668861777506591573
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -145,9 +152,9 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c7c1235e5f5c45fabb8ee64b9e839e8, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Possession.ShootAbility
+  m_EditorClassIdentifier: Possession.Runtime::Possession.ShootAbility
   cooldown: 0.5
-  projectilePrefab: {fileID: 0}
+  projectilePrefab: {fileID: 5592161369493967507, guid: 279603b0de41b417aafaaf47adf9e5ed, type: 3}
   firePoint: {fileID: 6331462020824144332}
 --- !u!1 &5966645645571724092
 GameObject:

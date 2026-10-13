@@ -14,6 +14,7 @@ namespace Possession
         private Rigidbody rb;
         private int currentHP;
         private bool isGrounded;
+        private bool isVisible = true;
 
         private void Awake()
         {
@@ -23,6 +24,7 @@ namespace Possession
 
         private void Update()
         {
+            if (!isVisible) return;
             if (GameManager.Instance != null && GameManager.Instance.CurrentState != LevelState.InProgress)
                 return;
 
@@ -63,7 +65,29 @@ namespace Possession
 
         public void SetVisible(bool visible)
         {
-            gameObject.SetActive(visible);
+            isVisible = visible;
+            isGrounded = false;
+            var renderer = GetComponent<Renderer>();
+            if (renderer != null) renderer.enabled = visible;
+            var col = GetComponent<Collider>();
+            if (col != null) col.enabled = visible;
+            if (rb != null)
+            {
+                if (visible) rb.isKinematic = false;
+                if (!rb.isKinematic)
+                {
+                    rb.linearVelocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                }
+                if (!visible) rb.isKinematic = true;
+            }
+        }
+
+        public void RestoreAt(Vector3 position)
+        {
+            if (rb != null) rb.position = position;
+            transform.position = position;
+            SetVisible(true);
         }
 
         public int CurrentHP => currentHP;

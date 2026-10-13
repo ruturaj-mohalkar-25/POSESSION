@@ -155,7 +155,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6fd5560b98cf6428bb58348c3b3945a5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Possession.SpiritController
+  m_EditorClassIdentifier: Possession.Runtime::Possession.SpiritController
   moveSpeed: 6
   jumpForce: 8
   maxHP: 3
@@ -170,9 +170,9 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b5cb51eb8026e4b51bf6f0655d8c934e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Possession.PossessionController
+  m_EditorClassIdentifier: Possession.Runtime::Possession.PossessionController
   possessRange: 5
-  possessDuration: 15
+  possessDuration: 10
   ejectCooldown: 0.5
   hostileTime: 5
   enemyLayer:

@@ -18,17 +18,22 @@ namespace Possession.Editor
         private static readonly Color GuardColor = new Color(0.85f, 0.2f, 0.2f);
         private static readonly Color HeavyColor = new Color(0.2f, 0.3f, 0.9f);
         private static readonly Color TargetColor = new Color(0.95f, 0.85f, 0.1f);
-        private static readonly Color DoorColor = new Color(0.1f, 0.8f, 0.2f);
+        private static readonly Color DoorColor = new Color(0.7f, 0.15f, 0.15f);
         private static readonly Color WallBreakColor = new Color(0.5f, 0.35f, 0.2f);
         private static readonly Color ExitColor = new Color(0.1f, 0.9f, 0.5f);
 
-        [MenuItem("Possession/Build Level_01 Scene")]
+        [MenuItem("Possession/P2/Build Level_01 Scene")]
         public static void BuildLevel01()
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             BuildLighting();
             BuildFloorAndWalls();
+
+            var projectileGO = BuildProjectile();
+            SavePrefab(projectileGO, "Assets/Prefabs", "Projectile.prefab");
+            var projectilePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Projectile.prefab");
+            Object.DestroyImmediate(projectileGO);
 
             var spirit = BuildSpirit();
             var guard = BuildGuard();
@@ -38,7 +43,7 @@ namespace Possession.Editor
             var wall = BuildBreakableWall();
             var exit = BuildExit();
 
-            WireGuardFields(guard);
+            WireGuardFields(guard, projectilePrefab);
             WireHeavyFields(heavy);
             WireSpiritFields(spirit);
             WireDoorFields(door, target);
@@ -73,7 +78,7 @@ namespace Possession.Editor
             Debug.Log("Level_01 built. Prefabs saved. Scene added to Build Settings.");
         }
 
-        [MenuItem("Possession/Build MainMenu Scene")]
+        [MenuItem("Possession/P2/Build MainMenu Scene")]
         public static void BuildMainMenu()
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -202,7 +207,7 @@ namespace Possession.Editor
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             go.name = "Spirit";
-            go.transform.position = new Vector3(0, 1.1f, 3);
+            go.transform.position = new Vector3(0, 1.1f, 3f);
 
             var rb = go.AddComponent<Rigidbody>();
             rb.constraints = RigidbodyConstraints.FreezeRotation;
@@ -219,6 +224,7 @@ namespace Possession.Editor
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             go.name = "Guard";
+            Object.DestroyImmediate(go.GetComponent<CapsuleCollider>());
             go.transform.position = new Vector3(2, 1.1f, 18);
             go.layer = EnemyLayer;
 
@@ -244,6 +250,7 @@ namespace Possession.Editor
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             go.name = "Heavy";
+            Object.DestroyImmediate(go.GetComponent<CapsuleCollider>());
             go.transform.position = new Vector3(-2, 1.3f, 30);
             go.transform.localScale = new Vector3(1.3f, 1.3f, 1.3f);
             go.layer = EnemyLayer;
@@ -341,14 +348,13 @@ namespace Possession.Editor
             cam.backgroundColor = new Color(0.08f, 0.08f, 0.1f);
             camGO.tag = "MainCamera";
 
-            // Fixed isometric-ish view: 45 degrees down, looking at center of level
-            camGO.transform.position = new Vector3(0, 25f, 5f);
+            camGO.transform.position = new Vector3(0, 25f, -10f);
             camGO.transform.rotation = Quaternion.Euler(55f, 0f, 0f);
 
             cam.fieldOfView = 40f;
 
-            // Add AudioListener
             camGO.AddComponent<AudioListener>();
+            camGO.AddComponent<CameraFollow>();
         }
 
         // ======================== MANAGERS ========================
@@ -445,15 +451,37 @@ namespace Possession.Editor
             return panel;
         }
 
+        static GameObject BuildProjectile()
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            go.name = "Projectile";
+            go.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+
+            var col = go.GetComponent<Collider>();
+            if (col is SphereCollider sc)
+                sc.isTrigger = true;
+
+            var rb = go.AddComponent<Rigidbody>();
+            rb.useGravity = false;
+            rb.isKinematic = true;
+
+            go.AddComponent<Projectile>();
+            SetColor(go, new Color(1f, 0.6f, 0.1f));
+
+            return go;
+        }
+
         // ======================== WIRING ========================
 
-        static void WireGuardFields(GameObject guard)
+        static void WireGuardFields(GameObject guard, GameObject projectilePrefab)
         {
             var wp1 = GameObject.Find("Guard_WP1");
             var wp2 = GameObject.Find("Guard_WP2");
 
             var enemy = guard.GetComponent<GuardEnemy>();
             var so = new SerializedObject(enemy);
+            so.FindProperty("moveSpeed").floatValue = 3f;
+            so.FindProperty("maxHP").intValue = 3;
             var waypoints = so.FindProperty("waypoints");
             waypoints.arraySize = 2;
             waypoints.GetArrayElementAtIndex(0).objectReferenceValue = wp1.transform;
@@ -464,6 +492,7 @@ namespace Possession.Editor
             var shootSO = new SerializedObject(shoot);
             var firePoint = guard.transform.Find("FirePoint");
             shootSO.FindProperty("firePoint").objectReferenceValue = firePoint;
+            shootSO.FindProperty("projectilePrefab").objectReferenceValue = projectilePrefab;
             shootSO.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -474,6 +503,8 @@ namespace Possession.Editor
 
             var enemy = heavy.GetComponent<HeavyEnemy>();
             var so = new SerializedObject(enemy);
+            so.FindProperty("moveSpeed").floatValue = 1.8f;
+            so.FindProperty("maxHP").intValue = 5;
             var waypoints = so.FindProperty("waypoints");
             waypoints.arraySize = 2;
             waypoints.GetArrayElementAtIndex(0).objectReferenceValue = wp1.transform;
