@@ -24,6 +24,7 @@ namespace Possession
         private float possessTimer;
         private float ejectCooldownTimer;
         private SpiritController spirit;
+        private Vector3 lastSpiritPosition;
 
         public PlayerState CurrentState => currentState;
         public float PossessTimer => possessTimer;
@@ -105,6 +106,7 @@ namespace Possession
 
         private void Possess(EnemyBase enemy)
         {
+            lastSpiritPosition = transform.position;
             possessedEnemy = enemy;
             possessTimer = possessDuration;
 
@@ -124,15 +126,15 @@ namespace Possession
         {
             if (possessedEnemy == null) return;
 
-            Vector3 ejectPos = possessedEnemy.transform.position;
+            if (!TryFindEjectionPosition(out Vector3 ejectPos))
+                return;
 
             if (forced)
                 possessedEnemy.OnForcedEject(hostileTime);
             else
                 possessedEnemy.OnEjected();
 
-            transform.position = ejectPos;
-            spirit.SetVisible(true);
+            spirit.RestoreAt(ejectPos);
             ejectCooldownTimer = ejectCooldown;
 
             var ejectedEnemy = possessedEnemy;
@@ -140,6 +142,75 @@ namespace Possession
             currentState = PlayerState.Spirit;
 
             EventBus.Ejected?.Invoke(ejectedEnemy, forced);
+        }
+
+        private bool TryFindEjectionPosition(out Vector3 position)
+        {
+            const float clearance = 0.1f;
+            var capsule = GetComponent<CapsuleCollider>();
+            position = lastSpiritPosition;
+            if (capsule == null) return false;
+
+            Physics.SyncTransforms();
+            var enemyCollider = possessedEnemy.GetComponent<Collider>();
+            Bounds bounds = enemyCollider != null ? enemyCollider.bounds
+                : new Bounds(possessedEnemy.transform.position, Vector3.one * 2f);
+            Vector3 scale = transform.lossyScale;
+            float radius = capsule.radius * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z));
+            float halfHeight = Mathf.Max(radius, capsule.height * Mathf.Abs(scale.y) * 0.5f);
+            Vector3 centerOffset = transform.TransformVector(capsule.center);
+
+            for (int ring = 0; ring < 2; ring++)
+            {
+                for (int i = 0; i < 8; i++)
+                {
+                    Vector3 direction = Quaternion.AngleAxis(i * 45f, Vector3.up)
+                        * possessedEnemy.transform.forward;
+                    direction.y = 0f;
+                    direction.Normalize();
+                    float bodyExtent = Mathf.Abs(direction.x) * bounds.extents.x
+                        + Mathf.Abs(direction.z) * bounds.extents.z;
+                    Vector3 candidate = bounds.center + direction
+                        * (bodyExtent + radius + clearance + ring * 0.5f);
+                    candidate -= new Vector3(centerOffset.x, 0f, centerOffset.z);
+                    if (TryGroundedPosition(candidate, bounds, centerOffset, radius,
+                        halfHeight, clearance, out position))
+                        return true;
+                }
+            }
+
+            return TryGroundedPosition(lastSpiritPosition, bounds, centerOffset, radius,
+                halfHeight, clearance, out position);
+        }
+
+        private bool TryGroundedPosition(Vector3 candidate, Bounds enemyBounds,
+            Vector3 centerOffset, float radius, float halfHeight, float clearance,
+            out Vector3 position)
+        {
+            position = candidate;
+            float groundY = float.NegativeInfinity;
+            Vector3 origin = new Vector3(candidate.x + centerOffset.x,
+                enemyBounds.max.y + 0.5f, candidate.z + centerOffset.z);
+            foreach (RaycastHit hit in Physics.RaycastAll(origin, Vector3.down,
+                enemyBounds.size.y + 2f, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (hit.collider.transform.IsChildOf(transform)
+                    || hit.collider.transform.IsChildOf(possessedEnemy.transform)
+                    || hit.normal.y < 0.5f || hit.point.y > enemyBounds.min.y + 0.3f)
+                    continue;
+                groundY = Mathf.Max(groundY, hit.point.y);
+            }
+            if (float.IsNegativeInfinity(groundY)) return false;
+
+            position.y = groundY + halfHeight - centerOffset.y + clearance;
+            Vector3 center = position + centerOffset;
+            Vector3 segment = Vector3.up * (halfHeight - radius);
+            foreach (Collider hit in Physics.OverlapCapsule(center + segment, center - segment,
+                radius + clearance * 0.5f, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (!hit.transform.IsChildOf(transform)) return false;
+            }
+            return true;
         }
     }
 }

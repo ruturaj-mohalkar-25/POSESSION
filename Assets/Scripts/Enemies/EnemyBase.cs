@@ -70,6 +70,11 @@ namespace Possession
 
             transform.Translate(dir * moveSpeed * Time.deltaTime, Space.World);
 
+            HandlePossessedAbility();
+        }
+
+        protected void HandlePossessedAbility()
+        {
             if (Input.GetMouseButtonDown(0))
             {
                 var ability = GetComponent<Ability>();
