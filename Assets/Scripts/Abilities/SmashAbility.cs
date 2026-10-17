@@ -8,6 +8,8 @@ namespace Possession
         [SerializeField] private int smashDamage = 2;
         [SerializeField] private LayerMask smashableLayer;
 
+        public float Range => smashRange;
+
         protected override void Execute()
         {
             Vector3 origin = transform.position + Vector3.up * 0.5f;
