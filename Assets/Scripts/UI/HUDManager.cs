@@ -30,6 +30,8 @@ namespace Possession
         [SerializeField] private float promptHeight = 2.6f; // above the enemy's name tag
         [SerializeField] private Text messageText; // "Forced out!"
         [SerializeField] private float messageTime = 1.5f;
+        [SerializeField] private float unlockMessageTime = 2.5f;
+        [SerializeField] private Color alertColor = new Color(1f, 0.6f, 0.15f);
 
         [Header("Objective")]
         [SerializeField] private Text objectiveText;
@@ -37,9 +39,18 @@ namespace Possession
         private const string objectiveDoorOpen = "2/3  Possess the HEAVY and smash the BREAKABLE wall";
         private const string objectiveWallBroken = "3/3  Eject and reach the EXIT as the Spirit";
 
+        [Header("Controls / Ammo")]
+        [SerializeField] private Text controlsText; // bottom-right, changes with the current form
+        [SerializeField] private AmmoDisplay ammoDisplay;
+
         [Header("End Screens")]
         [SerializeField] private GameObject levelCompletePanel;
         [SerializeField] private GameObject gameOverPanel;
+        [SerializeField] private GameObject gameCompletePanel; // shown instead of Level Complete on the last level
+
+        [Header("Par Times (seconds, used when no rating system reports one)")]
+        [SerializeField] private float goldTime = 90f;
+        [SerializeField] private float silverTime = 150f;
 
         private float healthPct = 1f;
         private EnemyBase[] enemies;
@@ -47,6 +58,10 @@ namespace Possession
         private Camera cam;
         private Coroutine flashRoutine;
         private Coroutine messageRoutine;
+        private bool levelEnded;
+        private Coroutine objectiveRoutine;
+        private Color? objectiveBarColor;
+        private ResultsView activeResults;
 
         private void OnEnable()
         {
@@ -59,9 +74,11 @@ namespace Possession
             EventBus.LevelCompleted += OnLevelComplete;
             EventBus.LevelFailed += OnLevelFailed;
             // GameManager pauses on death / time-out without raising LevelFailed
-            EventBus.SpiritDied += OnLevelFailed;
+            EventBus.SpiritDied += OnSpiritDied;
             EventBus.DoorOpened += OnDoorOpened;
             EventBus.WallBroken += OnWallBroken;
+            HUDEvents.AmmoChanged += OnAmmoChanged;
+            HUDEvents.LevelRated += OnLevelRated;
         }
 
         private void OnDisable()
@@ -74,19 +91,25 @@ namespace Possession
             EventBus.PossessPromptUpdated -= OnPossessPrompt;
             EventBus.LevelCompleted -= OnLevelComplete;
             EventBus.LevelFailed -= OnLevelFailed;
-            EventBus.SpiritDied -= OnLevelFailed;
+            EventBus.SpiritDied -= OnSpiritDied;
             EventBus.DoorOpened -= OnDoorOpened;
             EventBus.WallBroken -= OnWallBroken;
+            HUDEvents.AmmoChanged -= OnAmmoChanged;
+            HUDEvents.LevelRated -= OnLevelRated;
         }
 
         private void Start()
         {
             if (levelCompletePanel != null) levelCompletePanel.SetActive(false);
             if (gameOverPanel != null) gameOverPanel.SetActive(false);
+            if (gameCompletePanel != null) gameCompletePanel.SetActive(false);
             if (messageText != null) messageText.gameObject.SetActive(false);
+            if (ammoDisplay != null) ammoDisplay.Hide();
             SetPossessTimerVisible(false);
             SetFormText("Spirit");
+            SetControls("Spirit");
             SetObjective(objectiveStart);
+            RunStats.BeginAttempt();
 
             // Show full health immediately instead of waiting for the first hit
             var spiritController = FindFirstObjectByType<SpiritController>();
@@ -151,6 +174,8 @@ namespace Possession
         {
             if (levelTimerText == null) return;
 
+            RunStats.Elapsed = max - Mathf.Max(current, 0f);
+
             int seconds = Mathf.CeilToInt(Mathf.Max(current, 0f));
             levelTimerText.text = $"TIME {seconds / 60}:{seconds % 60:D2}";
             levelTimerText.color = current < 30f ? healthLow : Color.white;
@@ -199,23 +224,47 @@ namespace Possession
                 PlayerState.Possessed_Drone => "Drone",
                 _ => "Spirit"
             };
-            SetFormText(form);
+            SetFormText(form == "Heavy" ? "Heavy (slow)" : form);
+            SetControls(form);
+            RunStats.AddPossession();
             if (possessPrompt != null) possessPrompt.SetActive(false);
+            if (ammoDisplay != null) ammoDisplay.Hide(); // shown once the ability reports its uses
         }
 
         private void OnEjected(EnemyBase enemy, bool forced)
         {
             SetFormText("Spirit");
+            SetControls("Spirit");
             SetPossessTimerVisible(false);
+            if (ammoDisplay != null) ammoDisplay.Hide();
 
             if (forced)
-                ShowMessage("FORCED OUT! Enemy is hostile");
+            {
+                RunStats.AddForcedEject();
+                ShowMessage("FORCED OUT! Enemy is hostile", messageTime, alertColor);
+            }
         }
 
         private void SetFormText(string form)
         {
             if (currentFormText != null)
                 currentFormText.text = $"Form: {form}";
+        }
+
+        private void SetControls(string form)
+        {
+            if (controlsText == null) return;
+            controlsText.text = form switch
+            {
+                "Guard" => "WASD  Move\nMOUSE  Aim\nLEFT CLICK  Shoot the target\nE  Eject",
+                "Heavy" => "WASD  Move (slow)\nLEFT CLICK  Smash (face the wall)\nE  Eject",
+                _ => "WASD  Move\nSPACE  Jump\nE  Possess (near an enemy)"
+            };
+        }
+
+        private void OnAmmoChanged(int left, int max)
+        {
+            if (ammoDisplay != null) ammoDisplay.Show(left, max);
         }
 
         private void OnPossessPrompt(bool show)
@@ -228,18 +277,42 @@ namespace Possession
         private void OnDoorOpened(Door door)
         {
             SetObjective(objectiveDoorOpen);
-            ShowMessage("DOOR UNLOCKED!");
+            ShowMessage("TARGET HIT!  DOOR UNLOCKED!", unlockMessageTime, alertColor);
         }
 
         private void OnWallBroken(BreakableWall wall)
         {
             SetObjective(objectiveWallBroken);
-            ShowMessage("WALL SMASHED!");
+            ShowMessage("WALL SMASHED!", messageTime, alertColor);
         }
 
+        // Every objective change flashes the bar so it's noticed even while watching the character
         private void SetObjective(string text)
         {
-            if (objectiveText != null) objectiveText.text = text;
+            if (objectiveText == null) return;
+            objectiveText.text = text;
+            if (objectiveRoutine != null) StopCoroutine(objectiveRoutine);
+            objectiveRoutine = StartCoroutine(FlashObjective());
+        }
+
+        private IEnumerator FlashObjective()
+        {
+            var bar = objectiveText.transform.parent;
+            var barImage = bar != null ? bar.GetComponent<Image>() : null;
+            if (barImage != null && !objectiveBarColor.HasValue) objectiveBarColor = barImage.color;
+            Color normal = objectiveBarColor ?? Color.clear;
+            Color bright = new Color(0.95f, 0.75f, 0.2f, 0.9f);
+
+            const float duration = 1.2f;
+            for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
+            {
+                float k = Mathf.Sin(t / duration * Mathf.PI); // 0 -> 1 -> 0
+                if (barImage != null) barImage.color = Color.Lerp(normal, bright, k);
+                if (bar != null) bar.localScale = Vector3.one * (1f + 0.08f * k);
+                yield return null;
+            }
+            if (barImage != null) barImage.color = normal;
+            if (bar != null) bar.localScale = Vector3.one;
         }
 
         // ---------------- Possess prompt ----------------
@@ -278,18 +351,19 @@ namespace Possession
 
         // ---------------- Messages ----------------
 
-        private void ShowMessage(string text)
+        private void ShowMessage(string text, float duration, Color color)
         {
             if (messageText == null) return;
             if (messageRoutine != null) StopCoroutine(messageRoutine);
-            messageRoutine = StartCoroutine(MessageRoutine(text));
+            messageRoutine = StartCoroutine(MessageRoutine(text, duration, color));
         }
 
-        private IEnumerator MessageRoutine(string text)
+        private IEnumerator MessageRoutine(string text, float duration, Color color)
         {
             messageText.text = text;
+            messageText.color = color;
             messageText.gameObject.SetActive(true);
-            yield return new WaitForSecondsRealtime(messageTime);
+            yield return new WaitForSecondsRealtime(duration);
             messageText.gameObject.SetActive(false);
         }
 
@@ -297,18 +371,67 @@ namespace Possession
 
         private void OnLevelComplete()
         {
-            if (levelCompletePanel != null) levelCompletePanel.SetActive(true);
+            if (levelEnded) return;
+            levelEnded = true;
+
+            var panel = LevelFlow.IsLastLevel && gameCompletePanel != null ? gameCompletePanel : levelCompletePanel;
+            ShowEndPanel(panel);
+            if (activeResults != null) activeResults.ShowRating(RateByTime(RunStats.Elapsed));
         }
 
+        private void OnSpiritDied()
+        {
+            if (!levelEnded) RunStats.AddDeath();
+            OnLevelFailed();
+        }
+
+        // Several sources can report failure (time-out, death, LevelFailed); only the first one counts
         private void OnLevelFailed()
         {
-            if (gameOverPanel != null) gameOverPanel.SetActive(true);
+            if (levelEnded) return;
+            levelEnded = true;
+            ShowEndPanel(gameOverPanel);
+        }
+
+        private void ShowEndPanel(GameObject panel)
+        {
+            if (possessPrompt != null) possessPrompt.SetActive(false);
+            if (ammoDisplay != null) ammoDisplay.Hide();
+            SetPossessTimerVisible(false);
+            if (panel == null) return;
+
+            panel.SetActive(true);
+            activeResults = panel.GetComponent<ResultsView>();
+            if (activeResults != null) activeResults.ShowStats(RunStats.Summary());
+        }
+
+        private int RateByTime(float seconds)
+        {
+            if (seconds <= goldTime) return 3;
+            if (seconds <= silverTime) return 2;
+            return 1;
+        }
+
+        // A rating system, when present, overrides the par-time fallback
+        private void OnLevelRated(int stars)
+        {
+            if (activeResults != null) activeResults.ShowRating(stars);
         }
 
         // Button callbacks
         public void OnRestartButton()
         {
             GameManager.Instance?.RestartLevel();
+        }
+
+        public void OnNextLevelButton()
+        {
+            LevelFlow.LoadNext();
+        }
+
+        public void OnPlayAgainButton()
+        {
+            LevelFlow.LoadIndex(LevelFlow.FirstLevelIndex);
         }
 
         public void OnQuitButton()
