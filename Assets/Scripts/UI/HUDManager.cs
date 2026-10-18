@@ -39,12 +39,18 @@ namespace Possession
         private const string objectiveDoorOpen = "2/3  Possess the HEAVY and smash the BREAKABLE wall";
         private const string objectiveWallBroken = "3/3  Eject and reach the EXIT as the Spirit";
 
-        [Header("Controls")]
+        [Header("Controls / Ammo")]
         [SerializeField] private Text controlsText; // bottom-right, changes with the current form
+        [SerializeField] private AmmoDisplay ammoDisplay;
 
         [Header("End Screens")]
         [SerializeField] private GameObject levelCompletePanel;
         [SerializeField] private GameObject gameOverPanel;
+        [SerializeField] private GameObject gameCompletePanel; // shown instead of Level Complete on the last level
+
+        [Header("Par Times (seconds, used when no rating system reports one)")]
+        [SerializeField] private float goldTime = 90f;
+        [SerializeField] private float silverTime = 150f;
 
         private float healthPct = 1f;
         private EnemyBase[] enemies;
@@ -55,6 +61,7 @@ namespace Possession
         private bool levelEnded;
         private Coroutine objectiveRoutine;
         private Color? objectiveBarColor;
+        private ResultsView activeResults;
 
         private void OnEnable()
         {
@@ -70,6 +77,8 @@ namespace Possession
             EventBus.SpiritDied += OnSpiritDied;
             EventBus.DoorOpened += OnDoorOpened;
             EventBus.WallBroken += OnWallBroken;
+            HUDEvents.AmmoChanged += OnAmmoChanged;
+            HUDEvents.LevelRated += OnLevelRated;
         }
 
         private void OnDisable()
@@ -85,17 +94,22 @@ namespace Possession
             EventBus.SpiritDied -= OnSpiritDied;
             EventBus.DoorOpened -= OnDoorOpened;
             EventBus.WallBroken -= OnWallBroken;
+            HUDEvents.AmmoChanged -= OnAmmoChanged;
+            HUDEvents.LevelRated -= OnLevelRated;
         }
 
         private void Start()
         {
             if (levelCompletePanel != null) levelCompletePanel.SetActive(false);
             if (gameOverPanel != null) gameOverPanel.SetActive(false);
+            if (gameCompletePanel != null) gameCompletePanel.SetActive(false);
             if (messageText != null) messageText.gameObject.SetActive(false);
+            if (ammoDisplay != null) ammoDisplay.Hide();
             SetPossessTimerVisible(false);
             SetFormText("Spirit");
             SetControls("Spirit");
             SetObjective(objectiveStart);
+            RunStats.BeginAttempt();
 
             // Show full health immediately instead of waiting for the first hit
             var spiritController = FindFirstObjectByType<SpiritController>();
@@ -160,6 +174,8 @@ namespace Possession
         {
             if (levelTimerText == null) return;
 
+            RunStats.Elapsed = max - Mathf.Max(current, 0f);
+
             int seconds = Mathf.CeilToInt(Mathf.Max(current, 0f));
             levelTimerText.text = $"TIME {seconds / 60}:{seconds % 60:D2}";
             levelTimerText.color = current < 30f ? healthLow : Color.white;
@@ -210,7 +226,9 @@ namespace Possession
             };
             SetFormText(form == "Heavy" ? "Heavy (slow)" : form);
             SetControls(form);
+            RunStats.AddPossession();
             if (possessPrompt != null) possessPrompt.SetActive(false);
+            if (ammoDisplay != null) ammoDisplay.Hide(); // shown once the ability reports its uses
         }
 
         private void OnEjected(EnemyBase enemy, bool forced)
@@ -218,9 +236,13 @@ namespace Possession
             SetFormText("Spirit");
             SetControls("Spirit");
             SetPossessTimerVisible(false);
+            if (ammoDisplay != null) ammoDisplay.Hide();
 
             if (forced)
+            {
+                RunStats.AddForcedEject();
                 ShowMessage("FORCED OUT! Enemy is hostile", messageTime, alertColor);
+            }
         }
 
         private void SetFormText(string form)
@@ -238,6 +260,11 @@ namespace Possession
                 "Heavy" => "WASD  Move (slow)\nLEFT CLICK  Smash (face the wall)\nE  Eject",
                 _ => "WASD  Move\nSPACE  Jump\nE  Possess (near an enemy)"
             };
+        }
+
+        private void OnAmmoChanged(int left, int max)
+        {
+            if (ammoDisplay != null) ammoDisplay.Show(left, max);
         }
 
         private void OnPossessPrompt(bool show)
@@ -347,11 +374,14 @@ namespace Possession
             if (levelEnded) return;
             levelEnded = true;
 
-            ShowEndPanel(levelCompletePanel);
+            var panel = LevelFlow.IsLastLevel && gameCompletePanel != null ? gameCompletePanel : levelCompletePanel;
+            ShowEndPanel(panel);
+            if (activeResults != null) activeResults.ShowRating(RateByTime(RunStats.Elapsed));
         }
 
         private void OnSpiritDied()
         {
+            if (!levelEnded) RunStats.AddDeath();
             OnLevelFailed();
         }
 
@@ -366,14 +396,42 @@ namespace Possession
         private void ShowEndPanel(GameObject panel)
         {
             if (possessPrompt != null) possessPrompt.SetActive(false);
+            if (ammoDisplay != null) ammoDisplay.Hide();
             SetPossessTimerVisible(false);
-            if (panel != null) panel.SetActive(true);
+            if (panel == null) return;
+
+            panel.SetActive(true);
+            activeResults = panel.GetComponent<ResultsView>();
+            if (activeResults != null) activeResults.ShowStats(RunStats.Summary());
+        }
+
+        private int RateByTime(float seconds)
+        {
+            if (seconds <= goldTime) return 3;
+            if (seconds <= silverTime) return 2;
+            return 1;
+        }
+
+        // A rating system, when present, overrides the par-time fallback
+        private void OnLevelRated(int stars)
+        {
+            if (activeResults != null) activeResults.ShowRating(stars);
         }
 
         // Button callbacks
         public void OnRestartButton()
         {
             GameManager.Instance?.RestartLevel();
+        }
+
+        public void OnNextLevelButton()
+        {
+            LevelFlow.LoadNext();
+        }
+
+        public void OnPlayAgainButton()
+        {
+            LevelFlow.LoadIndex(LevelFlow.FirstLevelIndex);
         }
 
         public void OnQuitButton()
