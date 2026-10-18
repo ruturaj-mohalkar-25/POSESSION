@@ -1,7 +1,8 @@
 # P3: Alpha Heavy setup
 
 P4's `feature/level-puzzles` at `fa1717d` is merged locally with the existing
-smash-indicator work. P2's alpha branch and P5's UI branches are not merged here.
+smash-indicator work. P2's alpha branch at `cd1685b` is also merged locally.
+P5's alpha UI branches and the new Guard placements are not merged here.
 This is a focused Heavy test version, not the final integrated Alpha build.
 
 ## Saved local levels
@@ -37,8 +38,8 @@ it. The Level_01 scene, its speed and its patrol are unchanged.
 
 These focused checks do not replace testing the Guard puzzles, HUD, ammo,
 next-level flow, or the final WebGL build after team integration. In particular,
-the current pre-P2 ability still permits repeated smashes; the one-smash ammo
-restriction belongs to P2's pending integration.
+the Heavy now has one smash per possession from P2's ammo update. Eject and
+repossess to replenish it; a depleted guide remains dim after cooldown expires.
 
 ## Rebuild and merge workflow
 
@@ -91,3 +92,26 @@ leaving the original prefab material unchanged.
 The separate `FMOD failed to switch back to normal output` error was present in
 the Editor log after reload. No project audio settings were changed to hide it;
 save and restart the Unity Editor to retry audio initialization.
+
+## Local P2 alpha integration
+
+Merged `origin/dev/ruturaj-alpha` at `cd1685b` locally. The only merge conflict
+was in SmashAbility: both P2's SphereCast/one-use setup and P3's range API were
+retained. The range guide now includes the cast sphere's radius in its maximum
+forward reach (2.8m with the current 2m cast range and 0.8m radius).
+
+P2's camera now follows the possessed enemy and returns to Spirit on ejection.
+Ammo, progression, rating and in-memory analytics code are also available. This
+does not supply Guards or the new levels' HUD. The latest P4 branches contain
+the same builder content already integrated; their new commit IDs reflect
+rebasing rather than additional placements.
+
+Extra regression coverage checks guide behavior after ammo depletion and refill,
+and verifies camera targets during the real Level_02/03 possession transitions.
+
+Validation after this merge: 14/14 indicator and Level_02/03 checks passed.
+Three additional contact-damage checks passed, one per level: manual ejection
+causes no damage, while forced ejection allows the nearby hostile Heavy to
+damage the Spirit after its grace period. The full suite before these three
+additional checks reported 45/47 passing, with only the two baseline failures
+listed above. These automated checks do not replace keyboard/mouse or browser QA.

@@ -20,12 +20,13 @@ through obstacles. Attack behavior is unchanged.
   builders are unchanged. The installer handles scene loads, EventBus resets
   during restart, and Heavies spawned later and then possessed.
 - The only existing runtime script edit is the read-only `SmashAbility.Range`
-  property. Keep this property when changing smash hit detection; it exposes the
-  existing serialized `smashRange`, so gameplay and the guide use the same value.
+  property. Keep this property when changing smash hit detection. Following local
+  P2 alpha integration, it includes `smashRange + smashRadius` to match the new
+  SphereCast's maximum forward reach.
 - Range is measured in world units and does not grow with Heavy's model scale.
   The arrow follows body facing, matching the current forward-facing smash.
 - The guide uses `Ability.CanUse` for its ready/cooldown color. When P2 adds ammo,
-  readiness will also reflect exhaustion if `CanUse` includes remaining uses.
+  readiness also reflects P2's remaining-use count after local alpha integration.
 - A small unlit shader and material in `Assets/Resources/P3` keep the guide's
   material available in builds. The guide has no colliders, damage logic, input
   handling, or per-frame scene searches.

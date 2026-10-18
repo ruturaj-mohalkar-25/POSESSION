@@ -100,7 +100,8 @@ namespace Possession.Tests
             Vector3 center = heavy.transform.position;
             center.y = body.bounds.min.y + 0.06f;
             Vector3 tip = arc.GetPosition(arc.positionCount / 2);
-            Assert.That(Vector3.Distance(tip, center + Vector3.right * 3f), Is.LessThan(0.001f));
+            Assert.That(smash.Range, Is.EqualTo(3.8f).Within(0.001f));
+            Assert.That(Vector3.Distance(tip, center + Vector3.right * smash.Range), Is.LessThan(0.001f));
             for (int i = 0; i < arc.positionCount; i++)
             {
                 Assert.That(Vector3.Distance(arc.GetPosition(i), center), Is.EqualTo(smash.Range).Within(0.001f));
@@ -121,6 +122,28 @@ namespace Possession.Tests
             Assert.That(indicator.IsVisible, Is.True);
             Assert.That(arc.startColor, Is.Not.EqualTo(ready));
             yield return new WaitForSeconds(0.55f);
+            Assert.That(arc.startColor, Is.EqualTo(ready));
+        }
+
+        [UnityTest]
+        public IEnumerator OneSmashStaysDimAfterCooldownUntilHeavyIsPossessedAgain()
+        {
+            typeof(Ability).GetField("maxUses", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(smash, 1);
+            Invoke(possession, "Possess", heavy);
+            var arc = heavy.transform.Find("Heavy Smash Guide/Range arc").GetComponent<LineRenderer>();
+            Color ready = arc.startColor;
+            Assert.That(smash.UsesLeft, Is.EqualTo(1));
+            smash.TryExecute();
+            yield return new WaitForSeconds(0.55f);
+            Assert.That(smash.UsesLeft, Is.Zero);
+            Assert.That(smash.CanUse, Is.False);
+            Assert.That(indicator.IsVisible, Is.True);
+            Assert.That(arc.startColor, Is.Not.EqualTo(ready));
+            Invoke(possession, "Eject", false);
+            Invoke(possession, "Possess", heavy);
+            Assert.That(smash.UsesLeft, Is.EqualTo(1));
+            Assert.That(smash.CanUse, Is.True);
             Assert.That(arc.startColor, Is.EqualTo(ready));
         }
 

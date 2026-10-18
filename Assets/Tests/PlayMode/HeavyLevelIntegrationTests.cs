@@ -28,6 +28,9 @@ namespace Possession.Tests
         [UnityTest] public IEnumerator Level03HeaviesSmashBothWallsInSequence() => CheckSmashes("Level_03");
         [UnityTest] public IEnumerator Level02ManualAndForcedEjectionStayClearOfWalls() => CheckEjections("Level_02");
         [UnityTest] public IEnumerator Level03ManualAndForcedEjectionStayClearOfWalls() => CheckEjections("Level_03");
+        [UnityTest] public IEnumerator Level01HeavyContactDamageOnlyFollowsForcedEjection() => CheckContactDamage("Level_01");
+        [UnityTest] public IEnumerator Level02HeavyContactDamageOnlyFollowsForcedEjection() => CheckContactDamage("Level_02");
+        [UnityTest] public IEnumerator Level03HeavyContactDamageOnlyFollowsForcedEjection() => CheckContactDamage("Level_03");
 
         private static IEnumerator Load(string name)
         {
@@ -94,6 +97,8 @@ namespace Possession.Tests
             {
                 Teleport(heavies[i], new Vector3(0f, 1.45f, walls[i].transform.position.z - 1.5f));
                 Invoke(possession, "Possess", heavies[i]);
+                var follow = Object.FindFirstObjectByType<CameraFollow>();
+                Assert.That(Read<Transform>(follow, "target"), Is.EqualTo(heavies[i].transform));
                 Assert.That(heavies[i].GetComponent<HeavySmashIndicator>().IsVisible, Is.True);
                 heavies[i].GetComponent<SmashAbility>().TryExecute();
                 Assert.That(walls[i].CurrentHP, Is.LessThanOrEqualTo(0));
@@ -103,6 +108,7 @@ namespace Possession.Tests
                     Vector3.forward, 1.2f, 1 << 7, QueryTriggerInteraction.Ignore), Is.False);
                 Invoke(possession, "Eject", false);
                 Assert.That(possession.CurrentState, Is.EqualTo(PlayerState.Spirit));
+                Assert.That(Read<Transform>(follow, "target"), Is.EqualTo(possession.transform));
                 AssertSafeSpirit(Object.FindFirstObjectByType<SpiritController>());
                 Assert.That(heavies[i].GetComponent<HeavySmashIndicator>().IsVisible, Is.False);
                 yield return null;
@@ -147,6 +153,31 @@ namespace Possession.Tests
                         Assert.That(spirit.CurrentHP, Is.GreaterThan(0));
                     }
             }
+        }
+
+        private static IEnumerator CheckContactDamage(string name)
+        {
+            yield return Load(name);
+            var heavy = Heavies()[0];
+            var spirit = Object.FindFirstObjectByType<SpiritController>();
+            var possession = spirit.GetComponent<PossessionController>();
+            Assert.That(heavy.GetComponent<EnemyContactDamage>(), Is.Not.Null);
+            int initialHP = spirit.CurrentHP;
+            Invoke(possession, "Possess", heavy);
+            Invoke(possession, "Eject", false);
+            Assert.That(possession.CurrentState, Is.EqualTo(PlayerState.Spirit));
+            yield return new WaitForSeconds(0.95f);
+            Assert.That(spirit.CurrentHP, Is.EqualTo(initialHP), "Manual ejection must not enable hostile contact damage.");
+
+            Set(possession, "possessDuration", 0.04f);
+            Invoke(possession, "Possess", heavy);
+            float deadline = Time.realtimeSinceStartup + 1f;
+            while (possession.CurrentState != PlayerState.Spirit && Time.realtimeSinceStartup < deadline)
+                yield return null;
+            Assert.That(possession.CurrentState, Is.EqualTo(PlayerState.Spirit));
+            yield return new WaitForSeconds(0.95f);
+            Assert.That(spirit.CurrentHP, Is.LessThan(initialHP), "The nearby hostile Heavy must damage Spirit after the grace period.");
+            Assert.That(spirit.CurrentHP, Is.GreaterThan(0));
         }
 
         private static void AssertSafeSpirit(SpiritController spirit)

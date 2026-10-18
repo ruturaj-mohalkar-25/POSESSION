@@ -9,7 +9,8 @@ namespace Possession
         [SerializeField] private int smashDamage = 2;
         [SerializeField] private LayerMask smashableLayer;
 
-        public float Range => smashRange;
+        // The cast ends smashRange ahead of the body; its sphere extends farther.
+        public float Range => smashRange + smashRadius;
 
         private void Reset()
         {
