@@ -7,6 +7,11 @@ namespace Possession
         [SerializeField] private GameObject projectilePrefab;
         [SerializeField] private Transform firePoint;
 
+        private void Reset()
+        {
+            maxUses = 3;
+        }
+
         private Camera mainCam;
 
         protected override void Execute()
