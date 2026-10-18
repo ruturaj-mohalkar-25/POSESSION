@@ -75,3 +75,19 @@ The saved scenes/configs were then copied into the working repository.
   and `HeavySmashBreaksWallAndOpensPath`. No new PlayMode failures were introduced.
 
 Manual all-level QA and WebGL testing remain pending team integration.
+
+## Material correction on October 18
+
+The original saved test scenes inherited empty material slots from the puzzle
+and Spirit prefabs, causing pink objects in the Editor. The P3 setup now fills
+only missing scene-instance materials using the existing P5 assets. Already
+assigned materials and the shared prefabs are preserved. Both saved test scenes
+were repaired. This is basic test-scene readability, not P5's full visual pass.
+
+The focused PlayMode checks passed 13/13, including checks for missing material
+references. Editor setup checks also cover retaining assigned materials and
+leaving the original prefab material unchanged.
+
+The separate `FMOD failed to switch back to normal output` error was present in
+the Editor log after reload. No project audio settings were changed to hide it;
+save and restart the Unity Editor to retry audio initialization.

@@ -64,6 +64,27 @@ namespace Possession.Tests
         }
 
         [Test]
+        public void MissingMaterialsAreFilledWithoutChangingAssignedMaterialsOrPrefabs()
+        {
+            scene.name = "Level_02";
+            CreateWall("BreakableWall", 27f);
+            Create("SpawnPoint_Heavy_01", new Vector3(-3f, 1.3f, 20f));
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Puzzle/Target.prefab");
+            var originalPrefabMaterial = prefab.GetComponent<Renderer>().sharedMaterial;
+            var missing = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
+            missing.name = "Unpainted target";
+            missing.GetComponent<Renderer>().sharedMaterial = null;
+            var painted = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
+            var existing = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/P5_Board.mat");
+            painted.GetComponent<Renderer>().sharedMaterial = existing;
+            Configure();
+            Assert.That(missing.GetComponent<Renderer>().sharedMaterial.name, Is.EqualTo("P5_BullRed"));
+            Assert.That(painted.GetComponent<Renderer>().sharedMaterial, Is.EqualTo(existing));
+            Assert.That(prefab.GetComponent<Renderer>().sharedMaterial, Is.EqualTo(originalPrefabMaterial),
+                "Applying scene materials must not edit the shared prefab.");
+        }
+
+        [Test]
         public void MissingSpawnDoesNotPartiallyPopulateScene()
         {
             scene.name = "Level_02";

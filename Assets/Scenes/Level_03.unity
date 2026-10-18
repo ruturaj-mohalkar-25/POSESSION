@@ -2075,6 +2075,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 551245563}
     m_Modifications:
+    - target: {fileID: 37718064640305209, guid: 0236051ff7ce647fbbd559ad1ee1b10c, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 3c0d382939b2d4f1b98e79f8e3ea80c4, type: 2}
     - target: {fileID: 3442432637503280407, guid: 0236051ff7ce647fbbd559ad1ee1b10c, type: 3}
       propertyPath: m_Name
       value: BreakableWall_02
@@ -2753,6 +2757,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 551245563}
     m_Modifications:
+    - target: {fileID: 2254274087614335565, guid: 90355a5ed733840a786c9fa2bd12a669, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 36a56630d48534ff88395804cd0404dd, type: 2}
     - target: {fileID: 5628380099016175673, guid: 90355a5ed733840a786c9fa2bd12a669, type: 3}
       propertyPath: m_LocalScale.x
       value: 3.2
@@ -4050,6 +4058,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 551245563}
     m_Modifications:
+    - target: {fileID: 37718064640305209, guid: 0236051ff7ce647fbbd559ad1ee1b10c, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 3c0d382939b2d4f1b98e79f8e3ea80c4, type: 2}
     - target: {fileID: 3442432637503280407, guid: 0236051ff7ce647fbbd559ad1ee1b10c, type: 3}
       propertyPath: m_Name
       value: BreakableWall_01
@@ -4380,6 +4392,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Spirit
       objectReference: {fileID: 0}
+    - target: {fileID: 4877262969685787792, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 6c9f4ff37a0b0455c80db54e3d849591, type: 2}
     - target: {fileID: 6902978013017217372, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
       propertyPath: possessDuration
       value: 8
@@ -4789,6 +4805,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4073380519404449911, guid: 83a45950a6d154b1591ae649b2693192, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 21610689004f542e7ae660c06d20616f, type: 2}
     - target: {fileID: 6231050077448010109, guid: 83a45950a6d154b1591ae649b2693192, type: 3}
       propertyPath: m_Name
       value: Target_01

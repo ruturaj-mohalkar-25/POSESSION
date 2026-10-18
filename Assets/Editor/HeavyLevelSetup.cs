@@ -93,6 +93,13 @@ namespace Possession.Editor
                 || prefab.GetComponent<SmashAbility>() == null)
                 throw new InvalidOperationException("P3 setup requires the Heavy prefab with HeavyEnemy and SmashAbility.");
 
+            // The base puzzle/player prefabs have empty material slots. Keep the local
+            // test scenes readable without running P5's Level_01-specific visual builder.
+            AssignMissingMaterials<Target>(scene, "P5_BullRed");
+            AssignMissingMaterials<Door>(scene, "P5_Door");
+            AssignMissingMaterials<BreakableWall>(scene, "P5_Brick");
+            AssignMissingMaterials<SpiritController>(scene, "P5_Ghost");
+
             var groupObject = FindObject(scene, GroupName);
             if (groupObject == null)
             {
@@ -185,6 +192,22 @@ namespace Possession.Editor
             settings.FindProperty("moveSpeed").floatValue = speed;
             settings.FindProperty("maxHP").intValue = 5;
             settings.ApplyModifiedProperties();
+        }
+
+        private static void AssignMissingMaterials<T>(Scene scene, string materialName) where T : Component
+        {
+            var material = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/" + materialName + ".mat");
+            if (material == null)
+                throw new InvalidOperationException("Missing test-scene material: " + materialName);
+            foreach (var root in scene.GetRootGameObjects())
+                foreach (var component in root.GetComponentsInChildren<T>(true))
+                {
+                    var renderer = component.GetComponent<Renderer>();
+                    if (renderer == null || renderer.sharedMaterial != null) continue;
+                    Undo.RecordObject(renderer, "Assign missing test-scene material");
+                    renderer.sharedMaterial = material;
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(renderer);
+                }
         }
 
         private static Transform Waypoint(Transform route, string name, Vector3 position)

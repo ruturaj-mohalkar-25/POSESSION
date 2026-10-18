@@ -49,6 +49,10 @@ namespace Possession.Tests
             var heavies = Heavies();
             Assert.That(heavies.Length, Is.EqualTo(count));
             Assert.That(Walls().Length, Is.EqualTo(count));
+            foreach (var root in SceneManager.GetActiveScene().GetRootGameObjects())
+                foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+                    foreach (var material in renderer.sharedMaterials)
+                        Assert.That(material, Is.Not.Null, renderer.name + " has an unassigned material.");
             var starts = heavies.Select(enemy => enemy.transform.position).ToArray();
             foreach (var heavy in heavies)
             {
