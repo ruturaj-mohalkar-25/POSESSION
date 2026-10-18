@@ -302,7 +302,8 @@ namespace Possession.Editor
             }
 
             // No Guards exist yet (P1 places them), so this only bites once they are in the scene.
-            foreach (var guard in Object.FindObjectsByType<GuardEnemy>(FindObjectsInactive.Include))
+            foreach (var guard in Object.FindObjectsByType<GuardEnemy>(FindObjectsInactive.Include,
+                FindObjectsSortMode.None))
             {
                 var so = new SerializedObject(guard);
                 so.FindProperty("detectionRange").floatValue = config.GuardDetectionRange;
