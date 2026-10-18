@@ -154,6 +154,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.ShootAbility
   cooldown: 0.5
+  maxUses: 3
   projectilePrefab: {fileID: 5592161369493967507, guid: 279603b0de41b417aafaaf47adf9e5ed, type: 3}
   firePoint: {fileID: 6331462020824144332}
 --- !u!1 &5966645645571724092
