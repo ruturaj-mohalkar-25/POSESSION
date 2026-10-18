@@ -24,6 +24,7 @@ namespace Possession.Editor
         public const float SpawnHeight = 1.1f;
 
         public const string SpiritPrefab = "Assets/Prefabs/Spirit.prefab";
+        public const string GuardPrefab = "Assets/Prefabs/Enemies/Guard.prefab";
         public const string TargetPrefab = "Assets/Prefabs/Puzzle/Target.prefab";
         public const string DoorPrefab = "Assets/Prefabs/Puzzle/Door.prefab";
         public const string BreakableWallPrefab = "Assets/Prefabs/Puzzle/BreakableWall.prefab";
@@ -227,6 +228,37 @@ namespace Possession.Editor
             return go;
         }
 
+        public static GuardEnemy PlaceGuard(Transform parent, string name, Vector3 position,
+            IEnumerable<Vector3> waypointPositions, float detectionRange, float patrolStartDelay)
+        {
+            var go = Instantiate(GuardPrefab, name, position, Vector3.one, parent);
+            go.layer = EnemyLayer;
+
+            var route = new GameObject(name + "_PatrolRoute").transform;
+            route.SetParent(parent);
+            var points = new List<Transform>();
+            int index = 1;
+            foreach (Vector3 waypointPosition in waypointPositions)
+            {
+                var point = new GameObject("Waypoint_" + index.ToString("00")).transform;
+                point.SetParent(route);
+                point.position = waypointPosition;
+                points.Add(point);
+                index++;
+            }
+
+            var guard = go.GetComponent<GuardEnemy>();
+            var so = new SerializedObject(guard);
+            var waypoints = so.FindProperty("waypoints");
+            waypoints.arraySize = points.Count;
+            for (int i = 0; i < points.Count; i++)
+                waypoints.GetArrayElementAtIndex(i).objectReferenceValue = points[i];
+            so.FindProperty("detectionRange").floatValue = detectionRange;
+            so.FindProperty("patrolStartDelay").floatValue = patrolStartDelay;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            return guard;
+        }
+
         // ======================== LABELS ========================
 
         // Flat sign painted on the floor, same style as Level_01's StartInstructions.
@@ -301,8 +333,8 @@ namespace Possession.Editor
                 so.ApplyModifiedPropertiesWithoutUndo();
             }
 
-            // No Guards exist yet (P1 places them), so this only bites once they are in the scene.
-            foreach (var guard in Object.FindObjectsByType<GuardEnemy>(FindObjectsInactive.Include))
+            foreach (var guard in Object.FindObjectsByType<GuardEnemy>(FindObjectsInactive.Include,
+                FindObjectsSortMode.None))
             {
                 var so = new SerializedObject(guard);
                 so.FindProperty("detectionRange").floatValue = config.GuardDetectionRange;

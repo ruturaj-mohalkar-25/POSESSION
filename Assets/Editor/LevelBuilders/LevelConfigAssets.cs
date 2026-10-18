@@ -19,7 +19,7 @@ namespace Possession.Editor
             // spot the Spirit from further away as the levels go on.
             Write("LevelConfig_Level_01", "Level_01", 12f, 300f, 10f, 100f, 150f, 225f);
             Write("LevelConfig_Level_02", "Level_02", 10f, 240f, 12f, 80f, 120f, 180f);
-            Write("LevelConfig_Level_03", "Level_03", 8f, 180f, 14f, 60f, 90f, 135f);
+            Write("LevelConfig_Level_03", "Level_03", 8f, 180f, 12f, 60f, 90f, 135f);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();

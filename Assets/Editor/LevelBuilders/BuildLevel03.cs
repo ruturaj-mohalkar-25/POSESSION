@@ -11,8 +11,7 @@ namespace Possession.Editor
     //   Heavy_01 smashes BreakableWall_01 into Room 3 ->
     //   Heavy_02 smashes BreakableWall_02 (the exit wall) -> ExitZone as the Spirit.
     //
-    // Enemies are NOT placed here, only named spawn points: P1 drops the Guards in and
-    // gives them waypoints, P3 does the same for both Heavies.
+    // Guards are placed with tighter patrol routes. P3 uses the remaining spawn points.
     public static class BuildLevel03
     {
         const string ScenePath = "Assets/Scenes/Level_03.unity";
@@ -63,13 +62,24 @@ namespace Possession.Editor
             // ---- Player ----
             var spirit = LevelBuildKit.BuildSpirit(new Vector3(0f, LevelBuildKit.SpiritHeight, 3f));
 
-            // ---- Spawn points for P1 (Guards) and P3 (Heavies) ----
+            // ---- Guards and Heavy spawn points ----
             var spawns = new GameObject("SpawnPoints").transform;
             spawns.SetParent(layout);
-            LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Guard_01", -2f, 7f);         // Room 1, shoots Target_01
-            LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Guard_02", 3f, 31f);         // Room 3, hazard near the exit
             LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Heavy_01", 0f, 20f, 1.3f);   // Room 2, smashes wall 01
             LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Heavy_02", 0f, 32f, 1.3f);   // Room 3, smashes wall 02
+
+            var enemies = new GameObject("Enemies").transform;
+            enemies.SetParent(layout);
+            LevelBuildKit.PlaceGuard(enemies, "Guard_01", new Vector3(-2f, LevelBuildKit.SpawnHeight, 7f),
+                new[] {
+                    new Vector3(-3.5f, LevelBuildKit.SpawnHeight, 7f),
+                    new Vector3(2f, LevelBuildKit.SpawnHeight, 9f)
+                }, 12f, 0f);
+            LevelBuildKit.PlaceGuard(enemies, "Guard_02", new Vector3(3f, LevelBuildKit.SpawnHeight, 31f),
+                new[] {
+                    new Vector3(3.5f, LevelBuildKit.SpawnHeight, 29f),
+                    new Vector3(-2f, LevelBuildKit.SpawnHeight, 33f)
+                }, 12f, 0.5f);
 
             // ---- Labels ----
             var labels = new GameObject("P4_Labels").transform;
@@ -103,8 +113,7 @@ namespace Possession.Editor
             AssetDatabase.SaveAssets();
             LevelBuildKit.RegisterScene(ScenePath);
 
-            Debug.Log("P4: Level_03 built at " + ScenePath
-                + ". Enemies are spawn points only — P1 and P3 place the Guards and Heavies.");
+            Debug.Log("Level_03 built at " + ScenePath + " with two configured Guard patrols.");
         }
     }
 }

@@ -90,10 +90,43 @@ namespace Possession.Tests
         }
 
         [UnityTest]
+        public IEnumerator Level02HasTwoStaggeredGuardPatrols()
+        {
+            yield return SceneManager.LoadSceneAsync("Level_02", LoadSceneMode.Additive);
+            levelScene = SceneManager.GetSceneByName("Level_02");
+            var guards = FindLevelGuards(levelScene);
+
+            Assert.That(guards, Has.Count.EqualTo(2));
+            Assert.That(guards[0].DetectionRange, Is.EqualTo(12f).Within(0.01f));
+            Assert.That(guards[1].DetectionRange, Is.EqualTo(12f).Within(0.01f));
+            Assert.That(guards[0].PatrolStartDelay, Is.Not.EqualTo(guards[1].PatrolStartDelay),
+                "Level 2 Guard patrols should start at different times.");
+            AssertConfiguredRoutes(guards);
+        }
+
+        [UnityTest]
+        public IEnumerator Level03HasTwoTightTwelveMetreGuardPatrols()
+        {
+            yield return SceneManager.LoadSceneAsync("Level_03", LoadSceneMode.Additive);
+            levelScene = SceneManager.GetSceneByName("Level_03");
+            var guards = FindLevelGuards(levelScene);
+
+            Assert.That(guards, Has.Count.EqualTo(2));
+            AssertConfiguredRoutes(guards);
+            foreach (GuardEnemy levelGuard in guards)
+            {
+                Assert.That(levelGuard.DetectionRange, Is.EqualTo(12f).Within(0.01f));
+                Transform[] route = GetRoute(levelGuard);
+                Assert.That(Vector3.Distance(route[0].position, route[1].position), Is.LessThan(8f),
+                    levelGuard.name + " should use a compact Level 3 patrol route.");
+            }
+        }
+
+        [UnityTest]
         public IEnumerator PatrolMovesIdlesAtWaypointAndContinues()
         {
             Set(guard, "waypointArrivalDistance", 0.03f);
-            Set(guard, "waypointIdleTime", 0.25f);
+            Set(guard, "waypointWaitTime", 0.25f);
             SetBase(guard, "waypoints", new[] {
                 Create("Near WP", new Vector3(0.3f, 1f, 0f)).transform,
                 Create("Return WP", new Vector3(-3f, 1f, 0f)).transform });
@@ -147,6 +180,31 @@ namespace Possession.Tests
             yield return new WaitForSeconds(0.2f);
             Assert.That(guard.IsChasing, Is.True);
             Assert.That(guard.transform.position.x, Is.GreaterThan(x));
+        }
+
+        [UnityTest]
+        public IEnumerator HostileExpiryResumesAtNearestWaypoint()
+        {
+            SetBase(guard, "waypoints", new[] {
+                Create("Nearest WP", new Vector3(-1f, 1f, 0f)).transform,
+                Create("Far WP", new Vector3(8f, 1f, 0f)).transform });
+            var spirit = CreateSpirit(new Vector3(15f, 1f, 0f));
+            guard.OnForcedEject(0.25f);
+
+            yield return new WaitForSeconds(0.15f);
+            Assert.That(guard.transform.position.x, Is.GreaterThan(0.1f),
+                "Guard should chase the spirit while hostile.");
+
+            spirit.transform.position = new Vector3(50f, 1f, 0f);
+            Physics.SyncTransforms();
+            yield return new WaitForSeconds(0.2f);
+            float resumedAt = guard.transform.position.x;
+            yield return new WaitForSeconds(0.2f);
+
+            Assert.That(guard.IsChasing, Is.False);
+            Assert.That(guard.CanBePossessed, Is.True);
+            Assert.That(guard.transform.position.x, Is.LessThan(resumedAt - 0.05f),
+                "Guard should resume toward the closest patrol waypoint after hostility.");
         }
 
         [UnityTest]
@@ -207,10 +265,46 @@ namespace Possession.Tests
             return spirit;
         }
 
+        private static List<GuardEnemy> FindLevelGuards(Scene scene)
+        {
+            var guards = new List<GuardEnemy>();
+            foreach (GameObject root in scene.GetRootGameObjects())
+                guards.AddRange(root.GetComponentsInChildren<GuardEnemy>(true));
+            return guards;
+        }
+
+        private static void AssertConfiguredRoutes(IEnumerable<GuardEnemy> guards)
+        {
+            foreach (GuardEnemy levelGuard in guards)
+            {
+                Transform[] route = GetRoute(levelGuard);
+                Assert.That(route, Has.Length.EqualTo(2));
+                Assert.That(route[0], Is.Not.Null);
+                Assert.That(route[1], Is.Not.Null);
+            }
+        }
+
+        private static Transform[] GetRoute(GuardEnemy levelGuard)
+        {
+            return (Transform[])typeof(EnemyBase).GetField("waypoints",
+                BindingFlags.Instance | BindingFlags.NonPublic).GetValue(levelGuard);
+        }
+
         private static void Set(object target, string field, object value)
         {
-            target.GetType().GetField(field, BindingFlags.Instance | BindingFlags.NonPublic)
-                .SetValue(target, value);
+            System.Type type = target.GetType();
+            while (type != null)
+            {
+                FieldInfo info = type.GetField(field, BindingFlags.Instance
+                    | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                if (info != null)
+                {
+                    info.SetValue(target, value);
+                    return;
+                }
+                type = type.BaseType;
+            }
+            throw new System.MissingFieldException(target.GetType().Name, field);
         }
 
         private static void SetBase(object target, string field, object value)
