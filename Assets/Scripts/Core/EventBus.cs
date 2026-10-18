@@ -23,6 +23,14 @@ namespace Possession
         public static Action LevelCompleted;
         public static Action LevelFailed;
         public static Action<float, float> LevelTimerUpdated; // current, max
+        public static Action<int, float> LevelCompletedWithStats; // stars, elapsedTime
+        public static Action GameComplete;
+
+        // Abilities
+        public static Action<int, int> AmmoUpdated; // usesLeft, maxUses
+
+        // Analytics
+        public static Action<AnalyticsData> AnalyticsReady;
 
         public static void Clear()
         {
@@ -38,6 +46,10 @@ namespace Possession
             LevelCompleted = null;
             LevelFailed = null;
             LevelTimerUpdated = null;
+            LevelCompletedWithStats = null;
+            GameComplete = null;
+            AmmoUpdated = null;
+            AnalyticsReady = null;
         }
     }
 }

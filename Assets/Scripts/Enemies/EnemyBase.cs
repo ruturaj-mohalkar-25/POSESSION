@@ -68,7 +68,11 @@ namespace Possession
             if (dir.magnitude > 0.1f)
                 transform.rotation = Quaternion.LookRotation(dir);
 
-            transform.Translate(dir * moveSpeed * Time.deltaTime, Space.World);
+            var cc = GetComponent<CharacterController>();
+            if (cc != null)
+                cc.Move(dir * moveSpeed * Time.deltaTime);
+            else
+                transform.Translate(dir * moveSpeed * Time.deltaTime, Space.World);
 
             HandlePossessedAbility();
         }
@@ -91,6 +95,8 @@ namespace Possession
         public virtual void OnPossessed()
         {
             isPossessed = true;
+            var ability = GetComponent<Ability>();
+            if (ability != null) ability.ResetUses();
         }
 
         public virtual void OnEjected()
