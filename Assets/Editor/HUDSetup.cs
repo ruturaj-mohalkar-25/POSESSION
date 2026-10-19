@@ -162,6 +162,31 @@ namespace Possession.Editor
             controls.text = "WASD  Move\nSPACE  Jump\nE  Possess (near an enemy)";
             so.FindProperty("controlsText").objectReferenceValue = controls;
 
+            // Ammo pips: under the possession timer, top-right
+            var ammoRow = FindOrCreateRect(canvas, "AmmoRow");
+            ammoRow.anchorMin = ammoRow.anchorMax = ammoRow.pivot = new Vector2(1, 1);
+            ammoRow.anchoredPosition = new Vector2(-30, -134);
+            ammoRow.sizeDelta = new Vector2(460, 40);
+            var ammoLabel = FindOrCreateText(ammoRow, "Label");
+            var alRect = ammoLabel.rectTransform;
+            alRect.anchorMin = alRect.anchorMax = alRect.pivot = new Vector2(1, 0.5f);
+            alRect.anchoredPosition = new Vector2(-130, 0);
+            alRect.sizeDelta = new Vector2(200, 40);
+            StyleText(ammoLabel, 28, TextAnchor.MiddleRight);
+            ammoLabel.text = "AMMO";
+            var pips = FindOrCreateRect(ammoRow, "Pips");
+            pips.anchorMin = Vector2.zero;
+            pips.anchorMax = Vector2.one;
+            pips.offsetMin = pips.offsetMax = Vector2.zero;
+            var ammo = ammoRow.GetComponent<AmmoDisplay>();
+            if (ammo == null) ammo = ammoRow.gameObject.AddComponent<AmmoDisplay>();
+            var ammoSo = new SerializedObject(ammo);
+            ammoSo.FindProperty("pipRow").objectReferenceValue = pips;
+            ammoSo.FindProperty("pipSprite").objectReferenceValue = KnobSprite();
+            ammoSo.ApplyModifiedPropertiesWithoutUndo();
+            so.FindProperty("ammoDisplay").objectReferenceValue = ammo;
+            ammoRow.gameObject.SetActive(false);
+
             // Wire references
             so.FindProperty("healthFill").objectReferenceValue = healthFill;
             so.FindProperty("possessTimerGroup").objectReferenceValue = group.gameObject;
@@ -172,18 +197,29 @@ namespace Possession.Editor
 
             // End screens
             var dark = new Color(0.22f, 0.22f, 0.26f);
-            var redBtn = new Color(0.6f, 0.15f, 0.2f);
             var greenBtn = new Color(0.2f, 0.65f, 0.35f);
+            var redBtn = new Color(0.6f, 0.15f, 0.2f);
+            var goldBtn = new Color(0.75f, 0.58f, 0.15f);
 
             StylePanel(so.FindProperty("levelCompletePanel").objectReferenceValue as GameObject,
-                ":)", "LEVEL COMPLETE", new Color(0.02f, 0.10f, 0.05f, 0.88f), new Color(0.35f, 0.95f, 0.5f),
-                ("RestartButton", "RESTART", hud.OnRestartButton, greenBtn),
+                ":)", "LEVEL COMPLETE", new Color(0.02f, 0.10f, 0.05f, 0.88f), new Color(0.35f, 0.95f, 0.5f), true,
+                ("NextButton", "NEXT LEVEL", hud.OnNextLevelButton, greenBtn),
+                ("RestartButton", "RESTART", hud.OnRestartButton, dark),
                 ("MenuButton", "MAIN MENU", hud.OnQuitButton, dark));
 
             StylePanel(so.FindProperty("gameOverPanel").objectReferenceValue as GameObject,
-                ":(", "GAME OVER", new Color(0.08f, 0.02f, 0.03f, 0.92f), new Color(0.85f, 0.2f, 0.25f),
+                ":(", "GAME OVER", new Color(0.08f, 0.02f, 0.03f, 0.92f), new Color(0.85f, 0.2f, 0.25f), false,
                 ("RestartButton", "RESTART", hud.OnRestartButton, redBtn),
                 ("MenuButton", "MAIN MENU", hud.OnQuitButton, dark));
+
+            var gameComplete = FindOrCreatePanel(canvas, "GameCompletePanel");
+            StylePanel(gameComplete,
+                "", "GAME COMPLETE", new Color(0.09f, 0.07f, 0.02f, 0.92f), new Color(1f, 0.82f, 0.25f), true,
+                ("PlayAgainButton", "PLAY AGAIN", hud.OnPlayAgainButton, goldBtn),
+                ("MenuButton", "MAIN MENU", hud.OnQuitButton, dark));
+            gameComplete.SetActive(false);
+            so.FindProperty("gameCompletePanel").objectReferenceValue = gameComplete;
+            so.ApplyModifiedPropertiesWithoutUndo();
 
             // Hostile enemies need to deal damage so the health bar has something to show
             int enemies = 0;
@@ -216,13 +252,13 @@ namespace Possession.Editor
 
             AddScenesToBuild();
             SetupMainMenu();
-            Debug.Log("[P5] HUD, controls, end screens, build scenes and level select set up and saved.");
+            Debug.Log("[P5] HUD, controls, ammo, end screens, build scenes and level select set up and saved.");
         }
 
         // ---------------- End screens ----------------
 
         static void StylePanel(GameObject panel, string face, string title, Color background, Color titleColor,
-            params (string name, string label, UnityAction action, Color color)[] buttons)
+            bool withMedal, params (string name, string label, UnityAction action, Color color)[] buttons)
         {
             if (panel == null) return;
 
@@ -232,7 +268,7 @@ namespace Possession.Editor
             var bg = panel.GetComponent<Image>();
             if (bg != null) bg.color = background;
 
-            float top = 250f;
+            float top = withMedal ? 300f : 250f;
             if (string.IsNullOrEmpty(face))
             {
                 var oldFace = panel.transform.Find("Face");
@@ -256,13 +292,67 @@ namespace Possession.Editor
             var oldSub = panel.transform.Find("Subtitle");
             if (oldSub != null) Object.DestroyImmediate(oldSub.gameObject);
 
-            float y = top - 310f;
+            var results = panel.GetComponent<ResultsView>();
+            if (results == null) results = panel.AddComponent<ResultsView>();
+            var rso = new SerializedObject(results);
+
+            float y = top - 220f;
+            if (withMedal)
+            {
+                var medal = FindOrCreateRect(panel.transform, "Medal");
+                PlaceCentre(medal, new Vector2(0, y), new Vector2(360, 50));
+                var pipsProp = rso.FindProperty("medalPips");
+                pipsProp.arraySize = 3;
+                for (int i = 0; i < 3; i++)
+                {
+                    var pip = FindOrCreateImage(medal, "Pip" + i, new Color(1f, 1f, 1f, 0.15f));
+                    pip.sprite = KnobSprite();
+                    PlaceCentre(pip.rectTransform, new Vector2(-150 + i * 50, 0), new Vector2(40, 40));
+                    pipsProp.GetArrayElementAtIndex(i).objectReferenceValue = pip;
+                }
+                var medalText = FindOrCreateText(medal, "MedalText");
+                var mt = medalText.rectTransform;
+                mt.anchorMin = mt.anchorMax = new Vector2(0.5f, 0.5f);
+                mt.pivot = new Vector2(0, 0.5f);
+                mt.anchoredPosition = new Vector2(-10, 0);
+                mt.sizeDelta = new Vector2(200, 50);
+                StyleText(medalText, 40, TextAnchor.MiddleLeft);
+                medalText.text = "GOLD";
+                rso.FindProperty("medalText").objectReferenceValue = medalText;
+                y -= 60f;
+            }
+
+            var stats = FindOrCreateText(panel.transform, "Stats");
+            PlaceCentre(stats.rectTransform, new Vector2(0, y), new Vector2(1400, 44));
+            StyleText(stats, 28, TextAnchor.MiddleCenter);
+            stats.fontStyle = FontStyle.Normal;
+            stats.color = new Color(0.85f, 0.85f, 0.85f);
+            stats.text = "TIME 0:00    POSSESSIONS 0    FORCED EJECTS 0    DEATHS 0";
+            rso.FindProperty("statsText").objectReferenceValue = stats;
+            rso.ApplyModifiedPropertiesWithoutUndo();
+
+            y -= 90f;
             foreach (var b in buttons)
             {
                 var btn = FindOrCreateButton(panel.transform, b.name, b.label, new Vector2(0, y), b.color);
                 SetSingleListener(btn.onClick, b.action);
                 y -= 95f;
             }
+        }
+
+        static GameObject FindOrCreatePanel(Transform parent, string name)
+        {
+            var rect = FindOrCreateRect(parent, name);
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            if (rect.GetComponent<Image>() == null) rect.gameObject.AddComponent<Image>();
+            return rect.gameObject;
+        }
+
+        static Sprite KnobSprite()
+        {
+            return AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
         }
 
         // ---------------- Build scenes + main menu ----------------
