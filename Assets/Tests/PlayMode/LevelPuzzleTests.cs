@@ -85,8 +85,10 @@ namespace Possession.Tests
             Assert.That(wall.CurrentHP, Is.LessThanOrEqualTo(0));
             Assert.That(wall.gameObject.activeSelf, Is.False);
             Physics.SyncTransforms();
-            Assert.That(Physics.Raycast(new Vector3(0f, 1.5f, 32.5f),
-                Vector3.forward, 1f, ~0, QueryTriggerInteraction.Ignore), Is.False);
+            bool pathBlocked = Physics.Raycast(new Vector3(0f, 1.5f, 32.5f),
+                Vector3.forward, out RaycastHit blocker, 1f, ~0, QueryTriggerInteraction.Ignore);
+            Assert.That(pathBlocked, Is.False,
+                pathBlocked ? "Path remains blocked by " + blocker.collider.name : string.Empty);
         }
 
         [Test]

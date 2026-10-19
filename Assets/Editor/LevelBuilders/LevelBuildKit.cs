@@ -218,7 +218,7 @@ namespace Possession.Editor
             return exit;
         }
 
-        // Empty marker for P1/P3 to drop a Guard or Heavy onto.
+        // Empty marker for P3 to place a Heavy onto during integration.
         public static GameObject SpawnPoint(Transform parent, string name, float x, float z, float y = SpawnHeight)
         {
             var go = new GameObject(name);
