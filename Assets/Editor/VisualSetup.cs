@@ -421,15 +421,11 @@ namespace Possession.Editor
                 doneText, hideWhenDone, hiddenUntilWallBroken, background);
         }
 
+        // The block of instructions on the start floor is replaced by the hints next to each object
         static void UpdateFloorSign()
         {
             var sign = Find("StartInstructions");
-            var mesh = sign != null ? sign.GetComponent<TextMesh>() : null;
-            if (mesh == null) return;
-            mesh.text = "POSSESSION\nWASD move   |   SPACE jump   |   E possess / eject\n"
-                + "GUARD (police): mouse aim + LMB shoot\n"
-                + "HEAVY (worker): face wall + LMB smash\n"
-                + "Reach the EXIT as the SPIRIT";
+            if (sign != null) sign.SetActive(false);
         }
 
         // ---------------- Helpers ----------------
