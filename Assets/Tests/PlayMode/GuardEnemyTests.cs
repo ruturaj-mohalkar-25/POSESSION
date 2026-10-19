@@ -93,7 +93,7 @@ namespace Possession.Tests
         public IEnumerator PatrolMovesIdlesAtWaypointAndContinues()
         {
             Set(guard, "waypointArrivalDistance", 0.03f);
-            Set(guard, "waypointIdleTime", 0.25f);
+            Set(guard, "waypointWaitTime", 0.25f);
             SetBase(guard, "waypoints", new[] {
                 Create("Near WP", new Vector3(0.3f, 1f, 0f)).transform,
                 Create("Return WP", new Vector3(-3f, 1f, 0f)).transform });
@@ -147,6 +147,31 @@ namespace Possession.Tests
             yield return new WaitForSeconds(0.2f);
             Assert.That(guard.IsChasing, Is.True);
             Assert.That(guard.transform.position.x, Is.GreaterThan(x));
+        }
+
+        [UnityTest]
+        public IEnumerator HostileExpiryResumesAtNearestWaypoint()
+        {
+            SetBase(guard, "waypoints", new[] {
+                Create("Nearest WP", new Vector3(-1f, 1f, 0f)).transform,
+                Create("Far WP", new Vector3(8f, 1f, 0f)).transform });
+            var spirit = CreateSpirit(new Vector3(15f, 1f, 0f));
+            guard.OnForcedEject(0.25f);
+
+            yield return new WaitForSeconds(0.15f);
+            Assert.That(guard.transform.position.x, Is.GreaterThan(0.1f),
+                "Guard should chase the spirit while hostile.");
+
+            spirit.transform.position = new Vector3(50f, 1f, 0f);
+            Physics.SyncTransforms();
+            yield return new WaitForSeconds(0.2f);
+            float resumedAt = guard.transform.position.x;
+            yield return new WaitForSeconds(0.2f);
+
+            Assert.That(guard.IsChasing, Is.False);
+            Assert.That(guard.CanBePossessed, Is.True);
+            Assert.That(guard.transform.position.x, Is.LessThan(resumedAt - 0.05f),
+                "Guard should resume toward the closest waypoint after hostility.");
         }
 
         [UnityTest]
@@ -209,8 +234,19 @@ namespace Possession.Tests
 
         private static void Set(object target, string field, object value)
         {
-            target.GetType().GetField(field, BindingFlags.Instance | BindingFlags.NonPublic)
-                .SetValue(target, value);
+            System.Type type = target.GetType();
+            while (type != null)
+            {
+                FieldInfo info = type.GetField(field, BindingFlags.Instance
+                    | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                if (info != null)
+                {
+                    info.SetValue(target, value);
+                    return;
+                }
+                type = type.BaseType;
+            }
+            throw new System.MissingFieldException(target.GetType().Name, field);
         }
 
         private static void SetBase(object target, string field, object value)

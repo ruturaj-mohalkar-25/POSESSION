@@ -387,8 +387,19 @@ namespace Possession.Tests
 
         private static void Set(object target, string field, object value)
         {
-            target.GetType().GetField(field, BindingFlags.Instance | BindingFlags.NonPublic)
-                .SetValue(target, value);
+            System.Type type = target.GetType();
+            while (type != null)
+            {
+                FieldInfo info = type.GetField(field, BindingFlags.Instance
+                    | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                if (info != null)
+                {
+                    info.SetValue(target, value);
+                    return;
+                }
+                type = type.BaseType;
+            }
+            throw new System.MissingFieldException(target.GetType().Name, field);
         }
 
         private static void Invoke(object target, string method, params object[] arguments)
