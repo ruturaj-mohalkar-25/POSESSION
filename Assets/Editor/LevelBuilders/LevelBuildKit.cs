@@ -242,6 +242,14 @@ namespace Possession.Editor
             go.transform.SetParent(parent);
             go.transform.position = new Vector3(x, y, z);
             go.layer = EnemyLayer;
+
+            // A gizmo marker so designers can see the spawn in the Scene view. Guard/Heavy
+            // is read from the name the builders use (SpawnPoint_Guard_01, SpawnPoint_Heavy_01).
+            var marker = go.AddComponent<SpawnPointMarker>();
+            if (name.Contains("Guard")) marker.SetKind(SpawnPointMarker.SpawnKind.Guard);
+            else if (name.Contains("Heavy")) marker.SetKind(SpawnPointMarker.SpawnKind.Heavy);
+            else marker.SetKind(SpawnPointMarker.SpawnKind.Other);
+
             return go;
         }
 
