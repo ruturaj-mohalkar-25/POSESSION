@@ -17,6 +17,8 @@ namespace Possession
         private float idleTimer;
         private float verticalSpeed;
         private SpiritController detectedSpirit;
+        // After a normal eject the Guard leaves the spirit alone until it has walked out of range
+        private bool ignoreSpiritUntilOutOfRange;
 
         public bool IsChasing => !isPossessed && detectedSpirit != null
             && detectedSpirit.isActiveAndEnabled;
@@ -57,6 +59,11 @@ namespace Possession
         protected override void HandlePatrol()
         {
             detectedSpirit = DetectSpirit();
+            if (ignoreSpiritUntilOutOfRange)
+            {
+                if (detectedSpirit == null) ignoreSpiritUntilOutOfRange = false;
+                detectedSpirit = null;
+            }
             if (IsChasing)
             {
                 MoveTowards(detectedSpirit.transform.position, chaseStopDistance);
@@ -114,6 +121,7 @@ namespace Possession
         {
             base.OnPossessed();
             detectedSpirit = null;
+            ignoreSpiritUntilOutOfRange = false;
             idleTimer = 0f;
         }
 
@@ -121,11 +129,13 @@ namespace Possession
         {
             base.OnEjected();
             detectedSpirit = null;
+            ignoreSpiritUntilOutOfRange = true;
         }
 
         public override void OnForcedEject(float hostileDuration)
         {
             base.OnForcedEject(hostileDuration);
+            ignoreSpiritUntilOutOfRange = false;
             // PossessionController calls this before making the spirit visible again.
             detectedSpirit = FindFirstObjectByType<SpiritController>(FindObjectsInactive.Include);
         }
