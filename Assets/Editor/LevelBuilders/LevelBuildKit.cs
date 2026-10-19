@@ -32,6 +32,15 @@ namespace Possession.Editor
         static readonly Color WallColor = new Color(0.25f, 0.25f, 0.27f);
         static readonly Color ExitColor = new Color(0.1f, 0.9f, 0.5f);
 
+        // Graybox rest colors for the puzzle prefabs. The puzzle scripts recolor on
+        // state change (Target green on hit, Door translucent on open, wall gray->red by
+        // HP), but their prefabs ship with no material, so the editor view and the
+        // pre-hit state render pink. These give every placed object a material to start.
+        static readonly Color TargetColor = new Color(0.85f, 0.3f, 0.25f);
+        static readonly Color DoorColor = new Color(0.45f, 0.45f, 0.55f);
+        static readonly Color WallBreakColor = new Color(0.5f, 0.5f, 0.5f);
+        static readonly Color SpiritColor = new Color(0.6f, 0.8f, 1f);
+
         // ======================== SCENE BASICS ========================
 
         public static void BuildLighting()
@@ -75,6 +84,7 @@ namespace Possession.Editor
         public static GameObject BuildSpirit(Vector3 position)
         {
             var spirit = Instantiate(SpiritPrefab, "Spirit", position, Vector3.one);
+            SetColor(spirit, SpiritColor);
             var possession = spirit.GetComponent<PossessionController>();
             if (possession != null)
             {
@@ -164,6 +174,7 @@ namespace Possession.Editor
             var go = Instantiate(TargetPrefab, name, new Vector3(x, FirePointHeight, z),
                 new Vector3(1.2f, 1.2f, 0.6f), parent);
             go.layer = PuzzleLayer;
+            SetColor(go, TargetColor);
             return go.GetComponent<Target>();
         }
 
@@ -172,6 +183,7 @@ namespace Possession.Editor
             var go = Instantiate(DoorPrefab, name, new Vector3(0f, WallY, z),
                 new Vector3(Opening, WallHeight, WallThickness), parent);
             go.layer = PuzzleLayer;
+            SetColor(go, DoorColor);
 
             var door = go.GetComponent<Door>();
             var so = new SerializedObject(door);
@@ -190,6 +202,7 @@ namespace Possession.Editor
             var go = Instantiate(BreakableWallPrefab, name, new Vector3(0f, WallY, z),
                 new Vector3(Opening, WallHeight, WallThickness), parent);
             go.layer = PuzzleLayer;
+            SetColor(go, WallBreakColor);
             return go.GetComponent<BreakableWall>();
         }
 
@@ -316,7 +329,7 @@ namespace Possession.Editor
             }
 
             // No Guards exist yet (P1 places them), so this only bites once they are in the scene.
-            foreach (var guard in Object.FindObjectsByType<GuardEnemy>(FindObjectsInactive.Include))
+            foreach (var guard in Object.FindObjectsByType<GuardEnemy>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 var so = new SerializedObject(guard);
                 so.FindProperty("detectionRange").floatValue = config.GuardDetectionRange;
