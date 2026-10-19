@@ -153,7 +153,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.SmashAbility
   cooldown: 0.5
+  maxUses: 1
   smashRange: 2
+  smashRadius: 0.8
   smashDamage: 2
   smashableLayer:
     serializedVersion: 2
