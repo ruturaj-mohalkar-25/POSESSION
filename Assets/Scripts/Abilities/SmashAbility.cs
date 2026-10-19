@@ -9,6 +9,9 @@ namespace Possession
         [SerializeField] private int smashDamage = 2;
         [SerializeField] private LayerMask smashableLayer;
 
+        // Maximum forward reach of the existing sphere cast, in world units.
+        public float Range => smashRange + smashRadius;
+
         private void Reset()
         {
             maxUses = 1;
