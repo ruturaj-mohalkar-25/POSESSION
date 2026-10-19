@@ -64,7 +64,12 @@ namespace Possession.Editor
         public static GameManager BuildGameManager()
         {
             var go = new GameObject("GameManager");
-            return go.AddComponent<GameManager>();
+            var manager = go.AddComponent<GameManager>();
+
+            // P2's analytics listens on the EventBus and expects to sit next to the GameManager.
+            go.AddComponent<AnalyticsTracker>();
+
+            return manager;
         }
 
         public static GameObject BuildSpirit(Vector3 position)
@@ -290,6 +295,15 @@ namespace Possession.Editor
             {
                 var so = new SerializedObject(manager);
                 so.FindProperty("levelTime").floatValue = config.LevelTime;
+
+                // GameManager scores stars off starThresholds, so the par times in the config have
+                // to land there or the Inspector defaults win. Order matters: 3 stars, 2, 1.
+                var thresholds = so.FindProperty("starThresholds");
+                thresholds.arraySize = 3;
+                thresholds.GetArrayElementAtIndex(0).floatValue = config.GoldParTime;
+                thresholds.GetArrayElementAtIndex(1).floatValue = config.SilverParTime;
+                thresholds.GetArrayElementAtIndex(2).floatValue = config.BronzeParTime;
+
                 so.ApplyModifiedPropertiesWithoutUndo();
             }
 
