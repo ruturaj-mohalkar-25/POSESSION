@@ -81,16 +81,6 @@ namespace Possession.Editor
 
             var enemies = new GameObject("Enemies").transform;
             enemies.SetParent(layout);
-            var routes = new GameObject("GuardPatrolRoutes").transform;
-            routes.SetParent(layout);
-            LevelBuildKit.PlaceGuard(enemies, routes, "Guard_01",
-                new Vector3(0f, LevelBuildKit.SpawnHeight, 6f), 0f,
-                new Vector3(0f, LevelBuildKit.SpawnHeight, 4f),
-                new Vector3(0f, LevelBuildKit.SpawnHeight, 11f));
-            LevelBuildKit.PlaceGuard(enemies, routes, "Guard_02",
-                new Vector3(-8f, LevelBuildKit.SpawnHeight, 30f), 0.35f,
-                new Vector3(-9f, LevelBuildKit.SpawnHeight, 26f),
-                new Vector3(-7f, LevelBuildKit.SpawnHeight, 32f));
 
             var labels = new GameObject("P4_Labels").transform;
             labels.SetParent(layout);
