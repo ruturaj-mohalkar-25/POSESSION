@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Possession
@@ -35,16 +36,24 @@ namespace Possession
 
         [Header("Objective")]
         [SerializeField] private Text objectiveText;
-        private const string objectiveStart = "1/3  Possess the GUARD and shoot the TARGET to unlock the door";
-        private const string objectiveDoorOpen = "2/3  Possess the HEAVY and smash the BREAKABLE wall";
-        private const string objectiveWallBroken = "3/3  Eject and reach the EXIT as the Spirit";
+        // One step per puzzle event (door opened, wall broken), set per level by the HUD setup tool
+        [SerializeField] private string[] objectives =
+        {
+            "1/3  Possess the GUARD and shoot the TARGET to unlock the door",
+            "2/3  Possess the HEAVY and smash the BREAKABLE wall",
+            "3/3  Eject and reach the EXIT as the Spirit"
+        };
 
-        [Header("Controls")]
+        [Header("Controls / Ammo")]
         [SerializeField] private Text controlsText; // bottom-right, changes with the current form
+        [SerializeField] private AmmoDisplay ammoDisplay;
 
         [Header("End Screens")]
         [SerializeField] private GameObject levelCompletePanel;
         [SerializeField] private GameObject gameOverPanel;
+        [SerializeField] private GameObject gameCompletePanel; // after Next Level on the last level
+        [SerializeField] private Text nextButtonLabel;
+        [SerializeField] private string firstLevelScene = "Level_01";
 
         private float healthPct = 1f;
         private EnemyBase[] enemies;
@@ -55,6 +64,10 @@ namespace Possession
         private bool levelEnded;
         private Coroutine objectiveRoutine;
         private Color? objectiveBarColor;
+        private int objectiveStep;
+        private ResultsView activeResults;
+        private int stars;
+        private AnalyticsData? analytics;
 
         private void OnEnable()
         {
@@ -70,6 +83,10 @@ namespace Possession
             EventBus.SpiritDied += OnSpiritDied;
             EventBus.DoorOpened += OnDoorOpened;
             EventBus.WallBroken += OnWallBroken;
+            EventBus.AmmoUpdated += OnAmmoUpdated;
+            EventBus.LevelCompletedWithStats += OnLevelStats;
+            EventBus.AnalyticsReady += OnAnalyticsReady;
+            EventBus.GameComplete += OnGameComplete;
         }
 
         private void OnDisable()
@@ -85,17 +102,23 @@ namespace Possession
             EventBus.SpiritDied -= OnSpiritDied;
             EventBus.DoorOpened -= OnDoorOpened;
             EventBus.WallBroken -= OnWallBroken;
+            EventBus.AmmoUpdated -= OnAmmoUpdated;
+            EventBus.LevelCompletedWithStats -= OnLevelStats;
+            EventBus.AnalyticsReady -= OnAnalyticsReady;
+            EventBus.GameComplete -= OnGameComplete;
         }
 
         private void Start()
         {
             if (levelCompletePanel != null) levelCompletePanel.SetActive(false);
             if (gameOverPanel != null) gameOverPanel.SetActive(false);
+            if (gameCompletePanel != null) gameCompletePanel.SetActive(false);
             if (messageText != null) messageText.gameObject.SetActive(false);
+            if (ammoDisplay != null) ammoDisplay.Hide();
             SetPossessTimerVisible(false);
             SetFormText("Spirit");
             SetControls("Spirit");
-            SetObjective(objectiveStart);
+            SetObjectiveStep(0);
 
             // Show full health immediately instead of waiting for the first hit
             var spiritController = FindFirstObjectByType<SpiritController>();
@@ -211,6 +234,11 @@ namespace Possession
             SetFormText(form == "Heavy" ? "Heavy (slow)" : form);
             SetControls(form);
             if (possessPrompt != null) possessPrompt.SetActive(false);
+
+            // The ability reports its uses before Possessed is raised, so read them directly
+            var ability = enemy != null ? enemy.GetComponent<Ability>() : null;
+            if (ability != null && ability.MaxUses > 0) OnAmmoUpdated(ability.UsesLeft, ability.MaxUses);
+            else if (ammoDisplay != null) ammoDisplay.Hide();
         }
 
         private void OnEjected(EnemyBase enemy, bool forced)
@@ -218,6 +246,7 @@ namespace Possession
             SetFormText("Spirit");
             SetControls("Spirit");
             SetPossessTimerVisible(false);
+            if (ammoDisplay != null) ammoDisplay.Hide();
 
             if (forced)
                 ShowMessage("FORCED OUT! Enemy is hostile", messageTime, alertColor);
@@ -240,6 +269,11 @@ namespace Possession
             };
         }
 
+        private void OnAmmoUpdated(int left, int max)
+        {
+            if (ammoDisplay != null && !levelEnded) ammoDisplay.Show(left, max);
+        }
+
         private void OnPossessPrompt(bool show)
         {
             if (possessPrompt != null) possessPrompt.SetActive(show);
@@ -249,21 +283,22 @@ namespace Possession
 
         private void OnDoorOpened(Door door)
         {
-            SetObjective(objectiveDoorOpen);
+            SetObjectiveStep(objectiveStep + 1);
             ShowMessage("TARGET HIT!  DOOR UNLOCKED!", unlockMessageTime, alertColor);
         }
 
         private void OnWallBroken(BreakableWall wall)
         {
-            SetObjective(objectiveWallBroken);
+            SetObjectiveStep(objectiveStep + 1);
             ShowMessage("WALL SMASHED!", messageTime, alertColor);
         }
 
         // Every objective change flashes the bar so it's noticed even while watching the character
-        private void SetObjective(string text)
+        private void SetObjectiveStep(int step)
         {
-            if (objectiveText == null) return;
-            objectiveText.text = text;
+            if (objectiveText == null || objectives == null || objectives.Length == 0) return;
+            objectiveStep = Mathf.Min(step, objectives.Length - 1);
+            objectiveText.text = objectives[objectiveStep];
             if (objectiveRoutine != null) StopCoroutine(objectiveRoutine);
             objectiveRoutine = StartCoroutine(FlashObjective());
         }
@@ -348,6 +383,46 @@ namespace Possession
             levelEnded = true;
 
             ShowEndPanel(levelCompletePanel);
+            // GameManager.LoadNextLevel raises GameComplete instead of loading when this is the last level
+            if (nextButtonLabel != null)
+            {
+                bool last = SceneManager.GetActiveScene().buildIndex >= SceneManager.sceneCountInBuildSettings - 1;
+                nextButtonLabel.text = last ? "FINISH" : "NEXT LEVEL";
+            }
+        }
+
+        // GameManager's rating and AnalyticsTracker's summary can arrive before or after LevelCompleted
+        private void OnLevelStats(int rating, float elapsed)
+        {
+            stars = rating;
+            OnLevelComplete();
+            ShowResults();
+        }
+
+        private void OnAnalyticsReady(AnalyticsData data)
+        {
+            analytics = data;
+            ShowResults();
+        }
+
+        private void OnGameComplete()
+        {
+            if (levelCompletePanel != null) levelCompletePanel.SetActive(false);
+            ShowEndPanel(gameCompletePanel);
+        }
+
+        private void ShowResults()
+        {
+            if (activeResults == null) return;
+            if (stars > 0) activeResults.ShowRating(stars);
+            if (analytics.HasValue) activeResults.ShowStats(Summary(analytics.Value));
+        }
+
+        private static string Summary(AnalyticsData data)
+        {
+            int seconds = Mathf.FloorToInt(data.completionTime);
+            return $"TIME {seconds / 60}:{seconds % 60:D2}    POSSESSIONS {data.possessionCount}    " +
+                   $"FORCED EJECTS {data.forcedEjectCount}    DEATHS {data.deathCount}";
         }
 
         private void OnSpiritDied()
@@ -366,14 +441,29 @@ namespace Possession
         private void ShowEndPanel(GameObject panel)
         {
             if (possessPrompt != null) possessPrompt.SetActive(false);
+            if (ammoDisplay != null) ammoDisplay.Hide();
             SetPossessTimerVisible(false);
-            if (panel != null) panel.SetActive(true);
+            if (panel == null) return;
+
+            panel.SetActive(true);
+            activeResults = panel.GetComponent<ResultsView>();
+            ShowResults();
         }
 
         // Button callbacks
         public void OnRestartButton()
         {
             GameManager.Instance?.RestartLevel();
+        }
+
+        public void OnNextLevelButton()
+        {
+            GameManager.Instance?.LoadNextLevel();
+        }
+
+        public void OnPlayAgainButton()
+        {
+            LevelFlow.Load(firstLevelScene);
         }
 
         public void OnQuitButton()

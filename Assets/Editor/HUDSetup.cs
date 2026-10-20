@@ -3,6 +3,8 @@ using UnityEditor.Events;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Possession.Editor
@@ -10,6 +12,30 @@ namespace Possession.Editor
     public static class HUDSetup
     {
         static readonly Color BarBackground = new Color(0.15f, 0.15f, 0.15f, 0.85f);
+
+        // Objective steps per level: the bar advances on every DoorOpened / WallBroken
+        static readonly string[][] LevelObjectives =
+        {
+            new[]
+            {
+                "1/3  Possess the GUARD and shoot the TARGET to unlock the door",
+                "2/3  Possess the HEAVY and smash the BREAKABLE wall",
+                "3/3  Eject and reach the EXIT as the Spirit"
+            },
+            new[]
+            {
+                "1/3  Possess a GUARD and shoot BOTH targets to unlock the door",
+                "2/3  Possess the HEAVY and smash the BREAKABLE wall",
+                "3/3  Eject and reach the EXIT as the Spirit"
+            },
+            new[]
+            {
+                "1/4  Possess a GUARD and shoot the TARGET to unlock the door",
+                "2/4  Possess a HEAVY and smash the first BREAKABLE wall",
+                "3/4  Possess the other HEAVY and smash the second wall",
+                "4/4  Eject and reach the EXIT as the Spirit"
+            }
+        };
 
         [MenuItem("Possession/P5/Setup HUD Bars and Buttons")]
         public static void SetupHUD()
@@ -19,19 +45,42 @@ namespace Possession.Editor
                 EditorUtility.DisplayDialog("HUD Setup", "Stop Play mode first, then run this again.", "OK");
                 return;
             }
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
 
-            var hud = Object.FindFirstObjectByType<HUDManager>(FindObjectsInactive.Include);
-            if (hud == null && EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
-            {
-                EditorSceneManager.OpenScene(LevelPaths[0]);
-                hud = Object.FindFirstObjectByType<HUDManager>(FindObjectsInactive.Include);
-            }
+            // Level_01 holds the source HUD; the other levels get a copy of it
+            var level1 = EditorSceneManager.OpenScene(LevelPaths[0], OpenSceneMode.Single);
+            var hud = FindInScene<HUDManager>(level1);
             if (hud == null)
             {
-                EditorUtility.DisplayDialog("HUD Setup", "No HUDManager found. Open Level_01 first.", "OK");
+                EditorUtility.DisplayDialog("HUD Setup", "No HUDManager found in Level_01.", "OK");
                 return;
             }
 
+            StyleHUD(hud);
+            SetupLevel(level1, hud, 0);
+
+            for (int i = 1; i < LevelPaths.Length; i++)
+            {
+                if (!System.IO.File.Exists(LevelPaths[i])) continue;
+                var scene = EditorSceneManager.OpenScene(LevelPaths[i], OpenSceneMode.Additive);
+
+                var old = FindInScene<HUDManager>(scene);
+                if (old != null) Object.DestroyImmediate(old.gameObject);
+                var copy = Object.Instantiate(hud.gameObject);
+                copy.name = hud.gameObject.name;
+                SceneManager.MoveGameObjectToScene(copy, scene);
+
+                EnsureEventSystem(scene);
+                SetupLevel(scene, copy.GetComponent<HUDManager>(), i);
+                EditorSceneManager.CloseScene(scene, true);
+            }
+
+            AddScenesToBuild();
+            SetupMainMenu();
+        }
+
+        static void StyleHUD(HUDManager hud)
+        {
             var canvas = hud.transform;
             var so = new SerializedObject(hud);
 
@@ -162,6 +211,25 @@ namespace Possession.Editor
             controls.text = "WASD  Move\nSPACE  Jump\nE  Possess (near an enemy)";
             so.FindProperty("controlsText").objectReferenceValue = controls;
 
+            // Ammo pips: follow the mouse cursor while possessing, positioned at runtime
+            var ammoRow = FindOrCreateRect(canvas, "AmmoRow");
+            ammoRow.anchorMin = ammoRow.anchorMax = ammoRow.pivot = new Vector2(0, 0.5f);
+            ammoRow.sizeDelta = new Vector2(200, 30);
+            var oldAmmoLabel = ammoRow.Find("Label");
+            if (oldAmmoLabel != null) Object.DestroyImmediate(oldAmmoLabel.gameObject);
+            var pips = FindOrCreateRect(ammoRow, "Pips");
+            pips.anchorMin = Vector2.zero;
+            pips.anchorMax = Vector2.one;
+            pips.offsetMin = pips.offsetMax = Vector2.zero;
+            var ammo = ammoRow.GetComponent<AmmoDisplay>();
+            if (ammo == null) ammo = ammoRow.gameObject.AddComponent<AmmoDisplay>();
+            var ammoSo = new SerializedObject(ammo);
+            ammoSo.FindProperty("pipRow").objectReferenceValue = pips;
+            ammoSo.FindProperty("pipSprite").objectReferenceValue = KnobSprite();
+            ammoSo.ApplyModifiedPropertiesWithoutUndo();
+            so.FindProperty("ammoDisplay").objectReferenceValue = ammo;
+            ammoRow.gameObject.SetActive(false);
+
             // Wire references
             so.FindProperty("healthFill").objectReferenceValue = healthFill;
             so.FindProperty("possessTimerGroup").objectReferenceValue = group.gameObject;
@@ -174,21 +242,52 @@ namespace Possession.Editor
             var dark = new Color(0.22f, 0.22f, 0.26f);
             var redBtn = new Color(0.6f, 0.15f, 0.2f);
             var greenBtn = new Color(0.2f, 0.65f, 0.35f);
+            var goldBtn = new Color(0.75f, 0.58f, 0.15f);
 
-            StylePanel(so.FindProperty("levelCompletePanel").objectReferenceValue as GameObject,
-                ":)", "LEVEL COMPLETE", new Color(0.02f, 0.10f, 0.05f, 0.88f), new Color(0.35f, 0.95f, 0.5f),
-                ("RestartButton", "RESTART", hud.OnRestartButton, greenBtn),
+            var levelComplete = so.FindProperty("levelCompletePanel").objectReferenceValue as GameObject;
+            StylePanel(levelComplete,
+                ":)", "LEVEL COMPLETE", new Color(0.02f, 0.10f, 0.05f, 0.88f), new Color(0.35f, 0.95f, 0.5f), true,
+                ("NextButton", "NEXT LEVEL", hud.OnNextLevelButton, greenBtn),
+                ("RestartButton", "RESTART", hud.OnRestartButton, dark),
                 ("MenuButton", "MAIN MENU", hud.OnQuitButton, dark));
+            var nextLabel = levelComplete != null ? levelComplete.transform.Find("NextButton/Text") : null;
+            so.FindProperty("nextButtonLabel").objectReferenceValue = nextLabel != null ? nextLabel.GetComponent<Text>() : null;
 
             StylePanel(so.FindProperty("gameOverPanel").objectReferenceValue as GameObject,
-                ":(", "GAME OVER", new Color(0.08f, 0.02f, 0.03f, 0.92f), new Color(0.85f, 0.2f, 0.25f),
+                ":(", "GAME OVER", new Color(0.08f, 0.02f, 0.03f, 0.92f), new Color(0.85f, 0.2f, 0.25f), false,
                 ("RestartButton", "RESTART", hud.OnRestartButton, redBtn),
                 ("MenuButton", "MAIN MENU", hud.OnQuitButton, dark));
 
+            var gameComplete = FindOrCreatePanel(canvas, "GameCompletePanel");
+            StylePanel(gameComplete,
+                "", "GAME COMPLETE", new Color(0.09f, 0.07f, 0.02f, 0.92f), new Color(1f, 0.82f, 0.25f), true,
+                ("PlayAgainButton", "PLAY AGAIN", hud.OnPlayAgainButton, goldBtn),
+                ("MenuButton", "MAIN MENU", hud.OnQuitButton, dark));
+            gameComplete.SetActive(false);
+            so.FindProperty("gameCompletePanel").objectReferenceValue = gameComplete;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        // Objectives, hostile enemies and analytics for one level scene, then save it
+        static void SetupLevel(Scene scene, HUDManager hud, int levelIndex)
+        {
+            var so = new SerializedObject(hud);
+            var steps = LevelObjectives[Mathf.Min(levelIndex, LevelObjectives.Length - 1)];
+            var prop = so.FindProperty("objectives");
+            prop.arraySize = steps.Length;
+            for (int i = 0; i < steps.Length; i++) prop.GetArrayElementAtIndex(i).stringValue = steps[i];
+            var objective = so.FindProperty("objectiveText").objectReferenceValue as Text;
+            if (objective != null) objective.text = steps[0];
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            // The end screen summary comes from AnalyticsTracker, which lives next to the GameManager
+            var gm = FindInScene<GameManager>(scene);
+            if (gm != null && FindInScene<AnalyticsTracker>(scene) == null)
+                gm.gameObject.AddComponent<AnalyticsTracker>();
+
             // Hostile enemies need to deal damage so the health bar has something to show
-            int enemies = 0;
             var dust = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/P5_FXDust.mat");
-            foreach (var enemy in Object.FindObjectsByType<EnemyBase>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (var enemy in FindAllInScene<EnemyBase>(scene))
             {
                 var hostile = enemy.GetComponent<EnemyContactDamage>();
                 if (hostile == null) hostile = enemy.gameObject.AddComponent<EnemyContactDamage>();
@@ -206,23 +305,42 @@ namespace Possession.Editor
                 hso.FindProperty("shootRange").floatValue = 4.5f;
                 hso.FindProperty("smashRange").floatValue = 3f;
                 hso.ApplyModifiedPropertiesWithoutUndo();
-                enemies++;
             }
-            Debug.Log($"[P5] Hostile attacks set up on {enemies} enemies.");
 
-            var scene = hud.gameObject.scene;
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
+        }
 
-            AddScenesToBuild();
-            SetupMainMenu();
-            Debug.Log("[P5] HUD, controls, end screens, build scenes and level select set up and saved.");
+        static T FindInScene<T>(Scene scene) where T : Component
+        {
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                var found = root.GetComponentInChildren<T>(true);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
+        static System.Collections.Generic.List<T> FindAllInScene<T>(Scene scene) where T : Component
+        {
+            var all = new System.Collections.Generic.List<T>();
+            foreach (var root in scene.GetRootGameObjects())
+                all.AddRange(root.GetComponentsInChildren<T>(true));
+            return all;
+        }
+
+        // End screen buttons need an EventSystem to receive clicks
+        static void EnsureEventSystem(Scene scene)
+        {
+            if (FindInScene<EventSystem>(scene) != null) return;
+            var go = new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+            SceneManager.MoveGameObjectToScene(go, scene);
         }
 
         // ---------------- End screens ----------------
 
         static void StylePanel(GameObject panel, string face, string title, Color background, Color titleColor,
-            params (string name, string label, UnityAction action, Color color)[] buttons)
+            bool withResults, params (string name, string label, UnityAction action, Color color)[] buttons)
         {
             if (panel == null) return;
 
@@ -232,7 +350,7 @@ namespace Possession.Editor
             var bg = panel.GetComponent<Image>();
             if (bg != null) bg.color = background;
 
-            float top = 250f;
+            float top = withResults ? 300f : 250f;
             if (string.IsNullOrEmpty(face))
             {
                 var oldFace = panel.transform.Find("Face");
@@ -257,12 +375,83 @@ namespace Possession.Editor
             if (oldSub != null) Object.DestroyImmediate(oldSub.gameObject);
 
             float y = top - 310f;
+            if (withResults)
+            {
+                y = AddResults(panel, top - 220f);
+            }
+            else
+            {
+                foreach (var name in new[] { "Medal", "Stats" })
+                {
+                    var child = panel.transform.Find(name);
+                    if (child != null) Object.DestroyImmediate(child.gameObject);
+                }
+                var view = panel.GetComponent<ResultsView>();
+                if (view != null) Object.DestroyImmediate(view);
+            }
+
             foreach (var b in buttons)
             {
                 var btn = FindOrCreateButton(panel.transform, b.name, b.label, new Vector2(0, y), b.color);
                 SetSingleListener(btn.onClick, b.action);
                 y -= 95f;
             }
+        }
+
+        // Medal row (gold / silver / bronze) and the analytics line; returns where buttons start
+        static float AddResults(GameObject panel, float y)
+        {
+            var results = panel.GetComponent<ResultsView>();
+            if (results == null) results = panel.AddComponent<ResultsView>();
+            var rso = new SerializedObject(results);
+
+            var medal = FindOrCreateRect(panel.transform, "Medal");
+            PlaceCentre(medal, new Vector2(0, y), new Vector2(360, 50));
+            var pipsProp = rso.FindProperty("medalPips");
+            pipsProp.arraySize = 3;
+            for (int i = 0; i < 3; i++)
+            {
+                var pip = FindOrCreateImage(medal, "Pip" + i, new Color(1f, 1f, 1f, 0.15f));
+                pip.sprite = KnobSprite();
+                PlaceCentre(pip.rectTransform, new Vector2(-150 + i * 50, 0), new Vector2(40, 40));
+                pipsProp.GetArrayElementAtIndex(i).objectReferenceValue = pip;
+            }
+            var medalText = FindOrCreateText(medal, "MedalText");
+            var mt = medalText.rectTransform;
+            mt.anchorMin = mt.anchorMax = new Vector2(0.5f, 0.5f);
+            mt.pivot = new Vector2(0, 0.5f);
+            mt.anchoredPosition = new Vector2(-10, 0);
+            mt.sizeDelta = new Vector2(200, 50);
+            StyleText(medalText, 40, TextAnchor.MiddleLeft);
+            medalText.text = "GOLD";
+            rso.FindProperty("medalText").objectReferenceValue = medalText;
+            y -= 60f;
+
+            var stats = FindOrCreateText(panel.transform, "Stats");
+            PlaceCentre(stats.rectTransform, new Vector2(0, y), new Vector2(1400, 44));
+            StyleText(stats, 28, TextAnchor.MiddleCenter);
+            stats.fontStyle = FontStyle.Normal;
+            stats.color = new Color(0.85f, 0.85f, 0.85f);
+            stats.text = "TIME 0:00    POSSESSIONS 0    FORCED EJECTS 0    DEATHS 0";
+            rso.FindProperty("statsText").objectReferenceValue = stats;
+            rso.ApplyModifiedPropertiesWithoutUndo();
+
+            return y - 90f;
+        }
+
+        static GameObject FindOrCreatePanel(Transform parent, string name)
+        {
+            var rect = FindOrCreateRect(parent, name);
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            if (rect.GetComponent<Image>() == null) rect.gameObject.AddComponent<Image>();
+            return rect.gameObject;
+        }
+
+        static Sprite KnobSprite()
+        {
+            return AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
         }
 
         // ---------------- Build scenes + main menu ----------------
