@@ -66,6 +66,19 @@ namespace Possession.Editor
             LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Guard_02", 6f, 18f);
             LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Heavy_01", 0f, 23f, 1.3f);
 
+            var enemies = new GameObject("Enemies").transform;
+            enemies.SetParent(layout);
+            var routes = new GameObject("GuardPatrolRoutes").transform;
+            routes.SetParent(layout);
+            LevelBuildKit.PlaceGuard(enemies, routes, "Guard_01",
+                new Vector3(0f, LevelBuildKit.SpawnHeight, 7f), 0f,
+                new Vector3(0f, LevelBuildKit.SpawnHeight, 4f),
+                new Vector3(0f, LevelBuildKit.SpawnHeight, 10f));
+            LevelBuildKit.PlaceGuard(enemies, routes, "Guard_02",
+                new Vector3(6f, LevelBuildKit.SpawnHeight, 18f), 0.75f,
+                new Vector3(2f, LevelBuildKit.SpawnHeight, 18f),
+                new Vector3(7f, LevelBuildKit.SpawnHeight, 18f));
+
             var labels = new GameObject("P4_Labels").transform;
             labels.SetParent(layout);
             LevelBuildKit.FloorSign(labels, "StartInstructions",

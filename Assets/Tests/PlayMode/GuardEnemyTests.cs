@@ -90,6 +90,48 @@ namespace Possession.Tests
         }
 
         [UnityTest]
+        public IEnumerator Level02HasTwoConfiguredStaggeredGuardPatrols()
+        {
+            yield return SceneManager.LoadSceneAsync("Level_02", LoadSceneMode.Additive);
+            levelScene = SceneManager.GetSceneByName("Level_02");
+            var guards = FindLevelGuards(levelScene);
+
+            Assert.That(guards, Has.Count.EqualTo(2));
+            AssertConfiguredRoutes(guards);
+            Assert.That(guards[0].PatrolStartDelay, Is.Not.EqualTo(guards[1].PatrolStartDelay),
+                "Level 2 Guard patrols should start at different times.");
+            foreach (GuardEnemy levelGuard in guards)
+            {
+                Assert.That(levelGuard.CurrentHP, Is.EqualTo(3));
+                Assert.That(levelGuard.DetectionRange, Is.EqualTo(12f).Within(0.01f));
+                Assert.That(Read<float>(levelGuard, "moveSpeed"), Is.EqualTo(3f).Within(0.01f));
+                Assert.That(Read<float>(levelGuard, "waypointWaitTime"), Is.EqualTo(0.75f).Within(0.01f));
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Level03HasTwoTightTwelveMetreGuardPatrols()
+        {
+            yield return SceneManager.LoadSceneAsync("Level_03", LoadSceneMode.Additive);
+            levelScene = SceneManager.GetSceneByName("Level_03");
+            var guards = FindLevelGuards(levelScene);
+
+            Assert.That(guards, Has.Count.EqualTo(2));
+            AssertConfiguredRoutes(guards);
+            foreach (GuardEnemy levelGuard in guards)
+            {
+                Assert.That(levelGuard.CurrentHP, Is.EqualTo(3));
+                Assert.That(levelGuard.DetectionRange, Is.EqualTo(12f).Within(0.01f));
+                Assert.That(Read<float>(levelGuard, "moveSpeed"), Is.EqualTo(3.25f).Within(0.01f));
+                Assert.That(Read<float>(levelGuard, "waypointWaitTime"), Is.EqualTo(0.5f).Within(0.01f));
+                Assert.That(Read<float>(levelGuard, "chaseStopDistance"), Is.EqualTo(1.25f).Within(0.01f));
+                Transform[] route = GetRoute(levelGuard);
+                Assert.That(Vector3.Distance(route[0].position, route[1].position), Is.LessThan(8f),
+                    levelGuard.name + " should use a compact Level 3 patrol route.");
+            }
+        }
+
+        [UnityTest]
         public IEnumerator PatrolMovesIdlesAtWaypointAndContinues()
         {
             Set(guard, "waypointArrivalDistance", 0.03f);
@@ -230,6 +272,43 @@ namespace Possession.Tests
             else obj.AddComponent<CapsuleCollider>();
             Physics.SyncTransforms();
             return spirit;
+        }
+
+        private static List<GuardEnemy> FindLevelGuards(Scene scene)
+        {
+            var guards = new List<GuardEnemy>();
+            foreach (GameObject root in scene.GetRootGameObjects())
+                guards.AddRange(root.GetComponentsInChildren<GuardEnemy>(true));
+            return guards;
+        }
+
+        private static void AssertConfiguredRoutes(IEnumerable<GuardEnemy> guards)
+        {
+            foreach (GuardEnemy levelGuard in guards)
+            {
+                Transform[] route = GetRoute(levelGuard);
+                Assert.That(route, Has.Length.EqualTo(2));
+                Assert.That(route[0], Is.Not.Null);
+                Assert.That(route[1], Is.Not.Null);
+            }
+        }
+
+        private static Transform[] GetRoute(GuardEnemy levelGuard)
+        {
+            return Read<Transform[]>(levelGuard, "waypoints");
+        }
+
+        private static T Read<T>(object target, string field)
+        {
+            System.Type type = target.GetType();
+            while (type != null)
+            {
+                FieldInfo info = type.GetField(field, BindingFlags.Instance
+                    | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                if (info != null) return (T)info.GetValue(target);
+                type = type.BaseType;
+            }
+            throw new System.MissingFieldException(target.GetType().Name, field);
         }
 
         private static void Set(object target, string field, object value)

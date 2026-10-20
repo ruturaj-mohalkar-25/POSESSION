@@ -20,6 +20,7 @@ namespace Possession.Editor
         public const float SpawnHeight = 1.1f;
 
         public const string SpiritPrefab = "Assets/Prefabs/Spirit.prefab";
+        public const string GuardPrefab = "Assets/Prefabs/Enemies/Guard.prefab";
         public const string TargetPrefab = "Assets/Prefabs/Puzzle/Target.prefab";
         public const string DoorPrefab = "Assets/Prefabs/Puzzle/Door.prefab";
         public const string BreakableWallPrefab = "Assets/Prefabs/Puzzle/BreakableWall.prefab";
@@ -31,6 +32,7 @@ namespace Possession.Editor
         static readonly Color DoorColor = new Color(0.45f, 0.45f, 0.55f);
         static readonly Color WallBreakColor = new Color(0.5f, 0.5f, 0.5f);
         static readonly Color SpiritColor = new Color(0.6f, 0.8f, 1f);
+        static readonly Color GuardColor = new Color(0.15f, 0.45f, 0.85f);
 
         public static void BuildLighting()
         {
@@ -241,6 +243,32 @@ namespace Possession.Editor
             return go;
         }
 
+        public static GuardEnemy PlaceGuard(Transform parent, Transform routes, string name,
+            Vector3 position, float patrolStartDelay, params Vector3[] waypointPositions)
+        {
+            var go = Instantiate(GuardPrefab, name, position, Vector3.one, parent);
+            go.layer = EnemyLayer;
+            SetColor(go, GuardColor);
+
+            var guard = go.GetComponent<GuardEnemy>();
+            if (guard == null)
+                throw new System.InvalidOperationException("Guard prefab is missing GuardEnemy.");
+
+            var so = new SerializedObject(guard);
+            so.FindProperty("patrolStartDelay").floatValue = patrolStartDelay;
+            var waypoints = so.FindProperty("waypoints");
+            waypoints.arraySize = waypointPositions.Length;
+            for (int i = 0; i < waypointPositions.Length; i++)
+            {
+                var waypoint = new GameObject(name + "_WP" + (i + 1));
+                waypoint.transform.SetParent(routes);
+                waypoint.transform.position = waypointPositions[i];
+                waypoints.GetArrayElementAtIndex(i).objectReferenceValue = waypoint.transform;
+            }
+            so.ApplyModifiedPropertiesWithoutUndo();
+            return guard;
+        }
+
         public static GameObject FloorSign(Transform parent, string name, string text, Vector3 position,
             float characterSize = 0.055f)
         {
@@ -317,7 +345,11 @@ namespace Possession.Editor
             foreach (var guard in Object.FindObjectsByType<GuardEnemy>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 var so = new SerializedObject(guard);
+                so.FindProperty("moveSpeed").floatValue = config.GuardMoveSpeed;
+                so.FindProperty("maxHP").intValue = config.GuardMaxHP;
                 so.FindProperty("detectionRange").floatValue = config.GuardDetectionRange;
+                so.FindProperty("waypointWaitTime").floatValue = config.GuardWaypointWaitTime;
+                so.FindProperty("chaseStopDistance").floatValue = config.GuardChaseStopDistance;
                 so.ApplyModifiedPropertiesWithoutUndo();
             }
         }

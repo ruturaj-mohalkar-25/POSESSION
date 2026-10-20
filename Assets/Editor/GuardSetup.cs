@@ -52,7 +52,7 @@ namespace Possession.Editor
             serialized.FindProperty("moveSpeed").floatValue = 3f;
             serialized.FindProperty("maxHP").intValue = 3;
             serialized.FindProperty("detectionRange").floatValue = 10f;
-            serialized.FindProperty("waypointIdleTime").floatValue = 0.75f;
+            serialized.FindProperty("waypointWaitTime").floatValue = 0.75f;
             serialized.FindProperty("waypointArrivalDistance").floatValue = 0.3f;
             serialized.FindProperty("chaseStopDistance").floatValue = 1.5f;
             // Prefab routes are assigned per level; keep scene waypoint references intact.

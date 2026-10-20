@@ -11,7 +11,9 @@ namespace Possession
             if (material == null) return;
             var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             go.name = "FX_Burst";
-            Object.Destroy(go.GetComponent<Collider>());
+            var collider = go.GetComponent<Collider>();
+            collider.enabled = false;
+            Object.Destroy(collider);
             go.transform.position = position;
             go.GetComponent<Renderer>().sharedMaterial = material;
             go.AddComponent<FadeAndDie>().Init(Vector3.one * startSize, Vector3.one * endSize, duration);
@@ -25,6 +27,9 @@ namespace Possession
                 var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 go.name = "FX_Chunk";
                 go.layer = 2; // Ignore Raycast: never blocks aiming or possession
+                var collider = go.GetComponent<Collider>();
+                collider.enabled = false;
+                Object.Destroy(collider);
                 go.transform.position = center + Vector3.Scale(Random.insideUnitSphere, spread);
                 go.transform.rotation = Random.rotation;
                 float size = Random.Range(0.18f, 0.35f);
