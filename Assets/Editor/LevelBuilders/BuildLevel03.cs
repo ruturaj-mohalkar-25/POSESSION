@@ -41,8 +41,8 @@ namespace Possession.Editor
             LevelBuildKit.WallRect(walls, "Fork_West", -12.25f, -11.75f, 14f, 22f);
             LevelBuildKit.WallRect(walls, "Fork_East", 11.75f, 12.25f, 14f, 22f);
             LevelBuildKit.WallRect(walls, "Fork_SouthLeft", -12.25f, -3f, 13.75f, 14.25f);
-            LevelBuildKit.WallRect(walls, "Fork_SouthRight", 3f, 12.25f, 13.75f, 14.25f);
-            LevelBuildKit.WallRect(walls, "Fork_North", -4f, 12.25f, 21.75f, 22.25f);
+            LevelBuildKit.WallRect(walls, "Fork_SouthRight", 3f, 4f, 13.75f, 14.25f);
+            LevelBuildKit.WallRect(walls, "Fork_North", -4f, 4f, 21.75f, 22.25f);
 
             LevelBuildKit.WallRect(walls, "Left_West", -12.25f, -11.75f, 22f, 40f);
             LevelBuildKit.WallRect(walls, "Left_East", -4.25f, -3.75f, 22f, 34f);
