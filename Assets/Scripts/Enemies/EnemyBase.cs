@@ -18,6 +18,7 @@ namespace Possession
         [SerializeField, Min(0f)] protected float waypointWaitTime = 0.75f;
         [SerializeField, Min(0.01f)] protected float waypointArrivalDistance = 0.3f;
         [SerializeField, Min(0f)] protected float chaseStopDistance = 1.5f;
+        [SerializeField, Min(0f)] protected float patrolStartDelay;
 
         protected int currentHP;
         protected bool isPossessed;
@@ -35,11 +36,14 @@ namespace Possession
         public bool IsChasing => !isPossessed && chaseTarget != null
             && chaseTarget.isActiveAndEnabled;
         public bool IsIdle => !isPossessed && !IsChasing && waypointWaitTimer > 0f;
+        public float DetectionRange => detectionRange;
+        public float PatrolStartDelay => patrolStartDelay;
 
         protected virtual void Awake()
         {
             currentHP = maxHP;
             controller = GetComponent<CharacterController>();
+            waypointWaitTimer = patrolStartDelay;
 
             // CharacterController handles collision for both AI and possessed movement.
             var legacyCollider = GetComponent<CapsuleCollider>();

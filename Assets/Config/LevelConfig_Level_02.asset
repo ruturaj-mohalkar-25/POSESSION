@@ -15,7 +15,11 @@ MonoBehaviour:
   levelName: Level_02
   possessionTimer: 10
   levelTime: 240
+  guardMoveSpeed: 3
+  guardMaxHP: 3
   guardDetectionRange: 12
+  guardWaypointWaitTime: 0.75
+  guardChaseStopDistance: 1.5
   goldParTime: 80
   silverParTime: 120
   bronzeParTime: 180
