@@ -1,7 +1,15 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Possession
 {
+    public struct PossessionEntry
+    {
+        public string enemyType;
+        public float duration;
+        public bool forcedEject;
+    }
+
     public struct AnalyticsData
     {
         public string levelName;
@@ -11,6 +19,7 @@ namespace Possession
         public float totalPossessionTime;
         public float completionTime;
         public int stars;
+        public List<PossessionEntry> possessions;
     }
 
     public class AnalyticsTracker : MonoBehaviour
@@ -20,6 +29,8 @@ namespace Possession
         private int deathCount;
         private float possessionStartTime;
         private float totalPossessionTime;
+        private string currentEnemyType;
+        private readonly List<PossessionEntry> possessions = new();
 
         private void OnEnable()
         {
@@ -41,12 +52,20 @@ namespace Possession
         {
             possessionCount++;
             possessionStartTime = Time.time;
+            currentEnemyType = enemy is HeavyEnemy ? "Heavy" : "Guard";
         }
 
         private void OnEjected(EnemyBase enemy, bool forced)
         {
-            totalPossessionTime += Time.time - possessionStartTime;
+            float duration = Time.time - possessionStartTime;
+            totalPossessionTime += duration;
             if (forced) forcedEjectCount++;
+            possessions.Add(new PossessionEntry
+            {
+                enemyType = currentEnemyType,
+                duration = duration,
+                forcedEject = forced
+            });
         }
 
         private void OnSpiritDied()
@@ -56,6 +75,16 @@ namespace Possession
 
         private void OnLevelComplete(int stars, float elapsedTime)
         {
+            if (possessionStartTime > 0f && possessions.Count < possessionCount)
+            {
+                possessions.Add(new PossessionEntry
+                {
+                    enemyType = currentEnemyType,
+                    duration = Time.time - possessionStartTime,
+                    forcedEject = false
+                });
+            }
+
             var data = new AnalyticsData
             {
                 levelName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
@@ -64,7 +93,8 @@ namespace Possession
                 deathCount = deathCount,
                 totalPossessionTime = totalPossessionTime,
                 completionTime = elapsedTime,
-                stars = stars
+                stars = stars,
+                possessions = new List<PossessionEntry>(possessions)
             };
             EventBus.AnalyticsReady?.Invoke(data);
         }

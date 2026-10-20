@@ -140,6 +140,7 @@ MonoBehaviour:
   waypointWaitTime: 0.75
   waypointArrivalDistance: 0.3
   chaseStopDistance: 1.5
+  patrolStartDelay: 0
 --- !u!114 &6693207823745644827
 MonoBehaviour:
   m_ObjectHideFlags: 0
