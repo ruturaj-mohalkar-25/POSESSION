@@ -11,7 +11,10 @@ namespace Possession
             if (material == null) return;
             var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             go.name = "FX_Burst";
-            Object.Destroy(go.GetComponent<Collider>());
+            go.layer = 2;
+            var collider = go.GetComponent<Collider>();
+            collider.enabled = false;
+            Object.Destroy(collider);
             go.transform.position = position;
             go.GetComponent<Renderer>().sharedMaterial = material;
             go.AddComponent<FadeAndDie>().Init(Vector3.one * startSize, Vector3.one * endSize, duration);
