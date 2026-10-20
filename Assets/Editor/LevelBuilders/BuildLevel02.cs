@@ -7,15 +7,6 @@ namespace Possession.Editor
     public static class BuildLevel02
     {
         const string ScenePath = "Assets/Scenes/Level_02.unity";
-        const float LevelWidth = 12f;
-
-        const float Room1Z = 6f;
-        const float Room2Z = 18f;
-        const float CorridorZ = 27f;
-        const float DividerZ = 12f;
-        const float DoorZ = 24f;
-        const float WallZ = 27f;
-        const float ExitZ = 29f;
 
         [MenuItem("Possession/P4/Build Level_02")]
         public static void Build()
@@ -31,42 +22,65 @@ namespace Possession.Editor
 
             var layout = new GameObject("P4_LevelLayout").transform;
 
-            LevelBuildKit.Floor(layout, "Room1_Floor", new Vector3(0f, 0f, Room1Z), LevelWidth, 12f);
-            LevelBuildKit.Floor(layout, "Room2_Floor", new Vector3(0f, 0f, Room2Z), LevelWidth, 12f);
-            LevelBuildKit.Floor(layout, "Corridor_Floor", new Vector3(0f, 0f, CorridorZ), LevelWidth, 6f);
-            LevelBuildKit.Perimeter(layout, LevelWidth, 0f, 30f);
-            LevelBuildKit.DividerWithGap(layout, "Divider1", DividerZ, LevelWidth);
-            LevelBuildKit.DividerWithGap(layout, "Divider2", DoorZ, LevelWidth);
-            LevelBuildKit.DividerWithGap(layout, "WallPuzzle", WallZ, LevelWidth);
+            LevelBuildKit.FloorRect(layout, "Entry_Floor", -3f, 3f, 0f, 12f);
+            LevelBuildKit.FloorRect(layout, "Hub_Floor", -3f, 9f, 12f, 20f);
+            LevelBuildKit.FloorRect(layout, "Cache_Floor", -9f, -3f, 12f, 19f);
+            LevelBuildKit.FloorRect(layout, "North_Floor", -3f, 3f, 20f, 32f);
 
-            var target1 = LevelBuildKit.PlaceTarget(layout, "Target_01", -4f, 9f);
-            var target2 = LevelBuildKit.PlaceTarget(layout, "Target_02", 4f, 21f);
-            var door = LevelBuildKit.PlaceDoor(layout, "Door", DoorZ, new[] { target1, target2 });
-            var wall = LevelBuildKit.PlaceBreakableWall(layout, "BreakableWall", WallZ);
-            LevelBuildKit.PlaceExit(layout, "ExitZone", new Vector3(0f, 1f, ExitZ), door, wall);
+            var walls = new GameObject("Walls").transform;
+            walls.SetParent(layout);
+
+            LevelBuildKit.WallRect(walls, "Entry_South", -3.25f, 3.25f, -0.25f, 0.25f);
+            LevelBuildKit.WallRect(walls, "Entry_West", -3.25f, -2.75f, 0f, 12f);
+            LevelBuildKit.WallRect(walls, "Entry_East", 2.75f, 3.25f, 0f, 12f);
+
+            LevelBuildKit.WallRect(walls, "Hub_East", 8.75f, 9.25f, 12f, 20f);
+            LevelBuildKit.WallRect(walls, "Hub_SouthRight", 3f, 9.25f, 11.75f, 12.25f);
+            LevelBuildKit.WallRect(walls, "Hub_West_Lower", -3.25f, -2.75f, 12f, 14f);
+            LevelBuildKit.WallRect(walls, "Hub_West_Upper", -3.25f, -2.75f, 17f, 20f);
+            LevelBuildKit.WallRect(walls, "Hub_NorthRight", 3f, 9.25f, 19.75f, 20.25f);
+
+            LevelBuildKit.WallRect(walls, "Cache_West", -9.25f, -8.75f, 12f, 19f);
+            LevelBuildKit.WallRect(walls, "Cache_South", -9.25f, -3f, 11.75f, 12.25f);
+            LevelBuildKit.WallRect(walls, "Cache_North", -9.25f, -3f, 18.75f, 19.25f);
+
+            LevelBuildKit.WallRect(walls, "Door_FlankLeft", -3.25f, -1.6f, 19.75f, 20.25f);
+            LevelBuildKit.WallRect(walls, "Door_FlankRight", 1.6f, 3.25f, 19.75f, 20.25f);
+            LevelBuildKit.WallRect(walls, "North_West", -3.25f, -2.75f, 20f, 32f);
+            LevelBuildKit.WallRect(walls, "North_East", 2.75f, 3.25f, 20f, 32f);
+            LevelBuildKit.WallRect(walls, "Wall_FlankLeft", -3.25f, -1.6f, 26.75f, 27.25f);
+            LevelBuildKit.WallRect(walls, "Wall_FlankRight", 1.6f, 3.25f, 26.75f, 27.25f);
+            LevelBuildKit.WallRect(walls, "North_Boundary", -3.25f, 3.25f, 31.75f, 32.25f);
+
+            var target1 = LevelBuildKit.PlaceTarget(layout, "Target_01", 6f, 16f);
+            var target2 = LevelBuildKit.PlaceTarget(layout, "Target_02", -6f, 15.5f);
+            var door = LevelBuildKit.PlaceDoor(layout, "Door", 0f, 20f, new[] { target1, target2 });
+            var wall = LevelBuildKit.PlaceBreakableWall(layout, "BreakableWall", 0f, 27f);
+            LevelBuildKit.PlaceExit(layout, "ExitZone", new Vector3(0f, 1f, 30f), door, wall);
 
             var spirit = LevelBuildKit.BuildSpirit(new Vector3(0f, LevelBuildKit.SpiritHeight, 3f));
 
             var spawns = new GameObject("SpawnPoints").transform;
             spawns.SetParent(layout);
-            LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Guard_01", -2f, 8f);
-            LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Guard_02", 2f, 16f);
-            LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Heavy_01", -3f, 20f, 1.3f);
+            LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Guard_01", 0f, 7f);
+            LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Guard_02", 6f, 18f);
+            LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Heavy_01", 0f, 23f, 1.3f);
 
             var labels = new GameObject("P4_Labels").transform;
             labels.SetParent(layout);
             LevelBuildKit.FloorSign(labels, "StartInstructions",
                 "LEVEL 02\nWASD move   |   SPACE jump   |   E possess / eject\n"
-                + "Possess a GUARD and shoot BOTH targets\n"
-                + "Then possess the HEAVY and smash the wall",
-                new Vector3(0f, 0f, 3.5f));
-            LevelBuildKit.FloorSign(labels, "Sign_Target_01", "SHOOT THIS TARGET", new Vector3(-4f, 0f, 7f));
-            LevelBuildKit.FloorSign(labels, "Sign_Target_02", "SHOOT THIS TARGET TOO", new Vector3(4f, 0f, 19f));
+                + "Possess a GUARD, shoot the target in the right room\n"
+                + "then shoot the second target in the left cache\n"
+                + "take the HEAVY and smash the wall to reach the exit",
+                new Vector3(0f, 0f, 4f));
+            LevelBuildKit.FloorSign(labels, "Sign_Target_01", "SHOOT THIS TARGET", new Vector3(6f, 0f, 13.5f));
+            LevelBuildKit.FloorSign(labels, "Sign_Cache", "CACHE: SHOOT THE SECOND TARGET", new Vector3(-6f, 0f, 13.5f));
             LevelBuildKit.FloorSign(labels, "Sign_Door", "DOOR OPENS WHEN BOTH TARGETS ARE HIT",
                 new Vector3(0f, 0f, 22f));
-            LevelBuildKit.FloorSign(labels, "Sign_Wall", "SMASH THE WALL AS THE HEAVY", new Vector3(0f, 0f, 25.5f));
+            LevelBuildKit.FloorSign(labels, "Sign_Wall", "SMASH THE WALL AS THE HEAVY", new Vector3(0f, 0f, 25f));
             LevelBuildKit.FloorSign(labels, "Sign_Exit", "EJECT AND REACH THE EXIT AS THE SPIRIT",
-                new Vector3(0f, 0f, 28.2f), 0.045f);
+                new Vector3(0f, 0f, 29f), 0.045f);
 
             LevelBuildKit.ObjectLabel(labels, "SHOOT ME", target1.gameObject, new Vector3(0f, 1.3f, 0f),
                 new Color(1f, 0.35f, 0.3f), "HIT!");

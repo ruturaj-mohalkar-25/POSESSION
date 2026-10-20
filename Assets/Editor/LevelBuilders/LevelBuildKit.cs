@@ -93,6 +93,19 @@ namespace Possession.Editor
             return floor;
         }
 
+        public static GameObject FloorRect(Transform parent, string name, float minX, float maxX, float minZ, float maxZ)
+        {
+            var centre = new Vector3((minX + maxX) * 0.5f, 0f, (minZ + maxZ) * 0.5f);
+            return Floor(parent, name, centre, maxX - minX, maxZ - minZ);
+        }
+
+        public static GameObject WallRect(Transform parent, string name, float minX, float maxX, float minZ, float maxZ)
+        {
+            var position = new Vector3((minX + maxX) * 0.5f, WallY, (minZ + maxZ) * 0.5f);
+            var scale = new Vector3(maxX - minX, WallHeight, maxZ - minZ);
+            return Wall(parent, name, position, scale);
+        }
+
         public static GameObject Wall(Transform parent, string name, Vector3 position, Vector3 scale)
         {
             var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -157,9 +170,9 @@ namespace Possession.Editor
             return go.GetComponent<Target>();
         }
 
-        public static Door PlaceDoor(Transform parent, string name, float z, IEnumerable<Target> requiredTargets)
+        public static Door PlaceDoor(Transform parent, string name, float x, float z, IEnumerable<Target> requiredTargets)
         {
-            var go = Instantiate(DoorPrefab, name, new Vector3(0f, WallY, z),
+            var go = Instantiate(DoorPrefab, name, new Vector3(x, WallY, z),
                 new Vector3(Opening, WallHeight, WallThickness), parent);
             go.layer = PuzzleLayer;
             SetColor(go, DoorColor);
@@ -176,9 +189,9 @@ namespace Possession.Editor
             return door;
         }
 
-        public static BreakableWall PlaceBreakableWall(Transform parent, string name, float z)
+        public static BreakableWall PlaceBreakableWall(Transform parent, string name, float x, float z)
         {
-            var go = Instantiate(BreakableWallPrefab, name, new Vector3(0f, WallY, z),
+            var go = Instantiate(BreakableWallPrefab, name, new Vector3(x, WallY, z),
                 new Vector3(Opening, WallHeight, WallThickness), parent);
             go.layer = PuzzleLayer;
             SetColor(go, WallBreakColor);
