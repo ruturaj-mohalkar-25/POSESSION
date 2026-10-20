@@ -434,9 +434,21 @@ namespace Possession.Editor
             stats.color = new Color(0.85f, 0.85f, 0.85f);
             stats.text = "TIME 0:00    POSSESSIONS 0    FORCED EJECTS 0    DEATHS 0";
             rso.FindProperty("statsText").objectReferenceValue = stats;
+            y -= 50f;
+
+            var chartLabel = FindOrCreateText(panel.transform, "ChartLabel");
+            PlaceCentre(chartLabel.rectTransform, new Vector2(0, y), new Vector2(1400, 30));
+            StyleText(chartLabel, 22, TextAnchor.MiddleCenter);
+            chartLabel.color = new Color(0.7f, 0.7f, 0.7f);
+            chartLabel.text = "POSSESSION BREAKDOWN";
+            y -= 30f;
+
+            var chart = FindOrCreateRect(panel.transform, "ChartContainer");
+            PlaceCentre(chart, new Vector2(0, y), new Vector2(800, 36));
+            rso.FindProperty("chartContainer").objectReferenceValue = chart;
             rso.ApplyModifiedPropertiesWithoutUndo();
 
-            return y - 90f;
+            return y - 80f;
         }
 
         static GameObject FindOrCreatePanel(Transform parent, string name)

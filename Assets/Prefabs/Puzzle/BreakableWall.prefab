@@ -126,3 +126,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.BreakableWall
   hitsToBreak: 2
+  minDamageRequired: 2

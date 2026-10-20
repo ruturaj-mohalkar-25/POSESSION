@@ -415,7 +415,12 @@ namespace Possession
         {
             if (activeResults == null) return;
             if (stars > 0) activeResults.ShowRating(stars);
-            if (analytics.HasValue) activeResults.ShowStats(Summary(analytics.Value));
+            if (analytics.HasValue)
+            {
+                activeResults.ShowStats(Summary(analytics.Value));
+                if (analytics.Value.possessions != null)
+                    activeResults.ShowChart(analytics.Value.possessions);
+            }
         }
 
         private static string Summary(AnalyticsData data)
