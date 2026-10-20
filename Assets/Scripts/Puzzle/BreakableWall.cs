@@ -5,8 +5,11 @@ namespace Possession
     public class BreakableWall : MonoBehaviour, IDamageable
     {
         [SerializeField] private int hitsToBreak = 2;
+        [SerializeField] private int minDamageRequired = 2;
 
         private int currentHP;
+
+        public int MinDamageRequired => minDamageRequired;
 
         public int CurrentHP => currentHP;
 
@@ -17,6 +20,9 @@ namespace Possession
 
         public void TakeDamage(int amount)
         {
+            if (amount < minDamageRequired)
+                return;
+
             currentHP -= amount;
 
             // Visual feedback: change color on damage
