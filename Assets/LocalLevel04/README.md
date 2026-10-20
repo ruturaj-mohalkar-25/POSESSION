@@ -1,61 +1,31 @@
-# Level 04 prototype — The Relay Run
+# Level 04 — The Relay Run
 
-Experimental greybox based on Omkar's maze sketch, shared on a separate branch for team review. Everything unique to this prototype is under `Assets/LocalLevel04`. The scene is deliberately excluded from Build Settings and the shared main-menu progression.
-
-The playable view uses the same 3D perspective camera as Levels 01–03: 40-degree field of view, 55-degree downward angle, and the existing CameraFollow with offset (0, 25, -13). It follows the Spirit or possessed host. Solid walls and characters use directional lighting and shadows; the small HUD minimap is an optional flat overview.
+A 66 × 40 metre 3D maze built from Omkar's layout sketch. The scene uses the same gameplay components as Levels 01–03: SpiritController, PossessionController, GuardEnemy, HeavyEnemy, ShootAbility, SmashAbility, Target, Door, BreakableWall, LevelExit, GameManager, AnalyticsTracker and HUDManager.
 
 ## Play
 
-Stop Play mode, then choose **Possession → Local Experiments → Open Level 04** and press Play. You can also open `Level_04_Local.unity` directly. **Rebuild Level 04** regenerates this experiment, including its scene and materials; save hand edits elsewhere before rebuilding.
+Use Unity **6000.3.22f1**. Stop Play mode, select **Possession → Local Experiments → Open Level 04**, then press Play. The scene is `Assets/LocalLevel04/Level_04_Local.unity`.
 
-- WASD: move. Space: Spirit jump.
-- E: possess a host within 5 metres and line of sight, or eject.
-- LMB: aim and shoot as Guard; face a gate and smash as Heavy.
-- M: toggle the live minimap. R: restart, including after victory or failure.
-- Escape: pause/resume. The pause screen also has Resume and Retry buttons.
-
-## Spectral HUD
-
-The local HUD is built at runtime with Unity UI and scales with the Game view.
-Spirit is cyan, Guard is blue, and Heavy is amber. It includes segmented health,
-a circular countdown, a five-step mission tracker, ability uses and a possession
-link bar. The signal map shows live host positions and pulses around the next
-objective. Possession, ejection, damage and completed relays show short banners;
-the screen border pulses red when time is low.
-
-Pause freezes the clock and disables gameplay controls until Resume. Victory
-shows the existing star rating, elapsed time, completed relays and host links;
-failure explains whether time or Spirit integrity ran out. Both offer Retry.
-This UI is confined to the Level 04 prototype. The shared HUD is unchanged.
-
-Local Guard shots skip the shared muzzle-burst component, whose temporary
-primitive collider could consume a projectile on its spawn frame. The shared
-projectile prefab and effects code are unchanged.
+WASD moves, Space jumps as Spirit, E possesses/ejects, mouse aims and LMB shoots as Guard. Face the wall and LMB smashes as Heavy. Use the shared end-screen buttons to restart or return to the main menu. The previous custom minimap, pause screen and R shortcut have been removed.
 
 ## Route
 
-1. Start in the south-west. Find the blue Guard beyond the cover block. Possess it and shoot the red north-west target to open gate 01.
-2. Enter the central wing. Possess the orange Heavy and smash the east-facing cache gate (02).
-3. Eject, find the central Guard, and enter the opened cache. Shoot the relay target inside to open gate 03 at the south-east of the central wing.
-4. Go through gate 03 and take the long route around the right-hand end of the east baffle. Possess the second Heavy and smash gate 04, north of its patrol route.
-5. Eject and enter the green finish zone as a living Spirit. All four gates must be open.
+1. Possess the west Guard and shoot the north-west target to open the first Door.
+2. Possess the central Heavy and smash the cache BreakableWall.
+3. Bring a Guard into the cache and shoot its target to open the east relay Door.
+4. Follow the long route around the east baffle, possess the second Heavy and smash the final BreakableWall.
+5. Eject and enter the finish zone as a living Spirit.
 
-## Difficulty settings
+Shared waypoint patrol and chase behavior replaces grid navigation. Enemies use their normal damage, death, ability limits and forced-ejection hostility. They can be killed; use the shared restart button if a required body is lost. There are no local enemy, ability, gate, navigation or HUD runtime classes.
 
-- Footprint: 66 × 40 metres, with 6-metre walls to prevent jumping over the puzzle.
-- Level clock: 120 seconds, editable on `Local04_GameManager`. Start with this budget and tune after human playtests.
-- Possession: 10 seconds, 0.5-second re-entry cooldown, 5-second hostility after forced ejection. Existing Spirit/possession/ejection systems are reused.
-- Three Guards (3.2 m/s) and two Heavies (2.2 m/s, 5 HP). Guards have three shots per possession; Heavies have one smash. Repossessing refreshes uses.
-- Visible Spirit can be chased and take contact damage. Walls block detection; a short ejection grace period prevents immediate contact damage.
-- Required hosts cannot be killed by stray Guard shots in this prototype, preventing a permanent puzzle softlock. Their AI uses local grid navigation around walls and closed gates. This is separate from the shared Guard/Heavy AI.
-- Heavy gates reject ordinary projectiles and require a possessed Heavy. Gate prerequisites prevent opening the final route out of order.
+## Configuration and rebuilding
+
+Edit `Assets/Config/LevelConfig_Level_04.asset`, then choose **Possession → Local Experiments → Rebuild Level 04** to bake its values into the scene, following the existing P4 configuration workflow. Existing config values are preserved when rebuilding. Initial tuning is 120 seconds, 10-second possession, 10-metre Guard detection, and 60/85/110-second par times. Enemies inherit the shared prefab defaults (Guard speed 3, Heavy speed 1.8, Heavy HP 5).
+
+The builder copies the HUD from Level_01 and configures its optional shared objective list for the four puzzle gates. Levels without that list retain the existing three-step HUD behavior. The muzzle flash remains enabled; SimpleFX now disables the decorative burst collider immediately instead of waiting for deferred destruction.
+
+Level_04 is registered at the end of Build Settings so shared restart and level flow work in Editor and builds. It remains outside the main-menu level selector while under review. Building the scene does not regenerate Levels 01–03. The proposal targets the separate Omkar/level04-review branch; it does not merge into integration.
 
 ## Verification
 
-Eight native Unity 6.3 PlayMode tests cover scene isolation and roles, real projectile/smash gate progression, the long east route and sealed cache, Heavy approach times, grounded ejection beside walls, AI possession behavior, Spirit-only finish, restarting a scene outside Build Settings, HUD health/form updates, and pause/resume behavior. The tests use controlled placements to exercise interactions; they do not establish a human completion time or final difficulty balance.
-
-The scene was also rendered with the native Unity camera for visual inspection. Shared scenes, prefabs, scripts, and Build Settings are unchanged. Final art, audio, wider screen-layout polish, difficulty tuning, and team integration are outside this local prototype.
-
-## Previews
-
-[3D layout overview](../../Docs/Level04/Overview.png) · [Spectral HUD preview](../../Docs/Level04/HUD.png)
+Focused PlayMode coverage exercises the actual shared shooting/smash route, objective and HUD events, analytics, enemy damage/death, patrol/chase/possession, forced-ejection attacks, safe ejection, Spirit-only completion, normal scene restart, and the decorative collider fix. Controlled actor placement checks integration; human playtesting is still needed to tune the larger route's time budget.

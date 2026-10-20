@@ -35,6 +35,15 @@ namespace Possession
 
         [Header("Objective")]
         [SerializeField] private Text objectiveText;
+        [System.Serializable]
+        public class PuzzleObjective
+        {
+            public Door door;
+            public BreakableWall wall;
+            [TextArea] public string instruction;
+            public bool IsComplete => door != null ? door.IsOpen : wall != null && wall.CurrentHP <= 0;
+        }
+        [SerializeField] private PuzzleObjective[] puzzleObjectives;
         private const string objectiveStart = "1/3  Possess the GUARD and shoot the TARGET to unlock the door";
         private const string objectiveDoorOpen = "2/3  Possess the HEAVY and smash the BREAKABLE wall";
         private const string objectiveWallBroken = "3/3  Eject and reach the EXIT as the Spirit";
@@ -95,7 +104,7 @@ namespace Possession
             SetPossessTimerVisible(false);
             SetFormText("Spirit");
             SetControls("Spirit");
-            SetObjective(objectiveStart);
+            RefreshObjective(objectiveStart);
 
             // Show full health immediately instead of waiting for the first hit
             var spiritController = FindFirstObjectByType<SpiritController>();
@@ -249,14 +258,31 @@ namespace Possession
 
         private void OnDoorOpened(Door door)
         {
-            SetObjective(objectiveDoorOpen);
+            RefreshObjective(objectiveDoorOpen);
             ShowMessage("TARGET HIT!  DOOR UNLOCKED!", unlockMessageTime, alertColor);
         }
 
         private void OnWallBroken(BreakableWall wall)
         {
-            SetObjective(objectiveWallBroken);
+            RefreshObjective(objectiveWallBroken);
             ShowMessage("WALL SMASHED!", messageTime, alertColor);
+        }
+
+        private void RefreshObjective(string fallback)
+        {
+            if (puzzleObjectives == null || puzzleObjectives.Length == 0)
+            {
+                SetObjective(fallback);
+                return;
+            }
+            for (int i = 0; i < puzzleObjectives.Length; i++)
+            {
+                var step = puzzleObjectives[i];
+                if (step == null || step.IsComplete) continue;
+                SetObjective($"{i + 1}/{puzzleObjectives.Length + 1}  {step.instruction}");
+                return;
+            }
+            SetObjective($"{puzzleObjectives.Length + 1}/{puzzleObjectives.Length + 1}  Eject and reach the EXIT as the Spirit");
         }
 
         // Every objective change flashes the bar so it's noticed even while watching the character

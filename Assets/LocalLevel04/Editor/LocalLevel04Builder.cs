@@ -1,6 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using UnityEngine.EventSystems;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -12,7 +13,6 @@ namespace Possession.LocalLevel04.Editor
     {
         public const string ScenePath = "Assets/LocalLevel04/Level_04_Local.unity";
         private const string Root = "Assets/LocalLevel04";
-        private static readonly List<Collider> walls = new List<Collider>();
         private static Transform geometry, routes;
         private static Material wallMat, guardMat, heavyMat, redMat, cyanMat, amberMat;
 
@@ -33,7 +33,6 @@ namespace Possession.LocalLevel04.Editor
             Directory.CreateDirectory(Root + "/Materials");
             AssetDatabase.Refresh();
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            walls.Clear();
             geometry = new GameObject("Local04_Geometry").transform;
             routes = new GameObject("Local04_PatrolRoutes").transform;
             wallMat = Mat("Wall", new Color(.2f, .25f, .34f));
@@ -68,55 +67,43 @@ namespace Possession.LocalLevel04.Editor
             Wall("Finish_Divider_Left", 46.35f, 29, 8.7f, 1);
             Wall("Finish_Divider_Right", 60.65f, 29, 10.7f, 1);
 
-            var a = Gate("01_Guard_Gate", 14, 32, 1, 4.6f, false, "01 / SHOOT WEST TARGET");
-            var b = Gate("02_Heavy_Cache_Gate", 31, 20, 1, 4.6f, true, "02 / HEAVY SMASH");
-            var c = Gate("03_Guard_Relay_Gate", 42, 5, 1, 4.6f, false, "03 / CACHE RELAY");
-            var d = Gate("04_Heavy_Finish_Gate", 53, 29, 4.6f, 1, true, "04 / HEAVY SMASH");
-            b.prerequisite = a; c.prerequisite = b; d.prerequisite = c;
-            var targetA = MakeTarget("Target_01_West", new Vector3(10, 1.55f, 36));
-            var targetB = MakeTarget("Target_02_CacheRelay", new Vector3(18, 1.55f, 16));
-            a.target = targetA; c.target = targetB;
+            var targetA = MakeTarget("Target_01_West", new Vector3(10, 1.6f, 36));
+            var targetB = MakeTarget("Target_02_CacheRelay", new Vector3(18, 1.6f, 16));
+            var doorA = Door("01_Guard_Door", 14, 32, 1, 4.6f, targetA);
+            var wallA = Breakable("02_Heavy_Cache_Wall", 31, 20, 1, 4.6f);
+            var doorB = Door("03_Guard_Relay_Door", 42, 5, 1, 4.6f, targetB);
+            var wallB = Breakable("04_Heavy_Finish_Wall", 53, 29, 4.6f, 1);
 
-            var manager = new GameObject("Local04_GameManager").AddComponent<GameManager>();
-            Set(manager, "levelTime", 120f);
-            var managerSettings = new SerializedObject(manager);
-            var stars = managerSettings.FindProperty("starThresholds"); stars.arraySize = 3;
-            stars.GetArrayElementAtIndex(0).floatValue = 60;
-            stars.GetArrayElementAtIndex(1).floatValue = 85;
-            stars.GetArrayElementAtIndex(2).floatValue = 110;
-            managerSettings.ApplyModifiedPropertiesWithoutUndo();
-            var navigation = new GameObject("Local04_Navigation").AddComponent<LocalLevel04Navigation>();
-            navigation.barriers = walls.ToArray();
-
+            var manager = new GameObject("GameManager").AddComponent<GameManager>();
+            manager.gameObject.AddComponent<AnalyticsTracker>();
             var spiritPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Spirit.prefab");
             var spiritObject = (GameObject)PrefabUtility.InstantiatePrefab(spiritPrefab);
             spiritObject.name = "Spirit";
             spiritObject.transform.position = new Vector3(6, 1.15f, 4);
             spiritObject.GetComponent<Renderer>().sharedMaterial = Mat("Spirit", new Color(.8f, .95f, 1));
-            var player = spiritObject.GetComponent<PossessionController>();
-            Set(player, "possessDuration", 10f); Set(player, "possessRange", 5f); Set(player, "enemyLayer", 1 << 6);
 
-            var g1 = Host("Guard_West", false, new Vector3(6, 1.15f, 31), navigation,
-                new Rect(1, 1, 12, 38), new Vector3(5, 0, 30), new Vector3(9, 0, 34));
-            var h1 = Host("Heavy_Cache", true, new Vector3(35, 1.45f, 28), navigation,
-                new Rect(15, 12, 26, 27), new Vector3(35, 0, 28), new Vector3(38, 0, 23));
-            var g2 = Host("Guard_Relay", false, new Vector3(35, 1.15f, 12), navigation,
-                new Rect(15, 1, 26, 38), new Vector3(35, 0, 12), new Vector3(37, 0, 17));
-            var h2 = Host("Heavy_Finish", true, new Vector3(61, 1.45f, 23), navigation,
-                new Rect(43, 21, 22, 7), new Vector3(61, 0, 23), new Vector3(56, 0, 25));
-            var g3 = Host("Guard_East_Sentinel", false, new Vector3(61, 1.15f, 6), navigation,
-                new Rect(43, 1, 22, 8), new Vector3(52, 0, 5), new Vector3(62, 0, 7));
+            Host("Guard_West", false, new Vector3(6, 1.15f, 31),
+                new Vector3(5, 0, 30), new Vector3(9, 0, 34));
+            Host("Heavy_Cache", true, new Vector3(35, 1.45f, 28),
+                new Vector3(35, 0, 28), new Vector3(38, 0, 23));
+            Host("Guard_Relay", false, new Vector3(35, 1.15f, 12),
+                new Vector3(35, 0, 12), new Vector3(37, 0, 17));
+            Host("Heavy_Finish", true, new Vector3(61, 1.45f, 23),
+                new Vector3(61, 0, 23), new Vector3(56, 0, 25));
+            Host("Guard_East_Sentinel", false, new Vector3(61, 1.15f, 6),
+                new Vector3(52, 0, 5), new Vector3(62, 0, 7));
 
-            var challenge = new GameObject("Local04_ChallengeHUD").AddComponent<LocalLevel04Challenge>();
-            challenge.gates = new[] { a, b, c, d };
-            challenge.navigation = navigation;
-            challenge.targets = new[] { targetA, targetB };
-            challenge.hosts = new[] { g1, h1, g2, h2, g3 };
-            var goal = new GameObject("Spirit_Only_Finish");
+            var goal = new GameObject("ExitZone");
             goal.transform.position = new Vector3(53, 1.5f, 36);
-            var trigger = goal.AddComponent<BoxCollider>(); trigger.size = new Vector3(6, 3, 4); trigger.isTrigger = true;
-            goal.AddComponent<LocalLevel04Goal>().challenge = challenge;
-            challenge.finish = goal.transform;
+            var exit = goal.AddComponent<LevelExit>();
+            var trigger = goal.GetComponent<BoxCollider>();
+            trigger.size = new Vector3(6, 3, 4); trigger.isTrigger = true;
+            Set(exit, "puzzleDoor", doorB); Set(exit, "breakableWall", wallB);
+
+            var config = Config();
+            Possession.Editor.LevelBuildKit.ApplyConfig(config, manager, spiritObject);
+            var hud = CopySharedHUD(scene);
+            ConfigureObjectives(hud, doorA, wallA, doorB, wallB);
 
             Label("Start", "START / THE RELAY RUN\nE: POSSESS   LMB: ABILITY", new Vector3(6, .14f, 7), .25f, Color.white);
             Label("West", "01 / GUARD RANGE", new Vector3(7, .14f, 26), .3f, Color.cyan);
@@ -148,7 +135,8 @@ namespace Possession.LocalLevel04.Editor
             Set(follow, "target", spiritObject.transform); Set(follow, "offset", offset);
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.SaveAssets();
-            Debug.Log("Local Level 04 built. Not added to Build Settings. Open it and press Play.");
+            Possession.Editor.LevelBuildKit.RegisterScene(ScenePath);
+            Debug.Log("Level 04 built with shared gameplay, HUD and level config. Open it and press Play.");
         }
 
         // Updates only presentation in the saved local scene, preserving hand-edited layout.
@@ -174,19 +162,13 @@ namespace Possession.LocalLevel04.Editor
             EditorSceneManager.SaveScene(scene);
         }
 
-        private static EnemyBase Host(string name, bool heavy, Vector3 position, LocalLevel04Navigation nav,
-            Rect territory, params Vector3[] points)
+        private static EnemyBase Host(string name, bool heavy, Vector3 position, params Vector3[] points)
         {
-            var node = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            node.name = name; node.layer = 6; node.transform.position = position;
-            node.transform.localScale = Vector3.one * (heavy ? 1.3f : 1f);
-            UnityEngine.Object.DestroyImmediate(node.GetComponent<CapsuleCollider>());
-            var cc = node.AddComponent<CharacterController>();
-            cc.height = 2; cc.radius = .5f; cc.skinWidth = .05f; cc.minMoveDistance = 0;
+            string path = heavy ? "Assets/Prefabs/Enemies/Heavy.prefab" : "Assets/Prefabs/Enemies/Guard.prefab";
+            var node = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(path));
+            node.name = name; node.transform.position = position;
             node.GetComponent<Renderer>().sharedMaterial = heavy ? heavyMat : guardMat;
-            EnemyBase enemy = heavy ? (EnemyBase)node.AddComponent<LocalLevel04Heavy>() : node.AddComponent<LocalLevel04Guard>();
-            var brain = node.GetComponent<LocalLevel04Brain>(); brain.navigation = nav; brain.territory = territory;
-            Set(enemy, "moveSpeed", heavy ? 2.2f : 3.2f); Set(enemy, "maxHP", heavy ? 5 : 3);
+            var enemy = node.GetComponent<EnemyBase>();
             var settings = new SerializedObject(enemy);
             var route = settings.FindProperty("waypoints"); route.arraySize = points.Length;
             for (int i = 0; i < points.Length; i++)
@@ -195,36 +177,117 @@ namespace Possession.LocalLevel04.Editor
                 wp.transform.position = points[i]; route.GetArrayElementAtIndex(i).objectReferenceValue = wp.transform;
             }
             settings.ApplyModifiedPropertiesWithoutUndo();
-            Ability ability;
-            if (heavy) ability = node.AddComponent<LocalLevel04Smash>();
-            else
+            var hostile = node.GetComponent<EnemyContactDamage>();
+            if (hostile == null) hostile = node.AddComponent<EnemyContactDamage>();
+            Set(hostile, "dustMaterial", AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/P5_FXDust.mat"));
+            var shot = node.GetComponent<ShootAbility>();
+            if (shot != null)
             {
-                var shot = node.AddComponent<LocalLevel04Shot>();
-                shot.projectile = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Projectile.prefab");
-                ability = shot;
+                var so = new SerializedObject(shot);
+                Set(hostile, "projectilePrefab", so.FindProperty("projectilePrefab").objectReferenceValue);
+                Set(hostile, "firePoint", so.FindProperty("firePoint").objectReferenceValue);
             }
-            Set(ability, "maxUses", heavy ? 1 : 3); Set(ability, "cooldown", .5f);
+            if (heavy && node.GetComponent<HeavySmashIndicator>() == null)
+                node.AddComponent<HeavySmashIndicator>();
             return enemy;
         }
 
-        private static LocalLevel04Gate Gate(string name, float x, float z, float sx, float sz, bool heavy, string message)
+        private static Door Door(string name, float x, float z, float sx, float sz, Target target)
         {
-            var cube = Cube(name, new Vector3(x, 3.1f, z), new Vector3(sx, 6, sz), heavy ? amberMat : cyanMat);
-            walls.Add(cube.GetComponent<Collider>());
-            var gate = cube.AddComponent<LocalLevel04Gate>(); gate.requiresHeavy = heavy;
-            gate.panel = cube.GetComponent<Renderer>();
-            gate.sign = Label(name + "_Sign", message, new Vector3(x, 6.15f, z), .19f, Color.white);
-            return gate;
+            var cube = Cube(name, new Vector3(x, 3.1f, z), new Vector3(sx, 6, sz), cyanMat);
+            cube.layer = 7;
+            var door = cube.AddComponent<Door>();
+            var so = new SerializedObject(door);
+            var targets = so.FindProperty("requiredTargets"); targets.arraySize = 1;
+            targets.GetArrayElementAtIndex(0).objectReferenceValue = target;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            Label(name + "_Sign", "SHOOT TARGET TO OPEN", new Vector3(x, .14f, z), .19f, Color.cyan);
+            return door;
         }
+
+        private static BreakableWall Breakable(string name, float x, float z, float sx, float sz)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Puzzle/BreakableWall.prefab");
+            var node = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            node.name = name; node.layer = 7;
+            node.transform.position = new Vector3(x, 3.1f, z);
+            node.transform.localScale = new Vector3(sx, 6, sz);
+            node.GetComponent<Renderer>().sharedMaterial = amberMat;
+            Label(name + "_Sign", "HEAVY / SMASH WALL", new Vector3(x, .14f, z), .19f, Color.yellow);
+            return node.GetComponent<BreakableWall>();
+        }
+
+        private static LevelConfig Config()
+        {
+            const string path = "Assets/Config/LevelConfig_Level_04.asset";
+            var config = AssetDatabase.LoadAssetAtPath<LevelConfig>(path);
+            if (config != null) return config;
+            config = ScriptableObject.CreateInstance<LevelConfig>();
+            var so = new SerializedObject(config);
+            so.FindProperty("levelName").stringValue = "Level_04_Local";
+            so.ApplyModifiedPropertiesWithoutUndo();
+            Set(config, "possessionTimer", 10f); Set(config, "levelTime", 120f);
+            Set(config, "guardDetectionRange", 10f);
+            Set(config, "goldParTime", 60f); Set(config, "silverParTime", 85f); Set(config, "bronzeParTime", 110f);
+            Directory.CreateDirectory("Assets/Config"); AssetDatabase.Refresh();
+            AssetDatabase.CreateAsset(config, path);
+            return config;
+        }
+
+        private static HUDManager CopySharedHUD(Scene destination)
+        {
+            var template = EditorSceneManager.OpenScene("Assets/Scenes/Level_01.unity", OpenSceneMode.Additive);
+            try
+            {
+                var hud = template.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<HUDManager>(true)).Single();
+                SceneManager.SetActiveScene(destination);
+                var clone = UnityEngine.Object.Instantiate(hud.transform.root.gameObject);
+                clone.name = "HUD_Canvas";
+                SceneManager.MoveGameObjectToScene(clone, destination);
+                var events = template.GetRootGameObjects().FirstOrDefault(root => root.GetComponent<EventSystem>() != null);
+                if (events != null)
+                {
+                    var input = UnityEngine.Object.Instantiate(events);
+                    input.name = "EventSystem";
+                    SceneManager.MoveGameObjectToScene(input, destination);
+                }
+                return clone.GetComponentInChildren<HUDManager>(true);
+            }
+            finally { EditorSceneManager.CloseScene(template, true); }
+        }
+
+        private static void ConfigureObjectives(HUDManager hud, Door firstDoor, BreakableWall firstWall,
+            Door secondDoor, BreakableWall secondWall)
+        {
+            var so = new SerializedObject(hud);
+            var steps = so.FindProperty("puzzleObjectives"); steps.arraySize = 4;
+            UnityEngine.Object[] gates = { firstDoor, firstWall, secondDoor, secondWall };
+            string[] messages = {
+                "Possess the west GUARD and shoot the north-west TARGET",
+                "Possess the central HEAVY and smash the CACHE wall",
+                "Bring a GUARD into the cache and shoot the RELAY target",
+                "Go around the east baffle and smash the FINAL wall as HEAVY"
+            };
+            for (int i = 0; i < gates.Length; i++)
+            {
+                var step = steps.GetArrayElementAtIndex(i);
+                step.FindPropertyRelative("door").objectReferenceValue = gates[i] as Door;
+                step.FindPropertyRelative("wall").objectReferenceValue = gates[i] as BreakableWall;
+                step.FindPropertyRelative("instruction").stringValue = messages[i];
+            }
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         private static Target MakeTarget(string name, Vector3 point)
         {
             var node = Cube(name, point, new Vector3(1.5f, 1.5f, 1.5f), redMat);
+            node.layer = 7;
             return node.AddComponent<Target>();
         }
         private static void Wall(string name, float x, float z, float sx, float sz)
         {
             var wall = Cube(name, new Vector3(x, 3.1f, z), new Vector3(sx, 6, sz), wallMat);
-            wall.transform.SetParent(geometry); walls.Add(wall.GetComponent<Collider>());
+            wall.transform.SetParent(geometry);
         }
         private static void Floor(string name, float minX, float maxX, float minZ, float maxZ, Color color, float lift = 0)
         {
