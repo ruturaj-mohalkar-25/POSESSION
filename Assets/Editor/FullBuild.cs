@@ -40,6 +40,8 @@ namespace Possession.Editor
 
             Debug.Log("Step 2/6: Building Level_02 and Level_03 layouts (P4)...");
             LevelConfigAssets.CreateAll();
+            foreach (string path in new[] { "Assets/Scenes/Level_02.unity", "Assets/Scenes/Level_03.unity" })
+                if (System.IO.File.Exists(path)) AssetDatabase.DeleteAsset(path);
             BuildLevel02.Build();
             BuildLevel03.Build();
 
@@ -56,6 +58,7 @@ namespace Possession.Editor
             Debug.Log("Step 6/6: Setting up HUD in all levels (P5)...");
             HUDSetup.SetupHUD();
 
+            UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/Scenes/MainMenu.unity");
             Debug.Log("=== Full Build All Levels: complete ===");
         }
     }
