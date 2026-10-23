@@ -66,7 +66,19 @@ namespace Possession
             foreach (var cue in cues)
             {
                 if (cue == null) continue;
-                cue.SetMode(cue == green ? EnemyReadability.Mode.Possessable : EnemyReadability.Mode.None);
+                var enemy = cue.GetComponent<EnemyBase>();
+                if (enemy == null)
+                {
+                    cue.SetMode(EnemyReadability.Mode.None);
+                    continue;
+                }
+
+                if (cue == green)
+                    cue.SetMode(EnemyReadability.Mode.Possessable);
+                else if (enemy.IsChasing || enemy.IsHostile)
+                    cue.SetMode(EnemyReadability.Mode.Hostile);
+                else
+                    cue.SetMode(EnemyReadability.Mode.None);
             }
         }
 
