@@ -3,11 +3,12 @@ using UnityEngine.Rendering;
 
 namespace Possession
 {
-    // Per-enemy readability cue: a ground ring drawn under an enemy.
-    // Green marks the enemy the Spirit can possess right now; red marks a chasing or
-    // hostile enemy. EnemyReadabilityController decides the mode each frame; this
-    // component only draws it. The ring owns its own LineRenderer so shared scenes,
-    // prefabs and enemy AI stay untouched. Mirrors HeavySmashIndicator's approach.
+    // Per-enemy readability cue: a ground ring plus a floating "E" badge.
+    // A green ring and the "E" mark the enemy the Spirit can possess right now;
+    // a red ring marks a chasing or hostile enemy. EnemyReadabilityController decides
+    // the mode each frame; this component only draws it. Visuals are self-contained
+    // (its own LineRenderer and TextMesh), so shared scenes, prefabs and enemy AI stay
+    // untouched. Mirrors HeavySmashIndicator's runtime-visual approach.
     [DisallowMultipleComponent]
     public sealed class EnemyReadability : MonoBehaviour
     {
@@ -22,6 +23,10 @@ namespace Possession
         private LineRenderer ring;
         private Vector3[] ringPoints;
         private float ringRadius = 0.9f;
+        private MeshRenderer badgeRenderer;
+        private TextMesh badge;
+        private Transform badgeTransform;
+        private Camera cam;
         private Mode mode;
 
         public void SetMode(Mode value) => mode = value;
@@ -49,7 +54,31 @@ namespace Possession
             ring.receiveShadows = false;
             ring.enabled = false;
 
+            CreateBadge();
             MeasureRadius();
+        }
+
+        private void CreateBadge()
+        {
+            var badgeGo = new GameObject("Possess Badge");
+            badgeGo.layer = 2;
+            badgeTransform = badgeGo.transform;
+            badgeTransform.SetParent(transform, false);
+            badge = badgeGo.AddComponent<TextMesh>();
+            badge.text = "E";
+            badge.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            badge.fontSize = 64;
+            badge.characterSize = 0.08f;
+            badge.anchor = TextAnchor.MiddleCenter;
+            badge.alignment = TextAlignment.Center;
+            badge.fontStyle = FontStyle.Bold;
+            badge.color = PossessableColor;
+
+            badgeRenderer = badgeGo.GetComponent<MeshRenderer>();
+            badgeRenderer.sharedMaterial = badge.font.material;
+            badgeRenderer.shadowCastingMode = ShadowCastingMode.Off;
+            badgeRenderer.receiveShadows = false;
+            badgeRenderer.enabled = false;
         }
 
         private void MeasureRadius()
@@ -68,6 +97,7 @@ namespace Possession
 
             bool showRing = shown != Mode.None;
             ring.enabled = showRing;
+            badgeRenderer.enabled = shown == Mode.Possessable;
             if (!showRing) return;
 
             Color baseColor = shown == Mode.Possessable ? PossessableColor : HostileColor;
@@ -86,6 +116,13 @@ namespace Possession
                     center.z + Mathf.Sin(angle) * ringRadius);
             }
             ring.SetPositions(ringPoints);
+
+            if (!badgeRenderer.enabled) return;
+            if (cam == null) cam = Camera.main;
+            float top = body != null && body.enabled ? body.bounds.max.y : center.y + 1.5f;
+            badgeTransform.position = new Vector3(center.x, top + 0.6f, center.z);
+            if (cam != null) badgeTransform.rotation = cam.transform.rotation;
+            badge.color = pulsed;
         }
     }
 }
