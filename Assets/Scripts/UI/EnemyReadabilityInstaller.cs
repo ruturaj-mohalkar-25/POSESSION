@@ -17,9 +17,15 @@ namespace Possession
         private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             foreach (var root in scene.GetRootGameObjects())
+            {
                 foreach (var enemy in root.GetComponentsInChildren<EnemyBase>(true))
                     if (enemy.GetComponent<EnemyReadability>() == null)
                         enemy.gameObject.AddComponent<EnemyReadability>();
+
+                foreach (var heavy in root.GetComponentsInChildren<HeavyEnemy>(true))
+                    if (heavy.GetComponent<HeavyFeel>() == null)
+                        heavy.gameObject.AddComponent<HeavyFeel>();
+            }
 
             if (Object.FindFirstObjectByType<EnemyReadabilityController>() == null)
             {
@@ -29,9 +35,10 @@ namespace Possession
         }
     }
 
-    // Each frame, mark the nearest possessable enemy the Spirit can reach and see with
-    // the green possess cue. The pick mirrors PossessionController so the cue only
-    // appears where a possess would actually succeed.
+    // Each frame: the nearest possessable enemy the Spirit can reach and see gets the
+    // green possess cue; every chasing or hostile enemy gets the red cue; the rest are
+    // cleared. The green pick mirrors PossessionController so the cue only appears where
+    // a possess would actually succeed.
     public sealed class EnemyReadabilityController : MonoBehaviour
     {
         // Matches PossessionController's default possessRange.
