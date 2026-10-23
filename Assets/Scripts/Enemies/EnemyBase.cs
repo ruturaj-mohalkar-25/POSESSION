@@ -41,6 +41,14 @@ namespace Possession
         public float DetectionRange => detectionRange;
         public float PatrolStartDelay => patrolStartDelay;
 
+        // Lets a readability/feel cue retune this enemy's speed at runtime without
+        // touching the shared prefab (e.g. widening the Heavy's speed gap).
+        public float MoveSpeed
+        {
+            get => moveSpeed;
+            set => moveSpeed = Mathf.Max(0f, value);
+        }
+
         protected virtual void Awake()
         {
             currentHP = maxHP;
