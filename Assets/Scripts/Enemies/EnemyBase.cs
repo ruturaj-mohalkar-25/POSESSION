@@ -36,6 +36,8 @@ namespace Possession
         public bool IsChasing => !isPossessed && chaseTarget != null
             && chaseTarget.isActiveAndEnabled;
         public bool IsIdle => !isPossessed && !IsChasing && waypointWaitTimer > 0f;
+        // True while the enemy is in its post-eject hostile state (chasing or not).
+        public bool IsHostile => isHostile;
         public float DetectionRange => detectionRange;
         public float PatrolStartDelay => patrolStartDelay;
 
