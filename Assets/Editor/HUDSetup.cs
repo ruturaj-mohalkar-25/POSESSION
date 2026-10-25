@@ -98,25 +98,20 @@ namespace Possession.Editor
             var healthFill = FindOrCreateImage(healthBG.transform, "HealthFill", new Color(0.2f, 0.85f, 0.3f));
             StretchFromLeft(healthFill.rectTransform);
 
-            // Possession timer group: top-right, text above a draining bar
+            // Possession timer group: a small white bar that PossessionCues keeps above the possessed body
+            var white = new Color(0.95f, 0.95f, 1f);
             var group = FindOrCreateRect(canvas, "PossessTimerGroup");
-            group.anchorMin = group.anchorMax = group.pivot = new Vector2(1, 1);
-            group.anchoredPosition = new Vector2(-30, -24);
-            group.sizeDelta = new Vector2(460, 98);
+            group.anchorMin = group.anchorMax = new Vector2(0.5f, 0.5f);
+            group.pivot = new Vector2(0.5f, 0f);
+            group.anchoredPosition = Vector2.zero;
+            group.sizeDelta = new Vector2(160, 14);
 
+            // Bar only: the countdown text stays wired to HUDManager but is not shown
             var possessText = so.FindProperty("possessTimerText").objectReferenceValue as Text;
             if (possessText != null)
             {
                 possessText.transform.SetParent(group, false);
-                possessText.gameObject.SetActive(true); // the group handles visibility now
-                var r = possessText.rectTransform;
-                r.anchorMin = new Vector2(0, 1);
-                r.anchorMax = new Vector2(1, 1);
-                r.pivot = new Vector2(1, 1);
-                r.anchoredPosition = Vector2.zero;
-                r.sizeDelta = new Vector2(0, 56);
-                StyleText(possessText, 40, TextAnchor.MiddleRight);
-                possessText.text = "POSSESSED 15s";
+                possessText.gameObject.SetActive(false);
             }
 
             var possessBG = FindOrCreateImage(group, "PossessBarBG", BarBackground);
@@ -125,9 +120,33 @@ namespace Possession.Editor
             bgRect.anchorMax = new Vector2(1, 0);
             bgRect.pivot = new Vector2(0.5f, 0);
             bgRect.anchoredPosition = Vector2.zero;
-            bgRect.sizeDelta = new Vector2(0, 30);
-            var possessFill = FindOrCreateImage(possessBG.transform, "PossessFill", new Color(0.3f, 0.8f, 1f));
+            bgRect.sizeDelta = new Vector2(0, 14);
+            var possessFill = FindOrCreateImage(possessBG.transform, "PossessFill", white);
             StretchFromLeft(possessFill.rectTransform);
+            so.FindProperty("possessBarColor").colorValue = white;
+
+            // Short ability hint under the possessed body, positioned and faded by PossessionCues
+            var hint = FindOrCreateText(canvas, "AbilityHint");
+            var hRect = hint.rectTransform;
+            hRect.anchorMin = hRect.anchorMax = hRect.pivot = new Vector2(0.5f, 0.5f);
+            hRect.sizeDelta = new Vector2(300, 44);
+            StyleText(hint, 30, TextAnchor.MiddleCenter);
+            hint.color = white;
+            hint.text = "Shoot";
+            hint.gameObject.SetActive(false);
+
+            var cues = canvas.GetComponent<PossessionCues>();
+            if (cues == null) cues = canvas.gameObject.AddComponent<PossessionCues>();
+            var cso = new SerializedObject(cues);
+            cso.FindProperty("timerGroup").objectReferenceValue = group;
+            cso.FindProperty("hintText").objectReferenceValue = hint;
+            cso.FindProperty("possessedMaterial").objectReferenceValue =
+                AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/P5_Ghost.mat");
+            // Guard aim line: a thick warm-gold beam matching the bullet colour
+            cso.FindProperty("aimColor").colorValue = new Color(1f, 0.75f, 0.2f, 0.9f);
+            cso.FindProperty("aimStartWidth").floatValue = 0.22f;
+            cso.FindProperty("aimEndWidth").floatValue = 0.08f;
+            cso.ApplyModifiedPropertiesWithoutUndo();
 
             // Centre-screen message for forced eject
             var message = FindOrCreateText(canvas, "MessageText");
