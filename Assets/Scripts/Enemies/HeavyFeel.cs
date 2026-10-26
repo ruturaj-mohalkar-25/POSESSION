@@ -25,13 +25,13 @@ namespace Possession
         private float sinceStride;
         private float bobAge = Mathf.Infinity;
 
+        private float baseSpeed;     // the Heavy's unmodified MoveSpeed (its LevelConfig stat)
+        private bool speedReduced;
+
         private void Awake()
         {
             heavy = GetComponent<HeavyEnemy>();
             body = GetComponent<CharacterController>();
-
-            // Widen the speed gap vs the Guard so the Heavy reads as heavy and slow.
-            heavy.MoveSpeed *= slowFactor;
 
             var meshRenderer = GetComponentInChildren<MeshRenderer>();
             if (meshRenderer != null && meshRenderer.transform != transform)
@@ -57,12 +57,15 @@ namespace Possession
         {
             EventBus.Possessed -= OnPossessed;
             EventBus.Ejected -= OnEjected;
+            RestoreSpeed();
             RestoreMesh();
         }
 
         private void OnPossessed(EnemyBase enemy, PlayerState state)
         {
             possessed = enemy == (EnemyBase)heavy && state == PlayerState.Possessed_Heavy;
+            if (possessed) ReduceSpeed();
+            else RestoreSpeed();
             lastFootPosition = transform.position;
             sinceStride = 0f;
         }
@@ -71,7 +74,24 @@ namespace Possession
         {
             if (enemy != (EnemyBase)heavy) return;
             possessed = false;
+            RestoreSpeed();
             RestoreMesh();
+        }
+
+        // Slow only while the player drives the Heavy, so AI patrol keeps its LevelConfig speed.
+        private void ReduceSpeed()
+        {
+            if (speedReduced) return;
+            baseSpeed = heavy.MoveSpeed;
+            heavy.MoveSpeed = baseSpeed * slowFactor;
+            speedReduced = true;
+        }
+
+        private void RestoreSpeed()
+        {
+            if (!speedReduced) return;
+            heavy.MoveSpeed = baseSpeed;
+            speedReduced = false;
         }
 
         private void Update()
