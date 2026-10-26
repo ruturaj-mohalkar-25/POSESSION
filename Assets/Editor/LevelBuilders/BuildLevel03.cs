@@ -84,23 +84,6 @@ namespace Possession.Editor
 
             var labels = new GameObject("P4_Labels").transform;
             labels.SetParent(layout);
-            LevelBuildKit.FloorSign(labels, "StartInstructions",
-                "LEVEL 03\nWASD move   |   SPACE jump   |   E possess / eject\n"
-                + "GUARD shoots the target to open the door\n"
-                + "go LEFT and up, cross the top, come down the RIGHT\n"
-                + "each HEAVY smashes one wall; finish as the SPIRIT",
-                new Vector3(0f, 0f, 4f));
-            LevelBuildKit.FloorSign(labels, "Sign_Target", "SHOOT THE TARGET", new Vector3(0f, 0f, 7f));
-            LevelBuildKit.FloorSign(labels, "Sign_Door", "THE TARGET OPENS THIS DOOR", new Vector3(0f, 0f, 12f));
-            LevelBuildKit.FloorSign(labels, "Sign_Fork", "ONLY THE LEFT PATH IS OPEN", new Vector3(-8f, 0f, 20f));
-            LevelBuildKit.FloorSign(labels, "Sign_Top", "CROSS TO THE RIGHT CORRIDOR", new Vector3(0f, 0f, 37f));
-            LevelBuildKit.FloorSign(labels, "Sign_Heavy_01", "POSSESS A HEAVY, SMASH THIS WALL",
-                new Vector3(8f, 0f, 32.5f));
-            LevelBuildKit.FloorSign(labels, "Sign_Heavy_02", "SECOND HEAVY SMASHES THE EXIT WALL",
-                new Vector3(8f, 0f, 14.5f));
-            LevelBuildKit.FloorSign(labels, "Sign_Exit", "EJECT AND REACH THE EXIT AS THE SPIRIT",
-                new Vector3(9f, 0f, 4f), 0.045f);
-
             LevelBuildKit.ObjectLabel(labels, "SHOOT ME", target.gameObject, new Vector3(0f, 1.3f, 0f),
                 new Color(1f, 0.35f, 0.3f), "HIT!");
             LevelBuildKit.ObjectLabel(labels, "LOCKED", door.gameObject, new Vector3(0f, 3.4f, -0.6f),

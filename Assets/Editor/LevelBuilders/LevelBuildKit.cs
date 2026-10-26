@@ -269,26 +269,6 @@ namespace Possession.Editor
             return guard;
         }
 
-        public static GameObject FloorSign(Transform parent, string name, string text, Vector3 position,
-            float characterSize = 0.055f)
-        {
-            var sign = new GameObject(name);
-            sign.transform.SetParent(parent);
-            sign.transform.position = new Vector3(position.x, 0.13f, position.z);
-            sign.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-
-            var label = sign.AddComponent<TextMesh>();
-            label.text = text;
-            label.anchor = TextAnchor.MiddleCenter;
-            label.alignment = TextAlignment.Center;
-            label.fontSize = 64;
-            label.characterSize = characterSize;
-            label.color = Color.white;
-            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            sign.GetComponent<MeshRenderer>().sharedMaterial = label.font.material;
-            return sign;
-        }
-
         public static WorldLabel ObjectLabel(Transform parent, string text, GameObject follow, Vector3 offset,
             Color color, string doneText = "")
         {
