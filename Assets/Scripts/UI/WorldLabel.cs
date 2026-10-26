@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 namespace Possession
@@ -18,8 +19,8 @@ namespace Possession
         [SerializeField] private bool hiddenUntilWallBroken; // exit label sits behind the brick wall
         [SerializeField] private Renderer background; // optional dark box behind the text
         [SerializeField] private float backgroundPadding = 0.35f;
-
         private bool wallBroken;
+        private Coroutine pulseRoutine;
 
         private TextMesh label;
         private Renderer labelRenderer;
@@ -108,6 +109,26 @@ namespace Possession
             if (string.IsNullOrEmpty(doneText)) return;
             label.text = doneText;
             label.color = doneColor;
+            Pulse();
+        }
+
+        private void Pulse()
+        {
+            if (!isActiveAndEnabled) return;
+            if (pulseRoutine != null) StopCoroutine(pulseRoutine);
+            pulseRoutine = StartCoroutine(PulseRoutine());
+        }
+
+        private IEnumerator PulseRoutine()
+        {
+            const float duration = 0.6f;
+            for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
+            {
+                float k = 1f + 0.35f * Mathf.Sin(t / duration * Mathf.PI);
+                transform.localScale = Vector3.one * k;
+                yield return null;
+            }
+            transform.localScale = Vector3.one;
         }
     }
 }

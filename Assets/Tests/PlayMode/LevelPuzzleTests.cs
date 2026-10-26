@@ -61,7 +61,8 @@ namespace Possession.Tests
             Assert.That(door.IsOpen, Is.False);
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Projectile.prefab");
             var projectile = Object.Instantiate(prefab,
-                target.transform.position - Vector3.forward * 2f, Quaternion.identity);
+                target.transform.position - target.transform.forward * 2f,
+                Quaternion.LookRotation(target.transform.forward));
             yield return new WaitForSeconds(0.3f);
             Assert.That(target.IsHit, Is.True);
             Assert.That(door.IsOpen, Is.True);
@@ -75,9 +76,10 @@ namespace Possession.Tests
         {
             var heavy = Object.FindFirstObjectByType<HeavyEnemy>();
             var wall = Object.FindFirstObjectByType<BreakableWall>();
+            Vector3 wallPos = wall.transform.position;
             var controller = heavy.GetComponent<CharacterController>();
             controller.enabled = false;
-            heavy.transform.SetPositionAndRotation(new Vector3(0f, 1.4f, 31.5f), Quaternion.identity);
+            heavy.transform.SetPositionAndRotation(wallPos + Vector3.back * 1.5f + Vector3.up * 1.4f, Quaternion.identity);
             controller.enabled = true;
             heavy.OnPossessed();
             Physics.SyncTransforms();
@@ -85,7 +87,7 @@ namespace Possession.Tests
             Assert.That(wall.CurrentHP, Is.LessThanOrEqualTo(0));
             Assert.That(wall.gameObject.activeSelf, Is.False);
             Physics.SyncTransforms();
-            Assert.That(Physics.Raycast(new Vector3(0f, 1.5f, 32.5f),
+            Assert.That(Physics.Raycast(new Vector3(wallPos.x, 1.5f, wallPos.z - 0.5f),
                 Vector3.forward, 1f, ~0, QueryTriggerInteraction.Ignore), Is.False);
         }
 

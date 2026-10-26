@@ -14,10 +14,29 @@ namespace Possession.Editor
         const string TextureFolder = "Assets/Art/Textures";
         const string ModelName = "P5_Model";
 
-        // Level
-        static readonly Color FloorRoom1 = new Color(0.42f, 0.32f, 0.36f); // muted dusty pink
-        static readonly Color FloorRoom2 = new Color(0.40f, 0.31f, 0.37f);
-        static readonly Color FloorRoom3 = new Color(0.43f, 0.33f, 0.34f);
+        static readonly string[] LevelPaths =
+        {
+            "Assets/Scenes/Level_01.unity", "Assets/Scenes/Level_02.unity", "Assets/Scenes/Level_03.unity"
+        };
+
+        // Level: each level has its own floor colour so it is recognisable at a glance,
+        // with three close shades so neighbouring rooms stay distinguishable
+        static readonly string[] FloorMaterialPrefix = { "P5_FloorRoom", "P5_FloorL2_", "P5_FloorL3_" };
+        static readonly Color[][] FloorPalettes =
+        {
+            new[] // Level_01: muted dusty pink
+            {
+                new Color(0.42f, 0.32f, 0.36f), new Color(0.40f, 0.31f, 0.37f), new Color(0.43f, 0.33f, 0.34f)
+            },
+            new[] // Level_02: muted sage green
+            {
+                new Color(0.33f, 0.42f, 0.36f), new Color(0.31f, 0.40f, 0.35f), new Color(0.35f, 0.43f, 0.34f)
+            },
+            new[] // Level_03: warm sand
+            {
+                new Color(0.47f, 0.41f, 0.31f), new Color(0.45f, 0.39f, 0.30f), new Color(0.48f, 0.42f, 0.29f)
+            }
+        };
         static readonly Color WallColor = new Color(0.55f, 0.72f, 0.90f);  // light blue
 
         // Characters
@@ -44,30 +63,67 @@ namespace Possession.Editor
                 return;
             }
 
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+
             EnsureFolder("Assets/Art", "Materials");
             EnsureFolder("Assets/Art", "Textures");
+            BuildProjectileEffects();
 
-            // Rooms
-            Paint("Room1_Floor", Mat("P5_FloorRoom1", FloorRoom1));
-            Paint("Room2_Floor", Mat("P5_FloorRoom2", FloorRoom2));
-            Paint("Room3_Floor", Mat("P5_FloorRoom3", FloorRoom3));
+            string startScene = EditorSceneManager.GetActiveScene().path;
+            for (int i = 0; i < LevelPaths.Length; i++)
+            {
+                if (!System.IO.File.Exists(LevelPaths[i])) continue;
+                var scene = EditorSceneManager.OpenScene(LevelPaths[i], OpenSceneMode.Single);
+                ApplyToLevel(i);
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+            }
+            AssetDatabase.SaveAssets();
+
+            if (!string.IsNullOrEmpty(startScene) && System.IO.File.Exists(startScene))
+                EditorSceneManager.OpenScene(startScene, OpenSceneMode.Single);
+        }
+
+        static void ApplyToLevel(int level)
+        {
+            // Rooms: every *_Floor gets the level's palette, walls are the shared light blue
+            var palette = FloorPalettes[Mathf.Min(level, FloorPalettes.Length - 1)];
+            var prefix = FloorMaterialPrefix[Mathf.Min(level, FloorMaterialPrefix.Length - 1)];
+            var floors = new System.Collections.Generic.List<GameObject>();
+            foreach (var t in AllInScene<Transform>())
+                if (t.name.EndsWith("_Floor") && t.GetComponent<Renderer>() != null) floors.Add(t.gameObject);
+            floors.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+            for (int i = 0; i < floors.Count; i++)
+                Paint(floors[i], Mat(prefix + (i % palette.Length + 1), palette[i % palette.Length]));
+
             var wallMat = Mat("P5_Wall", WallColor);
             foreach (var name in new[] { "Wall_Left", "Wall_Right", "Wall_Back", "Wall_Front",
                 "Divider1_Left", "Divider1_Right", "Divider2_Left", "Divider2_Right",
                 "WallPuzzle_Left", "WallPuzzle_Right" })
-                Paint(name, wallMat);
+            {
+                var wall = Find(name);
+                if (wall != null) Paint(wall, wallMat);
+            }
+            // P4 levels keep their walls under a "Walls" group
+            var walls = Find("Walls");
+            if (walls != null)
+                foreach (var r in walls.GetComponentsInChildren<Renderer>(true)) r.sharedMaterial = wallMat;
 
-            BuildSpirit();
-            BuildGuard();
-            BuildHeavy();
-            BuildTarget();
-            var padlock = BuildDoor();
-            BuildBrickWall();
+            foreach (var spirit in AllInScene<SpiritController>()) BuildSpirit(spirit.gameObject);
+            foreach (var guard in AllInScene<GuardEnemy>()) BuildGuard(guard.gameObject);
+            foreach (var heavy in AllInScene<HeavyEnemy>()) BuildHeavy(heavy.gameObject);
+            foreach (var target in AllInScene<Target>()) BuildTarget(target.gameObject);
+            var padlocks = new System.Collections.Generic.Dictionary<Door, GameObject>();
+            foreach (var door in AllInScene<Door>()) padlocks[door] = BuildDoor(door.gameObject);
+            foreach (var wall in AllInScene<BreakableWall>())
+            {
+                BuildBrickWall(wall.gameObject);
+                BuildWallEffects(wall.gameObject);
+            }
             BuildExit();
 
-            BuildEffects();
-            BuildLabels(padlock);
-            UpdateFloorSign();
+            BuildLabels(padlocks);
+            HideFloorSigns();
 
             var cam = Camera.main;
             if (cam != null)
@@ -75,20 +131,12 @@ namespace Possession.Editor
                 cam.clearFlags = CameraClearFlags.SolidColor;
                 cam.backgroundColor = new Color(0.08f, 0.09f, 0.11f);
             }
-
-            var scene = EditorSceneManager.GetActiveScene();
-            EditorSceneManager.MarkSceneDirty(scene);
-            EditorSceneManager.SaveScene(scene);
-            AssetDatabase.SaveAssets();
-            Debug.Log("[P5] Minimal visuals applied and scene saved.");
         }
 
         // ---------------- Characters ----------------
 
-        static void BuildSpirit()
+        static void BuildSpirit(GameObject spirit)
         {
-            var spirit = Find("Spirit");
-            if (spirit == null) return;
 
             // The capsule itself is the ghost body (SpiritController hides it while possessing)
             Paint(spirit, Mat("P5_Ghost", GhostColor, emission: new Color(0.45f, 0.45f, 0.5f)));
@@ -117,10 +165,8 @@ namespace Possession.Editor
         }
 
         // Minimal: coloured body + hat + the tool that tells you its ability
-        static void BuildGuard()
+        static void BuildGuard(GameObject guard)
         {
-            var guard = Find("Guard");
-            if (guard == null) return;
             ShowBody(guard, Mat("P5_PoliceBlue", PoliceBlue));
             var model = NewModel(guard.transform);
             var black = Mat("P5_Black", Black);
@@ -132,10 +178,8 @@ namespace Possession.Editor
             Part(model, PrimitiveType.Cube, "Pistol", new Vector3(0.5f, -0.05f, 0.3f), new Vector3(0.12f, 0.15f, 0.42f), black);
         }
 
-        static void BuildHeavy()
+        static void BuildHeavy(GameObject heavy)
         {
-            var heavy = Find("Heavy");
-            if (heavy == null) return;
             ShowBody(heavy, Mat("P5_WorkerOrange", WorkerOrange));
             var model = NewModel(heavy.transform);
             var hat = Mat("P5_HardHat", HardHat);
@@ -150,26 +194,27 @@ namespace Possession.Editor
 
         // ---------------- Puzzle pieces ----------------
 
-        static void BuildTarget()
+        static void BuildTarget(GameObject target)
         {
-            var target = Find("Target");
-            if (target == null) return;
             Paint(target, Mat("P5_Board", BoardColor));
             var model = NewModel(target.transform);
 
-            // Bullseye rings on the side facing the player (-z). Discs are cylinders turned to face -z.
+            // Bullseye rings on both faces, so it reads from whichever side the Guard aims.
+            // Discs are cylinders turned to face along z.
             var red = Mat("P5_BullRed", BullRed);
             var white = Mat("P5_Board", BoardColor);
-            Disc(model, "Ring1", 0.95f, -0.52f, red);
-            Disc(model, "Ring2", 0.70f, -0.54f, white);
-            Disc(model, "Ring3", 0.45f, -0.56f, red);
-            Disc(model, "Ring4", 0.20f, -0.58f, white);
+            foreach (float side in new[] { -1f, 1f })
+            {
+                string suffix = side < 0f ? "" : "_Back";
+                Disc(model, "Ring1" + suffix, 0.95f, 0.52f * side, red);
+                Disc(model, "Ring2" + suffix, 0.70f, 0.54f * side, white);
+                Disc(model, "Ring3" + suffix, 0.45f, 0.56f * side, red);
+                Disc(model, "Ring4" + suffix, 0.20f, 0.58f * side, white);
+            }
         }
 
-        static GameObject BuildDoor()
+        static GameObject BuildDoor(GameObject door)
         {
-            var door = Find("Door");
-            if (door == null) return null;
             Paint(door, Mat("P5_Door", DoorColor));
             var model = NewModel(door.transform);
 
@@ -186,11 +231,8 @@ namespace Possession.Editor
             return lockGO;
         }
 
-        static void BuildBrickWall()
+        static void BuildBrickWall(GameObject wall)
         {
-            var wall = Find("BreakableWall");
-            if (wall == null) return;
-
             var mat = Mat("P5_Brick", Color.white);
             mat.mainTexture = BrickTexture();
             // Wall is 3.2 x 6 m and the texture is 1 x 1 m (2 bricks wide, 4 rows)
@@ -252,21 +294,35 @@ namespace Possession.Editor
 
             var exit = new GameObject("P5_Exit").transform;
             float x = zone.transform.position.x;
+            float z = zone.transform.position.z;
+            float back = BackWallSide(zone.transform.position); // +1: back wall is further along z
             var checker = CheckerTexture();
 
-            // Checkered finish mat on the corridor floor (between the brick wall and the back wall)
+            // Checkered finish mat on the floor in front of the exit
             var finishMat = Mat("P5_CheckerMat", Color.white);
             finishMat.mainTexture = checker;
             finishMat.mainTextureScale = new Vector2(4f, 3f);
-            Part(exit, PrimitiveType.Cube, "FinishMat", new Vector3(x, 0.11f, 34.7f), new Vector3(3.1f, 0.02f, 2.5f), finishMat);
+            Part(exit, PrimitiveType.Cube, "FinishMat", new Vector3(x, 0.11f, z - 0.8f * back), new Vector3(3.1f, 0.02f, 2.5f), finishMat);
 
-            // Goal flag on the back wall: pole + checkered flag
+            // Goal flag against the back wall: pole + checkered flag
             var flagMat = Mat("P5_CheckerFlag", Color.white);
             flagMat.mainTexture = checker;
             flagMat.mainTextureScale = new Vector2(2f, 1.5f);
-            Part(exit, PrimitiveType.Cylinder, "FlagPole", new Vector3(x - 0.6f, 1.6f, 35.6f), new Vector3(0.08f, 1.6f, 0.08f), Mat("P5_Metal", Metal));
-            Part(exit, PrimitiveType.Sphere, "PoleTop", new Vector3(x - 0.6f, 3.25f, 35.6f), Vector3.one * 0.18f, Mat("P5_HardHat", HardHat));
-            Part(exit, PrimitiveType.Cube, "Flag", new Vector3(x - 0.05f, 2.75f, 35.6f), new Vector3(1.0f, 0.7f, 0.04f), flagMat);
+            float flagZ = z + 0.1f * back;
+            Part(exit, PrimitiveType.Cylinder, "FlagPole", new Vector3(x - 0.6f, 1.6f, flagZ), new Vector3(0.08f, 1.6f, 0.08f), Mat("P5_Metal", Metal));
+            Part(exit, PrimitiveType.Sphere, "PoleTop", new Vector3(x - 0.6f, 3.25f, flagZ), Vector3.one * 0.18f, Mat("P5_HardHat", HardHat));
+            Part(exit, PrimitiveType.Cube, "Flag", new Vector3(x - 0.05f, 2.75f, flagZ), new Vector3(1.0f, 0.7f, 0.04f), flagMat);
+        }
+
+        // The exit sits at a dead end: the nearer solid wall along z is the one behind it
+        static float BackWallSide(Vector3 zonePos)
+        {
+            Physics.SyncTransforms();
+            float ahead = Physics.Raycast(zonePos, Vector3.forward, out var hitAhead, 50f, ~0, QueryTriggerInteraction.Ignore)
+                ? hitAhead.distance : float.MaxValue;
+            float behind = Physics.Raycast(zonePos, Vector3.back, out var hitBehind, 50f, ~0, QueryTriggerInteraction.Ignore)
+                ? hitBehind.distance : float.MaxValue;
+            return behind < ahead ? -1f : 1f;
         }
 
         static Texture2D CheckerTexture()
@@ -303,10 +359,9 @@ namespace Possession.Editor
 
         const string ProjectilePrefab = "Assets/Prefabs/Projectile.prefab";
 
-        static void BuildEffects()
+        static void BuildProjectileEffects()
         {
             var flash = UnlitMat("P5_FXFlash", new Color(1f, 0.9f, 0.4f));
-            var dust = UnlitMat("P5_FXDust", new Color(0.85f, 0.78f, 0.7f));
 
             // Projectile: glowing bullet + short trail + muzzle flash / impact puff (behaviour untouched)
             var root = PrefabUtility.LoadPrefabContents(ProjectilePrefab);
@@ -336,18 +391,17 @@ namespace Possession.Editor
             {
                 PrefabUtility.UnloadPrefabContents(root);
             }
+        }
 
-            // Brick wall: chunks + dust when smashed
-            var wall = Find("BreakableWall");
-            if (wall != null)
-            {
-                var wallFx = wall.GetComponent<WallBreakFX>();
-                if (wallFx == null) wallFx = wall.AddComponent<WallBreakFX>();
-                var so = new SerializedObject(wallFx);
-                so.FindProperty("chunkMaterial").objectReferenceValue = Mat("P5_BrickChunk", new Color(0.68f, 0.32f, 0.24f));
-                so.FindProperty("dustMaterial").objectReferenceValue = dust;
-                so.ApplyModifiedPropertiesWithoutUndo();
-            }
+        // Brick wall: chunks + dust when smashed
+        static void BuildWallEffects(GameObject wall)
+        {
+            var wallFx = wall.GetComponent<WallBreakFX>();
+            if (wallFx == null) wallFx = wall.AddComponent<WallBreakFX>();
+            var so = new SerializedObject(wallFx);
+            so.FindProperty("chunkMaterial").objectReferenceValue = Mat("P5_BrickChunk", new Color(0.68f, 0.32f, 0.24f));
+            so.FindProperty("dustMaterial").objectReferenceValue = UnlitMat("P5_FXDust", new Color(0.85f, 0.78f, 0.7f));
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         static Material UnlitMat(string name, Color color)
@@ -366,28 +420,51 @@ namespace Possession.Editor
 
         // ---------------- Labels + sign ----------------
 
-        static void BuildLabels(GameObject padlock)
+        static void BuildLabels(System.Collections.Generic.Dictionary<Door, GameObject> padlocks)
         {
             var old = Find("P5_Labels");
             if (old != null) Object.DestroyImmediate(old);
             var root = new GameObject("P5_Labels").transform;
 
-            Label(root, "GUARD", "Guard", new Vector3(0f, 1.7f, 0f), new Color(0.55f, 0.7f, 1f), "", null);
-            Label(root, "HEAVY", "Heavy", new Vector3(0f, 2.1f, 0f), WorkerOrange, "", null);
-            Label(root, "SHOOT ME", "Target", new Vector3(0f, 1.3f, 0f), new Color(1f, 0.35f, 0.3f), "HIT!", null);
-            Label(root, "LOCKED", "Door", new Vector3(0f, 3.4f, -0.6f), DoorColor, "OPEN", padlock);
-            Label(root, "BREAKABLE", "BreakableWall", new Vector3(0f, 3.4f, -0.6f), Color.white, "", null);
-            Label(root, "EXIT", "ExitZone", new Vector3(0f, 3.0f, -0.8f), new Color(1f, 0.85f, 0.2f), "", null, 0.2f, true, true);
+            // Objects P4 already labelled keep their label; it only learns to hide the padlock
+            var labelled = new System.Collections.Generic.HashSet<Transform>();
+            foreach (var existing in AllInScene<WorldLabel>())
+            {
+                var so = new SerializedObject(existing);
+                var follow = so.FindProperty("follow").objectReferenceValue as Transform;
+                if (follow == null) continue;
+                labelled.Add(follow);
+                var door = follow.GetComponent<Door>();
+                if (door != null && padlocks.TryGetValue(door, out var padlock) && padlock != null)
+                {
+                    so.FindProperty("hideWhenDone").objectReferenceValue = padlock;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                }
+            }
+
+            foreach (var guard in AllInScene<GuardEnemy>())
+                Label(root, labelled, "GUARD", guard.gameObject, new Vector3(0f, 1.7f, 0f), new Color(0.55f, 0.7f, 1f), "", null);
+            foreach (var heavy in AllInScene<HeavyEnemy>())
+                Label(root, labelled, "HEAVY", heavy.gameObject, new Vector3(0f, 2.1f, 0f), WorkerOrange, "", null);
+            foreach (var target in AllInScene<Target>())
+                Label(root, labelled, "SHOOT ME", target.gameObject, new Vector3(0f, 1.3f, 0f), new Color(1f, 0.35f, 0.3f), "HIT!", null);
+            foreach (var pair in padlocks)
+                Label(root, labelled, "LOCKED", pair.Key.gameObject, new Vector3(0f, 3.4f, -0.6f), DoorColor, "OPEN", pair.Value);
+            foreach (var wall in AllInScene<BreakableWall>())
+                Label(root, labelled, "BREAKABLE", wall.gameObject, new Vector3(0f, 3.4f, -0.6f), Color.white, "", null);
+            var zone = Find("ExitZone");
+            if (zone != null)
+                Label(root, labelled, "EXIT", zone, new Vector3(0f, 3.0f, -0.8f * BackWallSide(zone.transform.position)),
+                    new Color(1f, 0.85f, 0.2f), "", null, 0.2f, true, true);
         }
 
-        static void Label(Transform root, string text, string followName, Vector3 offset, Color color,
-            string doneText, GameObject hideWhenDone, float size = 0.1f, bool hiddenUntilWallBroken = false,
-            bool withBackground = false)
+        static void Label(Transform root, System.Collections.Generic.HashSet<Transform> labelled, string text,
+            GameObject follow, Vector3 offset, Color color, string doneText, GameObject hideWhenDone,
+            float size = 0.1f, bool hiddenUntilWallBroken = false, bool withBackground = false)
         {
-            var follow = Find(followName);
-            if (follow == null) return;
+            if (labelled.Contains(follow.transform)) return;
 
-            var go = new GameObject("Label_" + followName);
+            var go = new GameObject("Label_" + follow.name);
             go.transform.SetParent(root, false);
             go.transform.position = follow.transform.position + offset;
 
@@ -421,15 +498,13 @@ namespace Possession.Editor
                 doneText, hideWhenDone, hiddenUntilWallBroken, background);
         }
 
-        static void UpdateFloorSign()
+        // Floor text (start instructions, Sign_* hints) repeats the HUD's controls and objective bar,
+        // so it is switched off; the objects stay in the scene
+        static void HideFloorSigns()
         {
-            var sign = Find("StartInstructions");
-            var mesh = sign != null ? sign.GetComponent<TextMesh>() : null;
-            if (mesh == null) return;
-            mesh.text = "POSSESSION\nWASD move   |   SPACE jump   |   E possess / eject\n"
-                + "GUARD (police): mouse aim + LMB shoot\n"
-                + "HEAVY (worker): face wall + LMB smash\n"
-                + "Reach the EXIT as the SPIRIT";
+            foreach (var t in AllInScene<Transform>())
+                if (t.name == "StartInstructions" || t.name.StartsWith("Sign_"))
+                    t.gameObject.SetActive(false);
         }
 
         // ---------------- Helpers ----------------
@@ -529,11 +604,12 @@ namespace Possession.Editor
             return null;
         }
 
-        static void Paint(string name, Material mat)
+        static System.Collections.Generic.List<T> AllInScene<T>() where T : Component
         {
-            var go = Find(name);
-            if (go != null) Paint(go, mat);
-            else Debug.LogWarning($"[P5] {name} not found, skipped.");
+            var all = new System.Collections.Generic.List<T>();
+            foreach (var root in EditorSceneManager.GetActiveScene().GetRootGameObjects())
+                all.AddRange(root.GetComponentsInChildren<T>(true));
+            return all;
         }
 
         static void Paint(GameObject go, Material mat)
