@@ -171,7 +171,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b5cb51eb8026e4b51bf6f0655d8c934e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.PossessionController
-  possessRange: 5
+  possessRange: 7
   possessDuration: 10
   ejectCooldown: 0.5
   hostileTime: 5

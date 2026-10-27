@@ -58,8 +58,14 @@ namespace Possession.Editor
             Debug.Log("Step 6/7: Applying visuals to all levels (P5)...");
             VisualSetup.ApplyVisuals();
 
-            Debug.Log("Step 7/7: Setting up HUD in all levels (P5)...");
+            Debug.Log("Step 7/8: Setting up HUD in all levels (P5)...");
             HUDSetup.SetupHUD();
+
+            Debug.Log("Step 8/9: Applying HUD cleanup to all levels (P1)...");
+            HUDSetup.ApplyHUDCleanup();
+
+            Debug.Log("Step 9/9: Building Tutorial practice level...");
+            TutorialBuilder.Build();
 
             UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/Scenes/MainMenu.unity");
             Debug.Log("=== Full Build All Levels: complete ===");
