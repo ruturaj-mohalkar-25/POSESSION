@@ -10,6 +10,7 @@ namespace Possession
     public class WorldLabel : MonoBehaviour
     {
         [SerializeField] private Transform follow;
+        public Transform Follow => follow;
         [SerializeField] private Vector3 offset = new Vector3(0f, 2f, 0f);
         [SerializeField] private Target target;
         [SerializeField] private Door door;

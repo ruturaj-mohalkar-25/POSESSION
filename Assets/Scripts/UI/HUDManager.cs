@@ -21,8 +21,7 @@ namespace Possession
         [Header("Possession Timer")]
         [SerializeField] private GameObject possessTimerGroup; // bar + text, hidden as Spirit
         [SerializeField] private Text possessTimerText;
-        [SerializeField] private Image possessTimerFill; // pivot X = 0
-        [SerializeField] private Color possessBarColor = new Color(0.3f, 0.8f, 1f);
+        [SerializeField] private Image possessTimerFill; // pivot X = 0, green -> yellow -> red as time runs out
         [SerializeField] private float possessWarningTime = 5f;
 
         [Header("State")]
@@ -208,8 +207,16 @@ namespace Possession
             if (possessTimerFill != null)
             {
                 possessTimerFill.rectTransform.localScale = new Vector3(pct, 1f, 1f);
-                possessTimerFill.color = warning ? healthLow : possessBarColor;
+                possessTimerFill.color = PossessTimerColor(pct);
             }
+        }
+
+        // Full = green, half = yellow/orange, almost out = red, blending smoothly in between
+        private Color PossessTimerColor(float pct)
+        {
+            return pct > 0.5f
+                ? Color.Lerp(healthMid, healthHigh, (pct - 0.5f) / 0.5f)
+                : Color.Lerp(healthLow, healthMid, pct / 0.5f);
         }
 
         private void SetPossessTimerVisible(bool visible)
