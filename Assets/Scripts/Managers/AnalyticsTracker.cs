@@ -97,6 +97,8 @@ namespace Possession
                 possessions = new List<PossessionEntry>(possessions)
             };
             EventBus.AnalyticsReady?.Invoke(data);
+            var firebase = FindFirstObjectByType<FirebaseReporter>();
+            if (firebase != null) firebase.ReportSession(data);
         }
     }
 }
