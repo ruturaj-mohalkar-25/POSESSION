@@ -360,7 +360,7 @@ namespace Possession
         private static Text Text(Transform parent, string name, string value, int size, Vector2 position, Vector2 bounds, Color color)
         {
             var rect = CreateRect(parent, name, position, bounds); var text = rect.gameObject.AddComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); text.fontSize = size; text.fontStyle = FontStyle.Bold;
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); text.fontSize = size; text.fontStyle = FontStyle.Normal;
             text.text = value; text.color = color; text.alignment = TextAnchor.MiddleCenter; text.raycastTarget = false; return text;
         }
         private static Button Button(Transform parent, string name, string label, Vector2 position, Vector2 size, UnityAction clicked, Color color)

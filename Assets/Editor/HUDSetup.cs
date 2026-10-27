@@ -213,7 +213,7 @@ namespace Possession.Editor
             }
 
             // Objective bar: bottom-centre strip that tells the player the next step
-            var objectiveBG = FindOrCreateImage(canvas, "ObjectiveBar", new Color(1f, 0.78f, 0.18f, 0.92f));
+            var objectiveBG = FindOrCreateImage(canvas, "ObjectiveBar", new Color(0f, 0f, 0f, 0.55f));
             var oRect = objectiveBG.rectTransform;
             oRect.anchorMin = oRect.anchorMax = oRect.pivot = new Vector2(0.5f, 0);
             oRect.anchoredPosition = new Vector2(0, 24);
@@ -224,7 +224,7 @@ namespace Possession.Editor
             otRect.anchorMax = Vector2.one;
             otRect.offsetMin = otRect.offsetMax = Vector2.zero;
             StyleText(objective, 26, TextAnchor.MiddleCenter);
-            objective.color = new Color(0.12f, 0.10f, 0.04f);
+            objective.color = new Color(1f, 0.95f, 0.75f);
             objective.text = "1/3  POSSESS GUARD  •  HIT TARGET";
             so.FindProperty("objectiveText").objectReferenceValue = objective;
 
@@ -264,7 +264,7 @@ namespace Possession.Editor
             so.FindProperty("messageText").objectReferenceValue = message;
             so.FindProperty("alertColor").colorValue = new Color(0.9f, 0.2f, 0.2f);
             so.FindProperty("successColor").colorValue = new Color(0.2f, 0.85f, 0.3f);
-            so.FindProperty("objectiveColor").colorValue = new Color(1f, 0.78f, 0.18f);
+            so.FindProperty("objectiveColor").colorValue = new Color(0.95f, 0.75f, 0.2f);
             so.ApplyModifiedPropertiesWithoutUndo();
             group.gameObject.SetActive(false);
 

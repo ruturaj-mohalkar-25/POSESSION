@@ -39,7 +39,7 @@ namespace Possession
             if (label != null)
             {
                 label.text = "HOW TO PLAY";
-                label.color = new Color(0.08f, 0.11f, 0.16f);
+                label.color = Color.white;
             }
             var colors = button.colors;
             colors.normalColor = new Color(0.85f, 0.67f, 0.22f);

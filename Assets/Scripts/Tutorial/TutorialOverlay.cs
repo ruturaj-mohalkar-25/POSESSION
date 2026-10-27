@@ -141,7 +141,7 @@ namespace Possession
             var text = rect.gameObject.AddComponent<Text>();
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             text.fontSize = fontSize;
-            text.fontStyle = FontStyle.Bold;
+            text.fontStyle = FontStyle.Normal;
             text.alignment = TextAnchor.MiddleCenter;
             text.color = color;
             text.raycastTarget = false;

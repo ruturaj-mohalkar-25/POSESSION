@@ -33,7 +33,7 @@ namespace Possession
         [SerializeField] private float unlockMessageTime = 2.5f;
         [SerializeField] private Color alertColor = new Color(0.9f, 0.2f, 0.2f);
         [SerializeField] private Color successColor = new Color(0.2f, 0.85f, 0.3f);
-        [SerializeField] private Color objectiveColor = new Color(1f, 0.78f, 0.18f);
+        [SerializeField] private Color objectiveColor = new Color(0.95f, 0.75f, 0.2f);
 
         [Header("Objective")]
         [SerializeField] private Text objectiveText;
@@ -300,7 +300,7 @@ namespace Possession
             if (objectiveText != null)
             {
                 objectiveText.fontSize = 26;
-                objectiveText.color = new Color(0.12f, 0.10f, 0.04f);
+                objectiveText.color = new Color(1f, 0.95f, 0.75f);
                 var bar = objectiveText.transform.parent as RectTransform;
                 if (bar != null)
                 {
@@ -308,7 +308,7 @@ namespace Possession
                     bar.anchoredPosition = new Vector2(0f, 24f);
                     bar.sizeDelta = new Vector2(820f, 52f);
                     var image = bar.GetComponent<Image>();
-                    if (image != null) image.color = new Color(1f, 0.78f, 0.18f, 0.92f);
+                    if (image != null) image.color = new Color(0f, 0f, 0f, 0.55f);
                 }
             }
 
