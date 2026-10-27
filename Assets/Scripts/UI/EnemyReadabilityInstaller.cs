@@ -41,8 +41,7 @@ namespace Possession
     // a possess would actually succeed.
     public sealed class EnemyReadabilityController : MonoBehaviour
     {
-        // Matches PossessionController's default possessRange.
-        [SerializeField] private float possessRange = 5f;
+        [SerializeField] private float possessRange = 7f;
 
         private EnemyReadability[] cues;
         private Transform spirit;
