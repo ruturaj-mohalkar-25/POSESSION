@@ -90,6 +90,8 @@ namespace Possession
             if (!persistReports || Application.isBatchMode) return;
             try { TimingReportStore.Save(LatestReport); }
             catch (Exception error) { Debug.LogWarning("Could not save playtest timing: " + error.Message, this); }
+            var firebase = FindFirstObjectByType<FirebaseReporter>();
+            if (firebase != null) firebase.ReportTiming(LatestReport);
         }
     }
 }
