@@ -11,7 +11,7 @@ namespace Possession
         [SerializeField] private Text healthText;
         [SerializeField] private Image healthFill; // pivot X = 0 so it shrinks from the right
         [SerializeField] private Color healthHigh = new Color(0.2f, 0.85f, 0.3f);
-        [SerializeField] private Color healthMid = new Color(0.95f, 0.8f, 0.2f);
+        [SerializeField] private Color healthMid = new Color(0.2f, 0.85f, 0.3f);
         [SerializeField] private Color healthLow = new Color(0.9f, 0.2f, 0.2f);
         [SerializeField] private float damageFlashTime = 0.15f;
 
@@ -22,7 +22,7 @@ namespace Possession
         [SerializeField] private GameObject possessTimerGroup; // bar + text, hidden as Spirit
         [SerializeField] private Text possessTimerText;
         [SerializeField] private Image possessTimerFill; // pivot X = 0
-        [SerializeField] private Color possessBarColor = new Color(0.3f, 0.8f, 1f);
+        [SerializeField] private Color possessBarColor = Color.white;
         [SerializeField] private float possessWarningTime = 5f;
 
         [Header("State")]
@@ -32,16 +32,18 @@ namespace Possession
         [SerializeField] private Text messageText; // "Forced out!"
         [SerializeField] private float messageTime = 1.5f;
         [SerializeField] private float unlockMessageTime = 2.5f;
-        [SerializeField] private Color alertColor = new Color(1f, 0.6f, 0.15f);
+        [SerializeField] private Color alertColor = new Color(0.9f, 0.2f, 0.2f);
+        [SerializeField] private Color successColor = new Color(0.2f, 0.85f, 0.3f);
+        [SerializeField] private Color objectiveColor = new Color(1f, 0.78f, 0.18f);
 
         [Header("Objective")]
         [SerializeField] private Text objectiveText;
         // One step per puzzle event (door opened, wall broken), set per level by the HUD setup tool
         [SerializeField] private string[] objectives =
         {
-            "1/3  Possess the GUARD and shoot the TARGET to unlock the door",
-            "2/3  Possess the HEAVY and smash the BREAKABLE wall",
-            "3/3  Eject and reach the EXIT as the Spirit"
+            "1/3  POSSESS GUARD  •  HIT TARGET",
+            "2/3  POSSESS HEAVY  •  BREAK WALL",
+            "3/3  EJECT  •  REACH EXIT"
         };
 
         [Header("Controls / Ammo")]
@@ -115,9 +117,9 @@ namespace Possession
             if (gameCompletePanel != null) gameCompletePanel.SetActive(false);
             if (messageText != null) messageText.gameObject.SetActive(false);
             if (ammoDisplay != null) ammoDisplay.Hide();
+            ApplyCompactLayout();
+            HideLegacyOverlays();
             SetPossessTimerVisible(false);
-            SetFormText("Spirit");
-            SetControls("Spirit");
             SetObjectiveStep(0);
 
             // Show full health immediately instead of waiting for the first hit
@@ -249,24 +251,82 @@ namespace Possession
             if (ammoDisplay != null) ammoDisplay.Hide();
 
             if (forced)
-                ShowMessage("FORCED OUT! Enemy is hostile", messageTime, alertColor);
+                ShowMessage("FORCED OUT", messageTime, alertColor);
         }
 
         private void SetFormText(string form)
         {
-            if (currentFormText != null)
-                currentFormText.text = $"Form: {form}";
+            // Form is communicated by the controlled character itself. The old corner label
+            // duplicated that information and competed with the objective bar.
+            if (currentFormText != null) currentFormText.gameObject.SetActive(false);
         }
 
         private void SetControls(string form)
         {
-            if (controlsText == null) return;
-            controlsText.text = form switch
+            // Contextual prompts now live beside the possessed body; keep the screen HUD lean.
+            if (controlsText != null)
             {
-                "Guard" => "WASD  Move\nMOUSE  Aim\nLEFT CLICK  Shoot the target\nE  Eject",
-                "Heavy" => "WASD  Move (slow)\nLEFT CLICK  Smash (face the wall)\nE  Eject",
-                _ => "WASD  Move\nSPACE  Jump\nE  Possess (near an enemy)"
-            };
+                Transform panel = controlsText.transform.parent;
+                (panel != null ? panel.gameObject : controlsText.gameObject).SetActive(false);
+            }
+        }
+
+        private void HideLegacyOverlays()
+        {
+            SetFormText(string.Empty);
+            SetControls(string.Empty);
+        }
+
+        private void ApplyCompactLayout()
+        {
+            PlaceTopLeft(healthText != null ? healthText.rectTransform : null,
+                new Vector2(24f, -18f), new Vector2(280f, 36f));
+            if (healthText != null) healthText.fontSize = 26;
+
+            RectTransform healthBar = healthFill != null ? healthFill.rectTransform.parent as RectTransform : null;
+            PlaceTopLeft(healthBar, new Vector2(24f, -58f), new Vector2(280f, 18f));
+
+            PlaceTopLeft(levelTimerText != null ? levelTimerText.rectTransform : null,
+                new Vector2(24f, -84f), new Vector2(280f, 36f));
+            if (levelTimerText != null) levelTimerText.fontSize = 28;
+
+            if (objectiveText != null)
+            {
+                objectiveText.fontSize = 26;
+                objectiveText.color = new Color(0.12f, 0.10f, 0.04f);
+                var bar = objectiveText.transform.parent as RectTransform;
+                if (bar != null)
+                {
+                    bar.anchorMin = bar.anchorMax = bar.pivot = new Vector2(0.5f, 0f);
+                    bar.anchoredPosition = new Vector2(0f, 24f);
+                    bar.sizeDelta = new Vector2(820f, 52f);
+                    var image = bar.GetComponent<Image>();
+                    if (image != null) image.color = new Color(1f, 0.78f, 0.18f, 0.92f);
+                }
+            }
+
+            if (messageText != null)
+            {
+                RectTransform message = messageText.rectTransform;
+                message.anchorMin = message.anchorMax = message.pivot = new Vector2(0.5f, 0.5f);
+                message.anchoredPosition = new Vector2(0f, 90f);
+                message.sizeDelta = new Vector2(900f, 70f);
+                messageText.fontSize = 44;
+            }
+
+            if (possessPrompt != null)
+            {
+                var promptText = possessPrompt.GetComponent<Text>();
+                if (promptText != null) promptText.color = successColor;
+            }
+        }
+
+        private static void PlaceTopLeft(RectTransform rect, Vector2 position, Vector2 size)
+        {
+            if (rect == null) return;
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
         }
 
         private void OnAmmoUpdated(int left, int max)
@@ -284,13 +344,13 @@ namespace Possession
         private void OnDoorOpened(Door door)
         {
             SetObjectiveStep(objectiveStep + 1);
-            ShowMessage("TARGET HIT!  DOOR UNLOCKED!", unlockMessageTime, alertColor);
+            ShowMessage("DOOR OPEN", unlockMessageTime, successColor);
         }
 
         private void OnWallBroken(BreakableWall wall)
         {
             SetObjectiveStep(objectiveStep + 1);
-            ShowMessage("WALL SMASHED!", messageTime, alertColor);
+            ShowMessage("WALL BROKEN", messageTime, successColor);
         }
 
         // Every objective change flashes the bar so it's noticed even while watching the character
@@ -298,9 +358,31 @@ namespace Possession
         {
             if (objectiveText == null || objectives == null || objectives.Length == 0) return;
             objectiveStep = Mathf.Min(step, objectives.Length - 1);
-            objectiveText.text = objectives[objectiveStep];
+            objectiveText.text = CompactObjective(objectives[objectiveStep]);
             if (objectiveRoutine != null) StopCoroutine(objectiveRoutine);
             objectiveRoutine = StartCoroutine(FlashObjective());
+        }
+
+        private static string CompactObjective(string objective)
+        {
+            if (string.IsNullOrWhiteSpace(objective)) return objective;
+            string upper = objective.ToUpperInvariant();
+            int split = objective.IndexOf("  ", System.StringComparison.Ordinal);
+            string prefix = split >= 0 ? objective.Substring(0, split + 2) : string.Empty;
+
+            if (upper.Contains("BOTH TARGET") || upper.Contains("2 TARGET"))
+                return prefix + "POSSESS GUARD  •  HIT 2 TARGETS";
+            if (upper.Contains("TARGET"))
+                return prefix + "POSSESS GUARD  •  HIT TARGET";
+            if (upper.Contains("FIRST") || upper.Contains("WALL 1"))
+                return prefix + "POSSESS HEAVY  •  BREAK WALL 1";
+            if (upper.Contains("SECOND") || upper.Contains("WALL 2"))
+                return prefix + "POSSESS HEAVY  •  BREAK WALL 2";
+            if (upper.Contains("WALL"))
+                return prefix + "POSSESS HEAVY  •  BREAK WALL";
+            if (upper.Contains("EXIT"))
+                return prefix + "EJECT  •  REACH EXIT";
+            return objective;
         }
 
         private IEnumerator FlashObjective()
@@ -309,7 +391,7 @@ namespace Possession
             var barImage = bar != null ? bar.GetComponent<Image>() : null;
             if (barImage != null && !objectiveBarColor.HasValue) objectiveBarColor = barImage.color;
             Color normal = objectiveBarColor ?? Color.clear;
-            Color bright = new Color(0.95f, 0.75f, 0.2f, 0.9f);
+            Color bright = new Color(objectiveColor.r, objectiveColor.g, objectiveColor.b, 0.95f);
 
             const float duration = 1.2f;
             for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
@@ -369,9 +451,17 @@ namespace Possession
         private IEnumerator MessageRoutine(string text, float duration, Color color)
         {
             messageText.text = text;
-            messageText.color = color;
             messageText.gameObject.SetActive(true);
-            yield return new WaitForSecondsRealtime(duration);
+            RectTransform rect = messageText.rectTransform;
+            for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
+            {
+                float fade = 1f - Mathf.Clamp01((t - duration * 0.6f) / (duration * 0.4f));
+                float pulse = 1f + 0.08f * Mathf.Sin(t * 12f);
+                messageText.color = new Color(color.r, color.g, color.b, color.a * fade);
+                rect.localScale = Vector3.one * pulse;
+                yield return null;
+            }
+            rect.localScale = Vector3.one;
             messageText.gameObject.SetActive(false);
         }
 
