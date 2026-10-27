@@ -172,7 +172,8 @@ namespace Possession
             Fit(shades[2], Rect.MinMaxRect(screen.xMin, hole.yMin, hole.xMin, hole.yMax));
             Fit(shades[3], Rect.MinMaxRect(hole.xMax, hole.yMin, screen.xMax, hole.yMax));
             Fit(focusRing, Expand(hole, 8f + Mathf.Sin(Time.unscaledTime * 5f) * 4f));
-            if (focusBodyTarget == null) focusCard.anchoredPosition = new Vector2(hole.center.x < 0f ? 180f : -180f, 30f);
+            if (focusBodyTarget == null && guide.CoachingFocus != TutorialFocus.PossessionClock)
+                focusCard.anchoredPosition = new Vector2(hole.center.x < 0f ? 180f : -180f, 30f);
             else
             {
                 Vector2 half = focusCard.sizeDelta * 0.5f;

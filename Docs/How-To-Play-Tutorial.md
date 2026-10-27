@@ -5,7 +5,7 @@
 - Project: `/Users/omkarshinde/Documents/POSESSION-P5`
 - Branch: `Omkar/how-to-play`
 - Unity: **6000.3.22f1**
-- Integration base: `8575bab`
+- Integration base: `8b5b170` (includes the merged HUD cleanup, possession cues, and analytics updates)
 
 Open `Assets/Scenes/MainMenu.unity`, press **Play**, then click **HOW TO PLAY**. The button is installed when the menu runs, so it appears in the Game view during Play Mode. The existing PLAY/level-select flow still works.
 
@@ -25,7 +25,7 @@ The practice level is a separate copy of Level_01 with the shared Spirit, Guard,
 8. Go through the unlocked door. The **Wall Breaker** (the shared Heavy enemy) gets its own nearby **E** prompt, possession spotlight, and wall **LMB** highlight. Press **LET'S SMASH**, move close, face the brick wall with WASD, and left-click. Its prompts take priority when you control it, even if optional Guard or movement lessons remain incomplete.
 9. Eject back into Spirit form and enter the green exit before the level clock expires. Once the door is open and the wall is broken, entering as the Spirit finishes practice. Optional movement/ejection lesson flags never block an otherwise valid exit.
 
-The **HOW TO PLAY** badge shows the current controlled form and completed-skill count. The regular HUD continues to display health, level time, possession time, and ammo. Spotlight zooms restore each widget's exact original scale when dismissed. Pop effects use unscaled time so they continue animating while gameplay is paused. Damage briefly flashes the actual HP area red.
+The **HOW TO PLAY** badge shows the current controlled form and completed-skill count. The regular compact HUD continues to display health, level time, possession time above the possessed body, and ammo. Shared possession visuals and the Guard aim line are included. Spotlight zooms restore each widget's exact original scale when dismissed. Pop effects use unscaled time so they continue animating while gameplay is paused. Damage briefly flashes the actual HP area red.
 
 Redundant old controls/objective text and the regular end panels are hidden in this tutorial scene only; the tutorial provides its own lesson and completion cards. The effects use UI graphics and leave enemy colliders, movement, abilities, and shared HUD scripts unchanged.
 
@@ -51,7 +51,7 @@ The existing MainMenu scene and Levels_01–03 are unchanged. The only modified 
 
 Automated tests cover the lesson order, movement requirements, early actions, menu entry and duplicate prevention, paused welcome clock, genuine forced ejection and hostility expiry, real Guard damage, shared target/wall/exit events, completion, retry, return to menu, and campaign order.
 
-All **21 tutorial tests pass**. Checks cover sequential key prompts, paused spotlight clocks, HUD zoom and restoration, input restoration, nearby E prompts, ability explanations, cards avoiding the highlighted body, possession-bar focus, empty-ammo recovery prompts, renderable halos, finishing without optional lesson flags, the Wall Breaker route without the Guard ejection checklist, the real shared smash breaking the scene wall, and Wall Breaker countdown/hostility recovery.
+All **21 tutorial tests pass** after merging integration and rebuilding the tutorial from its latest Level_01. The full PlayMode suite reports **132/134 passed**. Checks cover sequential key prompts, paused spotlight clocks, HUD zoom and restoration, input restoration, nearby E prompts, ability explanations, cards avoiding the highlighted body, possession-bar focus, empty-ammo recovery prompts, renderable halos, finishing without optional lesson flags, the Wall Breaker route without the Guard ejection checklist, the real shared smash breaking the scene wall, and Wall Breaker countdown/hostility recovery.
 
 The untouched integration baseline has two existing failures: `BarChartTests.CallingShowChartTwiceClearsOldBars` and `HeavyEnemyTests.PatrolMovesAtSixtyPercentOfGuardSpeed`. These shared tests and their implementations are outside the tutorial change.
 

@@ -136,9 +136,18 @@ namespace Possession.Tests
             var bar = guide.FocusWidgets(TutorialFocus.PossessionClock).Single();
             Assert.That(bar.gameObject.activeInHierarchy, Is.True);
             float timer = guide.Possession.PossessTimer;
-            yield return new WaitForSecondsRealtime(0.15f);
+            yield return new WaitForSecondsRealtime(0.45f);
             Assert.That(bar.localScale.x, Is.GreaterThan(1f));
             Assert.That(guide.Possession.PossessTimer, Is.EqualTo(timer));
+            Canvas.ForceUpdateCanvases();
+            var coach = guide.GetComponent<TutorialCoach>();
+            var root = coach.GetComponentsInChildren<Canvas>(true).Single(c => c.name == "TutorialEffects").transform;
+            var rects = coach.GetComponentsInChildren<RectTransform>(true);
+            var card = RectTransformUtility.CalculateRelativeRectTransformBounds(root, rects.Single(r => r.name == "CoachCard"));
+            var halo = RectTransformUtility.CalculateRelativeRectTransformBounds(root, rects.Single(r => r.name == "SpotlightHalo"));
+            Assert.That(new Rect(card.min.x, card.min.y, card.size.x, card.size.y)
+                .Overlaps(new Rect(halo.min.x, halo.min.y, halo.size.x, halo.size.y)), Is.False,
+                "The explanation must leave the shared floating possession bar visible.");
             guide.ContinueCoaching();
             Assert.That(bar.localScale, Is.EqualTo(Vector3.one));
         }
