@@ -18,24 +18,50 @@ namespace Possession.Editor
         {
             new[]
             {
-                "1/3  Possess the GUARD and shoot the TARGET to unlock the door",
-                "2/3  Possess the HEAVY and smash the BREAKABLE wall",
-                "3/3  Eject and reach the EXIT as the Spirit"
+                "1/3  POSSESS GUARD  •  HIT TARGET",
+                "2/3  POSSESS HEAVY  •  BREAK WALL",
+                "3/3  EJECT  •  REACH EXIT"
             },
             new[]
             {
-                "1/3  Possess a GUARD and shoot BOTH targets to unlock the door",
-                "2/3  Possess the HEAVY and smash the BREAKABLE wall",
-                "3/3  Eject and reach the EXIT as the Spirit"
+                "1/3  POSSESS GUARD  •  HIT 2 TARGETS",
+                "2/3  POSSESS HEAVY  •  BREAK WALL",
+                "3/3  EJECT  •  REACH EXIT"
             },
             new[]
             {
-                "1/4  Possess a GUARD and shoot the TARGET to unlock the door",
-                "2/4  Possess a HEAVY and smash the first BREAKABLE wall",
-                "3/4  Possess the other HEAVY and smash the second wall",
-                "4/4  Eject and reach the EXIT as the Spirit"
+                "1/4  POSSESS GUARD  •  HIT TARGET",
+                "2/4  POSSESS HEAVY  •  BREAK WALL 1",
+                "3/4  POSSESS HEAVY  •  BREAK WALL 2",
+                "4/4  EJECT  •  REACH EXIT"
             }
         };
+
+        [MenuItem("Possession/P1/Apply HUD Cleanup")]
+        public static void ApplyHUDCleanup()
+        {
+            if (EditorApplication.isPlaying)
+            {
+                EditorUtility.DisplayDialog("HUD Cleanup", "Stop Play mode first, then run this again.", "OK");
+                return;
+            }
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+
+            for (int i = 0; i < LevelPaths.Length; i++)
+            {
+                if (!System.IO.File.Exists(LevelPaths[i])) continue;
+                var scene = EditorSceneManager.OpenScene(LevelPaths[i], OpenSceneMode.Single);
+                var hud = FindInScene<HUDManager>(scene);
+                if (hud == null) continue;
+                StyleHUD(hud);
+                SetObjectives(hud, i);
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log("P1 HUD cleanup applied to all available levels.");
+        }
 
         [MenuItem("Possession/P5/Setup HUD Bars and Buttons")]
         public static void SetupHUD()
@@ -88,35 +114,31 @@ namespace Possession.Editor
             var healthText = so.FindProperty("healthText").objectReferenceValue as Text;
             if (healthText != null)
             {
-                PlaceTopLeft(healthText.rectTransform, new Vector2(30, -24), new Vector2(460, 56));
-                StyleText(healthText, 44, TextAnchor.MiddleLeft);
+                PlaceTopLeft(healthText.rectTransform, new Vector2(24, -18), new Vector2(280, 36));
+                StyleText(healthText, 26, TextAnchor.MiddleLeft);
                 healthText.text = "HP 3/3";
             }
 
             var healthBG = FindOrCreateImage(canvas, "HealthBarBG", BarBackground);
-            PlaceTopLeft(healthBG.rectTransform, new Vector2(30, -86), new Vector2(460, 36));
+            PlaceTopLeft(healthBG.rectTransform, new Vector2(24, -58), new Vector2(280, 18));
             var healthFill = FindOrCreateImage(healthBG.transform, "HealthFill", new Color(0.2f, 0.85f, 0.3f));
             StretchFromLeft(healthFill.rectTransform);
 
-            // Possession timer group: top-right, text above a draining bar
+            // Possession timer group: a small bar that PossessionCues keeps above the possessed body.
+            // HUDManager colours the fill green -> yellow -> red as possession time runs out.
+            var white = new Color(0.95f, 0.95f, 1f);
             var group = FindOrCreateRect(canvas, "PossessTimerGroup");
-            group.anchorMin = group.anchorMax = group.pivot = new Vector2(1, 1);
-            group.anchoredPosition = new Vector2(-30, -24);
-            group.sizeDelta = new Vector2(460, 98);
+            group.anchorMin = group.anchorMax = new Vector2(0.5f, 0.5f);
+            group.pivot = new Vector2(0.5f, 0f);
+            group.anchoredPosition = Vector2.zero;
+            group.sizeDelta = new Vector2(160, 14);
 
+            // Bar only: the countdown text stays wired to HUDManager but is not shown
             var possessText = so.FindProperty("possessTimerText").objectReferenceValue as Text;
             if (possessText != null)
             {
                 possessText.transform.SetParent(group, false);
-                possessText.gameObject.SetActive(true); // the group handles visibility now
-                var r = possessText.rectTransform;
-                r.anchorMin = new Vector2(0, 1);
-                r.anchorMax = new Vector2(1, 1);
-                r.pivot = new Vector2(1, 1);
-                r.anchoredPosition = Vector2.zero;
-                r.sizeDelta = new Vector2(0, 56);
-                StyleText(possessText, 40, TextAnchor.MiddleRight);
-                possessText.text = "POSSESSED 15s";
+                possessText.gameObject.SetActive(false);
             }
 
             var possessBG = FindOrCreateImage(group, "PossessBarBG", BarBackground);
@@ -125,42 +147,59 @@ namespace Possession.Editor
             bgRect.anchorMax = new Vector2(1, 0);
             bgRect.pivot = new Vector2(0.5f, 0);
             bgRect.anchoredPosition = Vector2.zero;
-            bgRect.sizeDelta = new Vector2(0, 30);
-            var possessFill = FindOrCreateImage(possessBG.transform, "PossessFill", new Color(0.3f, 0.8f, 1f));
+            bgRect.sizeDelta = new Vector2(0, 14);
+            var possessFill = FindOrCreateImage(possessBG.transform, "PossessFill", new Color(0.2f, 0.85f, 0.3f));
             StretchFromLeft(possessFill.rectTransform);
+
+            // Short ability hint under the possessed body, positioned and faded by PossessionCues
+            var hint = FindOrCreateText(canvas, "AbilityHint");
+            var hRect = hint.rectTransform;
+            hRect.anchorMin = hRect.anchorMax = hRect.pivot = new Vector2(0.5f, 0.5f);
+            hRect.sizeDelta = new Vector2(300, 44);
+            StyleText(hint, 30, TextAnchor.MiddleCenter);
+            hint.color = white;
+            hint.text = "Shoot";
+            hint.gameObject.SetActive(false);
+
+            var cues = canvas.GetComponent<PossessionCues>();
+            if (cues == null) cues = canvas.gameObject.AddComponent<PossessionCues>();
+            var cso = new SerializedObject(cues);
+            cso.FindProperty("timerGroup").objectReferenceValue = group;
+            cso.FindProperty("hintText").objectReferenceValue = hint;
+            cso.FindProperty("possessedMaterial").objectReferenceValue =
+                AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/P5_Ghost.mat");
+            // Guard aim line: a thick warm-gold beam matching the bullet colour
+            cso.FindProperty("aimColor").colorValue = new Color(1f, 0.75f, 0.2f, 0.9f);
+            cso.FindProperty("aimStartWidth").floatValue = 0.22f;
+            cso.FindProperty("aimEndWidth").floatValue = 0.08f;
+            cso.ApplyModifiedPropertiesWithoutUndo();
 
             // Centre-screen message for forced eject
             var message = FindOrCreateText(canvas, "MessageText");
             var mRect = message.rectTransform;
             mRect.anchorMin = mRect.anchorMax = mRect.pivot = new Vector2(0.5f, 0.5f);
-            mRect.anchoredPosition = new Vector2(0, 150);
-            mRect.sizeDelta = new Vector2(1200, 80);
-            StyleText(message, 52, TextAnchor.MiddleCenter);
-            message.color = new Color(1f, 0.6f, 0.15f);
+            mRect.anchoredPosition = new Vector2(0, 90);
+            mRect.sizeDelta = new Vector2(900, 70);
+            StyleText(message, 44, TextAnchor.MiddleCenter);
+            message.color = new Color(0.2f, 0.85f, 0.3f);
             message.alignment = TextAnchor.MiddleCenter;
             message.horizontalOverflow = HorizontalWrapMode.Overflow;
-            message.text = "FORCED OUT! Enemy is hostile";
+            message.text = "DOOR OPEN";
             message.gameObject.SetActive(false);
 
             // Level timer: top-left under the health bar, clear of the play area
             var timer = so.FindProperty("levelTimerText").objectReferenceValue as Text;
             if (timer != null)
             {
-                PlaceTopLeft(timer.rectTransform, new Vector2(30, -140), new Vector2(460, 56));
-                StyleText(timer, 44, TextAnchor.MiddleLeft);
+                PlaceTopLeft(timer.rectTransform, new Vector2(24, -84), new Vector2(280, 36));
+                StyleText(timer, 28, TextAnchor.MiddleLeft);
                 timer.text = "TIME 5:00";
             }
 
-            // Form text: bottom-left
+            // Form and controls duplicate the character/world-space cues and obscure play.
             var form = so.FindProperty("currentFormText").objectReferenceValue as Text;
-            if (form != null)
-            {
-                var f = form.rectTransform;
-                f.anchorMin = f.anchorMax = f.pivot = Vector2.zero;
-                f.anchoredPosition = new Vector2(30, 110); // above the objective bar
-                f.sizeDelta = new Vector2(500, 60);
-                StyleText(form, 44, TextAnchor.MiddleLeft);
-            }
+            if (form != null) Object.DestroyImmediate(form.gameObject);
+            so.FindProperty("currentFormText").objectReferenceValue = null;
 
             // [E] POSSESS prompt: bottom-centre
             var prompt = so.FindProperty("possessPrompt").objectReferenceValue as GameObject;
@@ -170,46 +209,34 @@ namespace Possession.Editor
                 promptText.rectTransform.sizeDelta = new Vector2(500, 70);
                 promptText.rectTransform.anchoredPosition = new Vector2(0, 150);
                 StyleText(promptText, 34, TextAnchor.MiddleCenter); // floats over the enemy at runtime
-                promptText.color = new Color(1f, 0.9f, 0.3f);
+                promptText.color = new Color(0.2f, 0.85f, 0.3f);
             }
 
             // Objective bar: bottom-centre strip that tells the player the next step
-            var objectiveBG = FindOrCreateImage(canvas, "ObjectiveBar", new Color(0f, 0f, 0f, 0.55f));
+            var objectiveBG = FindOrCreateImage(canvas, "ObjectiveBar", new Color(1f, 0.78f, 0.18f, 0.92f));
             var oRect = objectiveBG.rectTransform;
             oRect.anchorMin = oRect.anchorMax = oRect.pivot = new Vector2(0.5f, 0);
-            oRect.anchoredPosition = new Vector2(0, 30);
-            oRect.sizeDelta = new Vector2(1100, 64);
+            oRect.anchoredPosition = new Vector2(0, 24);
+            oRect.sizeDelta = new Vector2(820, 52);
             var objective = FindOrCreateText(objectiveBG.transform, "ObjectiveText");
             var otRect = objective.rectTransform;
             otRect.anchorMin = Vector2.zero;
             otRect.anchorMax = Vector2.one;
             otRect.offsetMin = otRect.offsetMax = Vector2.zero;
-            StyleText(objective, 32, TextAnchor.MiddleCenter);
-            objective.color = new Color(1f, 0.95f, 0.75f);
-            objective.text = "1/3  Possess the GUARD and shoot the TARGET to unlock the door";
+            StyleText(objective, 26, TextAnchor.MiddleCenter);
+            objective.color = new Color(0.12f, 0.10f, 0.04f);
+            objective.text = "1/3  POSSESS GUARD  •  HIT TARGET";
             so.FindProperty("objectiveText").objectReferenceValue = objective;
 
             // Removed full-screen damage flash; clean it up if an earlier run added it
             var oldFlash = canvas.Find("DamageFlash");
             if (oldFlash != null) Object.DestroyImmediate(oldFlash.gameObject);
 
-            // Controls overlay: bottom-right, text changes with the current form
-            var controlsBG = FindOrCreateImage(canvas, "ControlsPanel", new Color(0f, 0f, 0f, 0.45f));
-            var cRect = controlsBG.rectTransform;
-            cRect.anchorMin = cRect.anchorMax = cRect.pivot = new Vector2(1, 0);
-            cRect.anchoredPosition = new Vector2(-30, 110);
-            cRect.sizeDelta = new Vector2(520, 170);
-            var controls = FindOrCreateText(controlsBG.transform, "ControlsText");
-            var ctRect = controls.rectTransform;
-            ctRect.anchorMin = Vector2.zero;
-            ctRect.anchorMax = Vector2.one;
-            ctRect.offsetMin = new Vector2(22, 12);
-            ctRect.offsetMax = new Vector2(-22, -12);
-            StyleText(controls, 28, TextAnchor.MiddleLeft);
-            controls.lineSpacing = 1.15f;
-            controls.color = new Color(0.92f, 0.92f, 0.95f);
-            controls.text = "WASD  Move\nSPACE  Jump\nE  Possess (near an enemy)";
-            so.FindProperty("controlsText").objectReferenceValue = controls;
+            var controls = so.FindProperty("controlsText").objectReferenceValue as Text;
+            var controlsPanel = canvas.Find("ControlsPanel");
+            if (controlsPanel != null) Object.DestroyImmediate(controlsPanel.gameObject);
+            else if (controls != null) Object.DestroyImmediate(controls.gameObject);
+            so.FindProperty("controlsText").objectReferenceValue = null;
 
             // Ammo pips: follow the mouse cursor while possessing, positioned at runtime
             var ammoRow = FindOrCreateRect(canvas, "AmmoRow");
@@ -235,6 +262,9 @@ namespace Possession.Editor
             so.FindProperty("possessTimerGroup").objectReferenceValue = group.gameObject;
             so.FindProperty("possessTimerFill").objectReferenceValue = possessFill;
             so.FindProperty("messageText").objectReferenceValue = message;
+            so.FindProperty("alertColor").colorValue = new Color(0.9f, 0.2f, 0.2f);
+            so.FindProperty("successColor").colorValue = new Color(0.2f, 0.85f, 0.3f);
+            so.FindProperty("objectiveColor").colorValue = new Color(1f, 0.78f, 0.18f);
             so.ApplyModifiedPropertiesWithoutUndo();
             group.gameObject.SetActive(false);
 
@@ -271,14 +301,7 @@ namespace Possession.Editor
         // Objectives, hostile enemies and analytics for one level scene, then save it
         static void SetupLevel(Scene scene, HUDManager hud, int levelIndex)
         {
-            var so = new SerializedObject(hud);
-            var steps = LevelObjectives[Mathf.Min(levelIndex, LevelObjectives.Length - 1)];
-            var prop = so.FindProperty("objectives");
-            prop.arraySize = steps.Length;
-            for (int i = 0; i < steps.Length; i++) prop.GetArrayElementAtIndex(i).stringValue = steps[i];
-            var objective = so.FindProperty("objectiveText").objectReferenceValue as Text;
-            if (objective != null) objective.text = steps[0];
-            so.ApplyModifiedPropertiesWithoutUndo();
+            SetObjectives(hud, levelIndex);
 
             // The end screen summary comes from AnalyticsTracker, which lives next to the GameManager
             var gm = FindInScene<GameManager>(scene);
@@ -309,6 +332,18 @@ namespace Possession.Editor
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
+        }
+
+        static void SetObjectives(HUDManager hud, int levelIndex)
+        {
+            var so = new SerializedObject(hud);
+            var steps = LevelObjectives[Mathf.Min(levelIndex, LevelObjectives.Length - 1)];
+            var prop = so.FindProperty("objectives");
+            prop.arraySize = steps.Length;
+            for (int i = 0; i < steps.Length; i++) prop.GetArrayElementAtIndex(i).stringValue = steps[i];
+            var objective = so.FindProperty("objectiveText").objectReferenceValue as Text;
+            if (objective != null) objective.text = steps[0];
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         static T FindInScene<T>(Scene scene) where T : Component
