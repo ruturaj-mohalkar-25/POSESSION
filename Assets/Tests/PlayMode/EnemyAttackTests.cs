@@ -26,6 +26,8 @@ namespace Possession.Tests
             guard = guardObject.AddComponent<GuardEnemy>();
             // No ShootAbility on this test body, so it uses the touch attack.
             attack = guardObject.AddComponent<EnemyContactDamage>();
+            // Vision is directional once the P1 cone lands; face the Spirit these tests use (+x).
+            guardObject.transform.rotation = Quaternion.LookRotation(Vector3.right);
             guardObject.SetActive(true);
             guard.GetComponent<CharacterController>().minMoveDistance = 0f;
             yield return null;
