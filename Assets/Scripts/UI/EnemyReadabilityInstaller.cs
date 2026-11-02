@@ -67,7 +67,8 @@ namespace Possession
 
             bool asSpirit = spirit != null && spirit.gameObject.activeInHierarchy
                 && (possession == null || possession.CurrentState == PlayerState.Spirit);
-            EnemyReadability green = asSpirit ? PickPossessTarget() : null;
+            EnemyReadability green = asSpirit && (possession == null || possession.CanStartPossession)
+                ? PickPossessTarget() : null;
 
             foreach (var cue in cues)
             {

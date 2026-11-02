@@ -50,6 +50,10 @@ namespace Possession.Editor
 
         public static void ConfigureScene(Scene scene)
         {
+            // The charge maze owns its authored eight-host layout.
+            if (scene.name == "Level_02")
+                foreach (var root in scene.GetRootGameObjects())
+                    if (root.GetComponent<Level02Director>() != null) return;
             if (!scene.IsValid() || !scene.isLoaded)
                 throw new InvalidOperationException("Open a level scene before configuring Guards.");
             if (scene.name != "Level_02" && scene.name != "Level_03")

@@ -30,6 +30,9 @@ namespace Possession
         public float PossessTimer => possessTimer;
         public float PossessDuration => possessDuration;
         public EnemyBase PossessedEnemy => possessedEnemy;
+        // Levels without a charge component retain their normal possession rules.
+        public bool CanStartPossession => GetComponent<PossessionCharge>() == null
+            || GetComponent<PossessionCharge>().HasCharge && ejectCooldownTimer <= 0f;
 
         private void Awake()
         {
@@ -62,7 +65,7 @@ namespace Possession
         private void HandlePossessInput()
         {
             EnemyBase nearest = FindNearestEnemy();
-            bool canPossess = nearest != null && ejectCooldownTimer <= 0f;
+            bool canPossess = nearest != null && ejectCooldownTimer <= 0f && CanStartPossession;
 
             EventBus.PossessPromptUpdated?.Invoke(canPossess);
 
@@ -106,6 +109,12 @@ namespace Possession
 
         private void Possess(EnemyBase enemy)
         {
+            if (GetComponent<PossessionCharge>() != null && (!CanStartPossession
+                || currentState != PlayerState.Spirit || enemy == null || !enemy.CanBePossessed
+                || !enemy.gameObject.activeInHierarchy || ejectCooldownTimer > 0f
+                || (enemyLayer.value & (1 << enemy.gameObject.layer)) == 0
+                || Vector3.Distance(transform.position, enemy.transform.position) > possessRange
+                || !HasLineOfSight(enemy))) return;
             lastSpiritPosition = transform.position;
             possessedEnemy = enemy;
             possessTimer = possessDuration;
@@ -144,6 +153,12 @@ namespace Possession
             EventBus.Ejected?.Invoke(ejectedEnemy, forced);
         }
 
+        public bool TryEject(bool forced)
+        {
+            Eject(forced);
+            return currentState == PlayerState.Spirit;
+        }
+
         private bool TryFindEjectionPosition(out Vector3 position)
         {
             const float clearance = 0.1f;
@@ -153,8 +168,8 @@ namespace Possession
 
             Physics.SyncTransforms();
             var enemyCollider = possessedEnemy.GetComponent<Collider>();
-            Bounds bounds = enemyCollider != null ? enemyCollider.bounds
-                : new Bounds(possessedEnemy.transform.position, Vector3.one * 2f);
+            Bounds bounds = enemyCollider != null && enemyCollider.bounds.size.sqrMagnitude > 0.01f
+                ? enemyCollider.bounds : new Bounds(possessedEnemy.transform.position, Vector3.one * 2f);
             Vector3 scale = transform.lossyScale;
             float radius = capsule.radius * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z));
             float halfHeight = Mathf.Max(radius, capsule.height * Mathf.Abs(scale.y) * 0.5f);
