@@ -31,7 +31,7 @@ namespace Possession.Tests
         [UnityTest]
         public IEnumerator Level02GuardsCompleteW3BehaviorChecks()
         {
-            yield return CheckLevel("Level_02", 2);
+            yield return CheckLevel("Level_02", 5);
         }
 
         [UnityTest]
