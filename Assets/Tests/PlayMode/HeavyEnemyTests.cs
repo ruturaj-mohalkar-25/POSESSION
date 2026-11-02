@@ -28,6 +28,8 @@ namespace Possession.Tests
             heavy = heavyObject.AddComponent<HeavyEnemy>();
             Set(heavy, "moveSpeed", 1.8f);
             Set(heavy, "maxHP", 5);
+            // Vision is directional now; point the enemy at the Spirit used by these tests (+x).
+            heavyObject.transform.rotation = Quaternion.LookRotation(Vector3.right);
             heavyObject.SetActive(true);
             heavy.GetComponent<CharacterController>().minMoveDistance = 0f;
             yield return null;

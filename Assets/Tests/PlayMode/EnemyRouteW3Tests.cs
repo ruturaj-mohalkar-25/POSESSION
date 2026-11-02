@@ -81,6 +81,9 @@ namespace Possession.Tests
 
                 spirit.gameObject.SetActive(true);
                 MoveSpirit(spirit, guard.transform.position + towardRoute * 4f);
+                // Directional vision: face the guard at the Spirit so it is inside the cone.
+                guard.transform.rotation = Quaternion.LookRotation(
+                    Flat(spirit.transform.position - guard.transform.position));
                 Vector3 beforeDetection = guard.transform.position;
                 yield return new WaitForSeconds(0.25f);
                 Assert.That(guard.IsChasing, Is.True,
