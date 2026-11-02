@@ -19,6 +19,9 @@ namespace Possession
         [SerializeField, Min(0.01f)] protected float waypointArrivalDistance = 0.3f;
         [SerializeField, Min(0f)] protected float chaseStopDistance = 1.5f;
         [SerializeField, Min(0f)] protected float patrolStartDelay;
+        // After losing sight of the Spirit, walk to where it was last seen and look
+        // around for this long before going back to the nearest patrol waypoint.
+        [SerializeField, Min(0f)] protected float loseSightSearchTime = 1.5f;
 
         protected int currentHP;
         protected bool isPossessed;
@@ -30,12 +33,16 @@ namespace Possession
         private float waypointWaitTimer;
         private float verticalSpeed;
         private SpiritController chaseTarget;
+        private Vector3 lastSeenPosition;
+        private float searchTimer;
 
         public bool CanBePossessed => !isPossessed && !isHostile && currentHP > 0;
         public int CurrentHP => currentHP;
         public bool IsChasing => !isPossessed && chaseTarget != null
             && chaseTarget.isActiveAndEnabled;
-        public bool IsIdle => !isPossessed && !IsChasing && waypointWaitTimer > 0f;
+        public bool IsIdle => !isPossessed && !IsChasing && !IsSearching && waypointWaitTimer > 0f;
+        // True while the enemy checks the Spirit's last seen position after losing sight of it.
+        public bool IsSearching => !isPossessed && !isHostile && searchTimer > 0f;
         // True while the enemy is in its post-eject hostile state (chasing or not).
         public bool IsHostile => isHostile;
         public float DetectionRange => detectionRange;
@@ -95,10 +102,31 @@ namespace Possession
 
         protected virtual void HandlePatrol()
         {
-            chaseTarget = DetectSpirit();
-            if (IsChasing)
+            SpiritController seen = DetectSpirit();
+            if (seen != null)
             {
-                MoveTowards(chaseTarget.transform.position, chaseStopDistance);
+                chaseTarget = seen;
+                searchTimer = 0f;
+                lastSeenPosition = seen.transform.position;
+                MoveTowards(lastSeenPosition, chaseStopDistance);
+                return;
+            }
+
+            if (chaseTarget != null)
+            {
+                // Lost sight this frame: search the last seen position first.
+                chaseTarget = null;
+                searchTimer = loseSightSearchTime;
+                if (searchTimer <= 0f)
+                    ResumePatrolAtNearestWaypoint();
+            }
+
+            if (searchTimer > 0f)
+            {
+                searchTimer -= Time.deltaTime;
+                MoveTowards(lastSeenPosition, waypointArrivalDistance);
+                if (searchTimer <= 0f)
+                    ResumePatrolAtNearestWaypoint();
                 return;
             }
 
@@ -155,6 +183,7 @@ namespace Possession
         {
             isPossessed = true;
             chaseTarget = null;
+            searchTimer = 0f;
             waypointWaitTimer = 0f;
             var ability = GetComponent<Ability>();
             if (ability != null) ability.ResetUses();
@@ -164,6 +193,7 @@ namespace Possession
         {
             isPossessed = false;
             chaseTarget = null;
+            searchTimer = 0f;
         }
 
         public virtual void OnForcedEject(float hostileDuration)
@@ -171,6 +201,7 @@ namespace Possession
             isPossessed = false;
             isHostile = true;
             hostileTimer = hostileDuration;
+            searchTimer = 0f;
             // PossessionController calls this before the spirit becomes visible again.
             chaseTarget = FindFirstObjectByType<SpiritController>(FindObjectsInactive.Include);
         }
