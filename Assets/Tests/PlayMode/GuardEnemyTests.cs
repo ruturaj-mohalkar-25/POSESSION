@@ -157,6 +157,8 @@ namespace Possession.Tests
         [UnityTest]
         public IEnumerator OverlapSphereDetectsChildColliderAndReturnsToPatrol()
         {
+            // Lose-sight search is covered in EnemyAttackTests; this checks the direct return.
+            SetBase(guard, "loseSightSearchTime", 0f);
             SetBase(guard, "waypoints", new[] {
                 Create("Patrol WP", new Vector3(-20f, 1f, 0f)).transform });
             var spirit = CreateSpirit(new Vector3(5f, 1f, 0f), true);
