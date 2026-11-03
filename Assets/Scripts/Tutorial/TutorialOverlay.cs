@@ -103,9 +103,9 @@ namespace Possession
                     bool failed = state.Failed;
                     modalTitle.text = state.Completed ? "YOU'RE READY." : failed ? "TRY AGAIN." : "BORROW A BODY. FIND THE EXIT.";
                     modalBody.text = state.Completed
-                        ? "You opened the door, broke the wall, and reached the exit as the Spirit.\n\nIn every level: use each body's ability and finish before the clock reaches zero. Eject early to avoid a hostile enemy."
+                        ? "You used charges, stayed outside vision cones, opened the door, broke the wall, and reached the exit as the Spirit.\n\nIn every level: collect charges, approach enemies from behind, use each body's ability, and finish before the clock reaches zero."
                         : failed ? "The level clock ran out, or the Spirit lost its health.\n\nEject early to avoid hostility. If you are forced out, move away from the red enemy. Restart whenever you need."
-                        : "Borrow the Guard to shoot. Borrow the Wall Breaker to smash.\n\nFollow the key prompts, then reach the green exit as the Spirit.";
+                        : "Red cones show enemy vision. Possession only works outside a cone, usually from behind.\n\nEach possession spends one charge. Collect Soul Coins as the Spirit, borrow the Guard to shoot, and borrow the Wall Breaker to smash.";
                     primary.GetComponentInChildren<Text>().text = state.Completed ? "PLAY LEVEL 01" : failed ? "RESTART PRACTICE" : "START PRACTICE";
                     replay.gameObject.SetActive(state.Completed);
                     (menu.transform as RectTransform).anchoredPosition = new Vector2(state.Completed ? 220f : 0f, -245f);

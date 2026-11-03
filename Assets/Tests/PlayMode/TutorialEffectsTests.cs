@@ -44,20 +44,14 @@ namespace Possession.Tests
         }
 
         [UnityTest]
-        public IEnumerator ClockSpotlightEnlargesAndRestoresTheRealHudWidget()
+        public IEnumerator StartingPracticeDoesNotOpenAnotherBlockingPopup()
         {
-            var clock = guide.FocusWidgets(TutorialFocus.LevelClock).Single();
-            Vector3 original = clock.localScale;
             guide.BeginPractice();
-            Assert.That(guide.CoachingFocus, Is.EqualTo(TutorialFocus.LevelClock));
-            yield return new WaitForSecondsRealtime(0.2f);
-            Assert.That(clock.localScale.x, Is.GreaterThan(original.x));
-            Assert.That(Time.timeScale, Is.Zero);
-            guide.ContinueCoaching();
-            Assert.That(clock.localScale, Is.EqualTo(original));
-            guide.ContinueCoaching();
             Assert.That(guide.IsCoaching, Is.False);
             Assert.That(Time.timeScale, Is.EqualTo(1f));
+            Assert.That(guide.Spirit.enabled, Is.True);
+            Assert.That(guide.Possession.enabled, Is.True);
+            yield return null;
         }
 
         [UnityTest]
@@ -79,7 +73,7 @@ namespace Possession.Tests
         }
 
         [UnityTest]
-        public IEnumerator NearbyGuardShowsEThenPossessionExplainsLmbWithoutLosingTimer()
+        public IEnumerator NearbyGuardShowsEThenPossessionUsesNonBlockingLmbGuidance()
         {
             Begin(); guide.Progress.Move(TutorialMovement.All);
             guide.Guard.MoveSpeed = 0f;
@@ -88,13 +82,11 @@ namespace Possession.Tests
             var key = guide.GetComponent<TutorialCoach>().GetComponentsInChildren<Text>(true).Single(t => t.name == "RequiredKey");
             Assert.That(key.text, Is.EqualTo("E"));
             Invoke(guide.Possession, "Possess", guide.Guard);
-            Assert.That(guide.CoachingFocus, Is.EqualTo(TutorialFocus.GuardAbility));
+            Assert.That(guide.IsCoaching, Is.False);
             float timer = guide.Possession.PossessTimer;
-            yield return new WaitForSecondsRealtime(0.15f);
-            Assert.That(guide.Possession.PossessTimer, Is.EqualTo(timer));
-            var body = guide.GetComponent<TutorialCoach>().GetComponentsInChildren<Text>(true).Single(t => t.name == "FeatureExplanation");
-            StringAssert.Contains("LMB", body.text);
-            guide.ContinueCoaching(); yield return null;
+            yield return new WaitForSeconds(0.15f);
+            Assert.That(guide.Possession.PossessTimer, Is.LessThan(timer));
+            StringAssert.Contains("LEFT CLICK", guide.Instruction);
             Assert.That(key.text, Is.EqualTo("LMB"));
             Assert.That(guide.GetComponent<TutorialCoach>().GetComponentsInChildren<TutorialRingGraphic>(true)
                 .All(ring => ring.canvasRenderer != null), Is.True, "Every halo needs a CanvasRenderer to be visible.");
@@ -105,59 +97,41 @@ namespace Possession.Tests
         }
 
         [UnityTest]
-        public IEnumerator AbilityCardDoesNotCoverTheHighlightedBody()
+        public IEnumerator PossessingDoesNotOpenTheBlockingAbilityCard()
         {
             Begin(); guide.Progress.Move(TutorialMovement.All);
             guide.Guard.MoveSpeed = 0f;
             guide.Spirit.RestoreAt(guide.Guard.transform.position + Vector3.back * 3f);
             yield return new WaitForSeconds(0.25f);
             Invoke(guide.Possession, "Possess", guide.Guard);
-            yield return new WaitForSecondsRealtime(0.45f);
-            Canvas.ForceUpdateCanvases();
+            yield return null;
             var coach = guide.GetComponent<TutorialCoach>();
-            var rects = coach.GetComponentsInChildren<RectTransform>(true);
-            var card = rects.Single(r => r.name == "CoachCard");
-            var halo = rects.Single(r => r.name == "SpotlightHalo");
-            var root = coach.GetComponentsInChildren<Canvas>(true).Single(c => c.name == "TutorialEffects").transform;
-            var a = RectTransformUtility.CalculateRelativeRectTransformBounds(root, card);
-            var b = RectTransformUtility.CalculateRelativeRectTransformBounds(root, halo);
-            Assert.That(new Rect(a.min.x, a.min.y, a.size.x, a.size.y)
-                .Overlaps(new Rect(b.min.x, b.min.y, b.size.x, b.size.y)), Is.False);
+            var card = coach.GetComponentsInChildren<RectTransform>(true).Single(r => r.name == "CoachCard");
+            Assert.That(card.gameObject.activeInHierarchy, Is.False);
+            Assert.That(guide.IsCoaching, Is.False);
+            Assert.That(Time.timeScale, Is.EqualTo(1f));
         }
 
         [UnityTest]
-        public IEnumerator PossessionClockIsVisibleBeforeThePausedCountdownExplanation()
+        public IEnumerator PossessionClockStaysVisibleWithoutPausingTheCountdown()
         {
             Begin(); guide.Progress.Move(TutorialMovement.All);
             Invoke(guide.Possession, "Possess", guide.Guard); Dismiss();
             Object.FindFirstObjectByType<Target>().OnHit();
             yield return null;
-            Assert.That(guide.CoachingFocus, Is.EqualTo(TutorialFocus.PossessionClock));
+            Assert.That(guide.IsCoaching, Is.False);
             var bar = guide.FocusWidgets(TutorialFocus.PossessionClock).Single();
             Assert.That(bar.gameObject.activeInHierarchy, Is.True);
             float timer = guide.Possession.PossessTimer;
-            yield return new WaitForSecondsRealtime(0.45f);
-            Assert.That(bar.localScale.x, Is.GreaterThan(1f));
-            Assert.That(guide.Possession.PossessTimer, Is.EqualTo(timer));
-            Canvas.ForceUpdateCanvases();
-            var coach = guide.GetComponent<TutorialCoach>();
-            var root = coach.GetComponentsInChildren<Canvas>(true).Single(c => c.name == "TutorialEffects").transform;
-            var rects = coach.GetComponentsInChildren<RectTransform>(true);
-            var card = RectTransformUtility.CalculateRelativeRectTransformBounds(root, rects.Single(r => r.name == "CoachCard"));
-            var halo = RectTransformUtility.CalculateRelativeRectTransformBounds(root, rects.Single(r => r.name == "SpotlightHalo"));
-            Assert.That(new Rect(card.min.x, card.min.y, card.size.x, card.size.y)
-                .Overlaps(new Rect(halo.min.x, halo.min.y, halo.size.x, halo.size.y)), Is.False,
-                "The explanation must leave the shared floating possession bar visible.");
-            guide.ContinueCoaching();
+            yield return new WaitForSeconds(0.2f);
+            Assert.That(guide.Possession.PossessTimer, Is.LessThan(timer));
             Assert.That(bar.localScale, Is.EqualTo(Vector3.one));
         }
 
         [Test]
-        public void DisablingTheGuideDuringASpotlightRestoresControlsAndTime()
+        public void BeginningPracticeKeepsControlsAndTimeRunning()
         {
             guide.BeginPractice();
-            Assert.That(guide.Possession.enabled, Is.False);
-            guide.enabled = false;
             Assert.That(guide.Possession.enabled, Is.True);
             Assert.That(guide.Spirit.enabled, Is.True);
             Assert.That(Time.timeScale, Is.EqualTo(1f));
@@ -194,6 +168,7 @@ namespace Possession.Tests
             Invoke(guide.Possession, "Possess", guide.Guard); Dismiss();
             Object.FindFirstObjectByType<Target>().OnHit();
             Invoke(guide.Possession, "Eject", false);
+            Assert.That(guide.Charges.TryCollect(), Is.True, "Simulate collecting the tutorial Soul Coin.");
             guide.Heavy.MoveSpeed = 0f;
             guide.Spirit.RestoreAt(guide.Heavy.transform.position + Vector3.back * 2.5f);
             Physics.SyncTransforms(); yield return null;
@@ -205,11 +180,10 @@ namespace Possession.Tests
             Assert.That(key.text, Is.EqualTo("E"));
             Assert.That(label.text, Is.EqualTo("WALL BREAKER"));
             Invoke(guide.Possession, "Possess", guide.Heavy);
-            Assert.That(guide.CoachingFocus, Is.EqualTo(TutorialFocus.HeavyAbility));
-            var explanation = coach.GetComponentsInChildren<Text>(true).Single(t => t.name == "FeatureExplanation");
-            StringAssert.Contains("brick wall", explanation.text);
-            Dismiss(); yield return null;
+            Assert.That(guide.IsCoaching, Is.False);
+            yield return null;
             Assert.That(guide.Progress.Lesson, Is.EqualTo(TutorialLesson.SmashWall));
+            StringAssert.Contains("brick wall", guide.Instruction);
             Assert.That(key.text, Is.EqualTo("LMB"));
             Assert.That(label.text, Is.EqualTo("SMASH THIS WALL"));
             var wall = Object.FindFirstObjectByType<BreakableWall>();
@@ -250,7 +224,23 @@ namespace Possession.Tests
 
         private void Begin() { guide.BeginPractice(); Dismiss(); }
         private void Dismiss() { for (int i = 0; i < 5 && guide.IsCoaching; i++) guide.ContinueCoaching(); }
-        private static void Invoke(object item, string method, params object[] args) => item.GetType()
-            .GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(item, args);
+        private static void Invoke(object item, string method, params object[] args)
+        {
+            if (method == "Possess" && item is PossessionController controller)
+            {
+                typeof(PossessionController).GetField("ejectCooldownTimer",
+                    BindingFlags.Instance | BindingFlags.NonPublic).SetValue(controller, 0f);
+                var charges = controller.GetComponent<PossessionCharge>();
+                if (charges != null && !charges.HasCharge)
+                    Assert.That(charges.TryCollect(), Is.True, "Simulate collecting the tutorial Soul Coin.");
+                if (args.Length > 0 && args[0] is EnemyBase body)
+                {
+                    controller.GetComponent<SpiritController>().RestoreAt(
+                        body.transform.position - body.transform.forward * 2.5f);
+                    Physics.SyncTransforms();
+                }
+            }
+            item.GetType().GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(item, args);
+        }
     }
 }

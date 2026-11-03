@@ -111,7 +111,7 @@ namespace Possession.Tests
         }
 
         [UnityTest]
-        public IEnumerator WelcomePausesClockAndBeginStartsSharedGameplay()
+        public IEnumerator WelcomeIsTheOnlyOpeningModalAndPracticeStartsWithoutMoreInterruptions()
         {
             yield return Load(TutorialScene.Name);
             var guide = Object.FindFirstObjectByType<TutorialGuide>();
@@ -122,19 +122,8 @@ namespace Possession.Tests
             yield return new WaitForSecondsRealtime(0.1f);
             Assert.That(manager.LevelTimer, Is.EqualTo(remaining));
             guide.BeginPractice();
-            Assert.That(guide.CoachingFocus, Is.EqualTo(TutorialFocus.LevelClock));
-            Assert.That(Time.timeScale, Is.Zero);
-            Assert.That(guide.Possession.enabled, Is.False);
-            yield return new WaitForSecondsRealtime(0.1f);
-            Assert.That(manager.LevelTimer, Is.EqualTo(remaining));
-            guide.ContinueCoaching();
-            Assert.That(guide.CoachingFocus, Is.EqualTo(TutorialFocus.Health));
-            var hp = guide.FocusWidgets(TutorialFocus.Health)[1];
-            Vector3 originalScale = hp.localScale;
-            yield return new WaitForSecondsRealtime(0.2f);
-            Assert.That(hp.localScale.x, Is.GreaterThan(originalScale.x));
-            guide.ContinueCoaching();
-            Assert.That(hp.localScale, Is.EqualTo(originalScale));
+            Assert.That(guide.IsCoaching, Is.False);
+            Assert.That(Time.timeScale, Is.EqualTo(1f));
             Assert.That(guide.Possession.enabled, Is.True);
             yield return new WaitForSeconds(0.1f);
             Assert.That(manager.LevelTimer, Is.LessThan(remaining));
@@ -214,6 +203,10 @@ namespace Possession.Tests
             var spirit = pc.GetComponent<SpiritController>();
             spirit.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeAll;
             Assert.That(guide.Guard.IsHostile, Is.True);
+            var attackPosition = guide.Guard.transform.position + guide.Guard.transform.forward * 2.5f;
+            attackPosition.y = spirit.transform.position.y;
+            spirit.RestoreAt(attackPosition);
+            Physics.SyncTransforms();
             yield return new WaitForSeconds(1.1f);
             Assert.That(spirit.CurrentHP, Is.LessThan(spirit.MaxHP), "The lesson must use the Guard's real attack, not only a warning message.");
         }
@@ -261,7 +254,15 @@ namespace Possession.Tests
         private static void Dismiss(TutorialGuide guide)
         { for (int i = 0; i < 5 && guide.IsCoaching; i++) guide.ContinueCoaching(); }
         private static void Possess(TutorialGuide guide, EnemyBase body)
-        { Invoke(guide.Possession, "Possess", body); Dismiss(guide); }
+        {
+            Set(guide.Possession, "ejectCooldownTimer", 0f);
+            var charges = guide.Possession.GetComponent<PossessionCharge>();
+            if (charges != null && !charges.HasCharge) Assert.That(charges.TryCollect(), Is.True);
+            guide.Spirit.RestoreAt(body.transform.position - body.transform.forward * 2.5f);
+            Physics.SyncTransforms();
+            Invoke(guide.Possession, "Possess", body);
+            Dismiss(guide);
+        }
         private static void Set(object item, string name, object value) => item.GetType()
             .GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).SetValue(item, value);
         private static void Invoke(object item, string name, params object[] args) => item.GetType()
