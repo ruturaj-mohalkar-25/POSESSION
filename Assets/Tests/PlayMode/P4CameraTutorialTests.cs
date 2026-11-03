@@ -13,8 +13,10 @@ namespace Possession.Tests
         public IEnumerator Cleanup()
         {
             Time.timeScale = 1f;
+            var loaded = SceneManager.GetActiveScene();
+            SceneManager.SetActiveScene(SceneManager.CreateScene("P4CameraTutorialCleanup"));
+            yield return SceneManager.UnloadSceneAsync(loaded);
             EventBus.Clear();
-            yield return null;
         }
 
         [UnityTest]
