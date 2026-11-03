@@ -63,15 +63,16 @@ namespace Possession.Editor
             chargeSo.FindProperty("startingCharges").intValue=0;
             chargeSo.ApplyModifiedPropertiesWithoutUndo();
             spirit.transform.position=Map(3,14);
-            LevelBuildKit.BuildLighting(); RenderSettings.ambientLight=new Color(.38f,.42f,.5f);
-            var daylight=Object.FindFirstObjectByType<Light>();daylight.intensity=.65f;daylight.color=new Color(.74f,.83f,1f);
-            camera.backgroundColor=new Color(.035f,.045f,.065f); camera.fieldOfView=45f;
-            camera.transform.rotation=Quaternion.Euler(57,0,0); camera.transform.position=spirit.transform.position+new Vector3(0,17,-11);
-            Set(camera.GetComponent<CameraFollow>(),"offset",new Vector3(0,17,-11));
+            LevelBuildKit.BuildLighting();
+            camera.backgroundColor=new Color(.08f,.08f,.1f);
+            camera.fieldOfView=40f;
+            camera.transform.rotation=Quaternion.Euler(55,0,0);
+            camera.transform.position=spirit.transform.position+new Vector3(0,25,-10);
+            Set(camera.GetComponent<CameraFollow>(),"offset",new Vector3(0,25,-10));
             Set(camera.GetComponent<CameraFollow>(),"target",spirit.transform);
             var world=new GameObject("Level02_ChargeMaze").transform;
-            var floor=Material("CourtyardStone",new Color(.27f,.30f,.34f));
-            var wallMat=Material("SunlitPlaster",new Color(.35f,.40f,.47f));
+            var floor=Material("CourtyardStone",new Color(.33f,.42f,.36f));
+            var wallMat=Material("SunlitPlaster",new Color(.55f,.72f,.90f));
             var coverMat=Material("OldWood",new Color(.23f,.20f,.18f));
             var shardMat=Material("ChargeEnergy",new Color(.35f,1f,.72f),true);
             var dustMat=Material("DustPrint",new Color(.52f,.52f,.47f));
@@ -147,18 +148,18 @@ namespace Possession.Editor
             Set(exit.AddComponent<Level02Exit>(),"director",director);
             Cube(exit.transform,"ExitPlatform",Map(31,12,.18f),new Vector3(3f,.15f,3f),AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/P5_Exit.mat"));
             var enemies=new GameObject("HuntedEnemies").transform;enemies.SetParent(world);
-            Enemy(enemies,guardTemplate,"Guard_Entrance",4.7f,10.5f,5,14,5.5f);
+            Enemy(enemies,guardTemplate,"Guard_Entrance",4.7f,10.5f,5,14,5f);
             Enemy(enemies,guardTemplate,"Guard_Courtyard",10.5f,10.5f,14,10.5f,5f);
-            Enemy(enemies,heavyTemplate,"Heavy_Courtyard",13.6f,15,10,15,4f);
+            Enemy(enemies,heavyTemplate,"Heavy_Courtyard",13.6f,15,10,15,3f);
             Enemy(enemies,guardTemplate,"Guard_North",14.5f,2,14.5f,5,5f);
-            Enemy(enemies,heavyTemplate,"Heavy_North",24.5f,4.5f,25,2,4f);
+            Enemy(enemies,heavyTemplate,"Heavy_North",24.5f,4.5f,25,2,3f);
             Enemy(enemies,guardTemplate,"Guard_South",14.2f,22,13.2f,19.8f,5f);
             Enemy(enemies,guardTemplate,"Guard_GateChamber",24.5f,21.7f,21,21.8f,5f);
-            Enemy(enemies,heavyTemplate,"Heavy_Exit",31.5f,14.3f,31,10,4f);
+            Enemy(enemies,heavyTemplate,"Heavy_Exit",31.5f,14.3f,31,10,3f);
             Object.DestroyImmediate(guardTemplate);Object.DestroyImmediate(heavyTemplate);
             var config=LevelConfigAssets.Load("Level_02");LevelBuildKit.ApplyConfig(config,manager,spirit.gameObject);
             foreach(var enemy in world.GetComponentsInChildren<EnemyBase>())
-            {Set(enemy,"detectionRange",enemy is HeavyEnemy?4f:5.5f);Set(enemy,"chaseStopDistance",1.5f);}
+            {Set(enemy,"detectionRange",enemy is HeavyEnemy?3f:5f);Set(enemy,"chaseStopDistance",1.5f);}
             foreach(var w in new[] {barrierN,barrierS})w.GetComponent<Renderer>().sharedMaterial=AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/P5_Brick.mat");
             // Daylight clues are floor marks and sunlit alcoves, rather than glowing routes.
             Prints(world,Map(3,14,.13f),Map(8,13,.13f),dustMat);
