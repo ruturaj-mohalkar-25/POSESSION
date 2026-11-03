@@ -153,7 +153,8 @@ namespace Possession.Tests
                 .Invoke(possession, new object[] { heavy });
             var controller = heavy.GetComponent<CharacterController>();
             controller.enabled = false;
-            heavy.transform.SetPositionAndRotation(new Vector3(0f, 1.4f, 35.2f), Quaternion.identity);
+            // Back to the exit: an eject drops the Spirit behind the body it leaves.
+            heavy.transform.SetPositionAndRotation(new Vector3(0f, 1.4f, 35.2f), Quaternion.Euler(0f, 180f, 0f));
             controller.enabled = true;
             yield return new WaitForFixedUpdate();
             Assert.That(GameManager.Instance.CurrentState, Is.EqualTo(LevelState.InProgress));
