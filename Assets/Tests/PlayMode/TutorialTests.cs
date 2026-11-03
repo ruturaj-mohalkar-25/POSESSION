@@ -262,8 +262,11 @@ namespace Possession.Tests
         { for (int i = 0; i < 5 && guide.IsCoaching; i++) guide.ContinueCoaching(); }
         private static void Possess(TutorialGuide guide, EnemyBase body)
         {
+            Set(guide.Possession, "ejectCooldownTimer", 0f);
             var charges = guide.Possession.GetComponent<PossessionCharge>();
             if (charges != null && !charges.HasCharge) Assert.That(charges.TryCollect(), Is.True);
+            guide.Spirit.RestoreAt(body.transform.position - body.transform.forward * 2.5f);
+            Physics.SyncTransforms();
             Invoke(guide.Possession, "Possess", body);
             Dismiss(guide);
         }

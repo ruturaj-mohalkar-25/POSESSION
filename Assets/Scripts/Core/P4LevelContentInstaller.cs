@@ -22,6 +22,16 @@ namespace Possession
             if (spirit != null && spirit.GetComponent<PossessionCharge>() == null)
                 spirit.gameObject.AddComponent<PossessionCharge>();
 
+            if (scene.name == TutorialScene.Name)
+            {
+                // The tutorial teaches a deterministic behind-the-body approach. Face
+                // both examples north so the starting path and coaching arrows agree.
+                var guard = Object.FindFirstObjectByType<GuardEnemy>();
+                var heavy = Object.FindFirstObjectByType<HeavyEnemy>();
+                if (guard != null) guard.transform.rotation = Quaternion.identity;
+                if (heavy != null) heavy.transform.rotation = Quaternion.identity;
+            }
+
             var existing = Object.FindObjectsByType<PossessionChargePickup>(FindObjectsSortMode.None);
             if (existing.Length >= 2)
             {

@@ -255,9 +255,17 @@ namespace Possession.Tests
         {
             if (method == "Possess" && item is PossessionController controller)
             {
+                typeof(PossessionController).GetField("ejectCooldownTimer",
+                    BindingFlags.Instance | BindingFlags.NonPublic).SetValue(controller, 0f);
                 var charges = controller.GetComponent<PossessionCharge>();
                 if (charges != null && !charges.HasCharge)
                     Assert.That(charges.TryCollect(), Is.True, "Simulate collecting the tutorial shard.");
+                if (args.Length > 0 && args[0] is EnemyBase body)
+                {
+                    controller.GetComponent<SpiritController>().RestoreAt(
+                        body.transform.position - body.transform.forward * 2.5f);
+                    Physics.SyncTransforms();
+                }
             }
             item.GetType().GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(item, args);
         }
