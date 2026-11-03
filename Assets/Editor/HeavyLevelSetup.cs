@@ -78,9 +78,10 @@ namespace Possession.Editor
             bool levelTwo = scene.name == "Level_02";
             // Validate dependencies before making any scene changes.
             RequireWall(scene, levelTwo ? "BreakableWall" : "BreakableWall_01");
-            if (!levelTwo) RequireWall(scene, "BreakableWall_02");
+            if (!levelTwo) RequireWall(scene, "BreakableWall_Entry");
             var spawn1 = RequireObject(scene, "SpawnPoint_Heavy_01");
-            var spawn2 = levelTwo ? null : RequireObject(scene, "SpawnPoint_Heavy_02");
+            var spawn2 = levelTwo ? RequireObject(scene, "SpawnPoint_Heavy_02") : null;
+            var spawn3 = levelTwo ? null : FindObject(scene, "SpawnPoint_Heavy_03");
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
             if (prefab == null || prefab.GetComponent<HeavyEnemy>() == null
                 || prefab.GetComponent<SmashAbility>() == null)
@@ -98,9 +99,10 @@ namespace Possession.Editor
                 levelTwo ? 2f : 2.2f,
                 spawn1.transform.position,
                 spawn1.transform.position + (levelTwo ? new Vector3(1.4f, 0f, 2f) : new Vector3(2f, 0f, -1f)));
-            if (!levelTwo)
-                ConfigureHeavy(scene, group, prefab, "Heavy_02", spawn2.transform.position, 2.2f,
-                    spawn2.transform.position, spawn2.transform.position + new Vector3(2f, 0f, -2f));
+            if (!levelTwo && spawn3 != null)
+                ConfigureHeavy(scene, group, prefab, "Heavy_03", spawn3.transform.position, 2.2f,
+                    new Vector3(0f, spawn3.transform.position.y, 10f),
+                    new Vector3(0f, spawn3.transform.position.y, 7f));
             EditorSceneManager.MarkSceneDirty(scene);
         }
 
