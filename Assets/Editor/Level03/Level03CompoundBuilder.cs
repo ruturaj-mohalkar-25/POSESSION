@@ -17,7 +17,7 @@ namespace Possession.Editor
         const float Unit=Level03Director.LayoutUnit, Height=Level03Director.FloorHeight;
         [Serializable] public class Layout { public Floor[] floors; }
         [Serializable] public class Floor { public string name;public float height;public Rect[] rooms,halls,cover;public Actor[] actors;public Pickup[] pickups;public Wire[] wires; }
-        [Serializable] public class Rect {public float x,y,width,height;}
+        [Serializable] public class Rect {public float x,y,width,height;public string label;}
         [Serializable] public class Actor {public string kind,wing;public float x,y;public bool enabled;}
         [Serializable] public class Pickup {public string name;public float x,y;public bool reforms;}
         [Serializable] public class Wire {public string wing;public Vector2[] points;}
@@ -29,18 +29,21 @@ namespace Possession.Editor
         {
             if(EditorApplication.isPlayingOrWillChangePlaymode)return;
             if(!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())return;
-            if(!File.Exists(ScenePath))AssetDatabase.CopyAsset("Assets/Scenes/Level_01.unity",ScenePath);
+            // Refresh the shared scene shell on every rebuild: player, camera, HUD,
+            // manager and authored enemy/puzzle components come from the team's current level.
+            var reference=EditorSceneManager.OpenScene("Assets/Scenes/Level_01.unity");
+            if(!EditorSceneManager.SaveScene(reference,ScenePath,true))throw new InvalidOperationException("Could not refresh the Level 3 scene shell.");
             var scene=EditorSceneManager.OpenScene(ScenePath);
             var spirit=Object.FindFirstObjectByType<SpiritController>();var manager=Object.FindFirstObjectByType<GameManager>();var camera=Camera.main;
             guardStyle=Object.Instantiate(Object.FindFirstObjectByType<GuardEnemy>().gameObject);guardStyle.SetActive(false);
             heavyStyle=Object.Instantiate(Object.FindFirstObjectByType<HeavyEnemy>().gameObject);heavyStyle.SetActive(false);
-            var style=EditorSceneManager.OpenScene("Assets/Scenes/Level_01.unity",OpenSceneMode.Additive);var roots=style.GetRootGameObjects();
+            var roots=scene.GetRootGameObjects();
             targetStyle=Object.Instantiate(roots.SelectMany(r=>r.GetComponentsInChildren<Target>(true)).First().gameObject);
             doorStyle=Object.Instantiate(roots.SelectMany(r=>r.GetComponentsInChildren<Door>(true)).First(d=>d.GetComponent<LevelExit>()==null).gameObject);
             wallStyle=Object.Instantiate(roots.SelectMany(r=>r.GetComponentsInChildren<BreakableWall>(true)).First().gameObject);
             var styles=new[]{guardStyle,heavyStyle,targetStyle,doorStyle,wallStyle};
-            foreach(var item in new[]{targetStyle,doorStyle,wallStyle}){SceneManager.MoveGameObjectToScene(item,scene);item.SetActive(false);}
-            EditorSceneManager.CloseScene(style,true);SceneManager.SetActiveScene(scene);
+            foreach(var item in new[]{targetStyle,doorStyle,wallStyle}){if(item.scene!=scene)SceneManager.MoveGameObjectToScene(item,scene);item.SetActive(false);}
+            SceneManager.SetActiveScene(scene);
             foreach(var root in scene.GetRootGameObjects())
             {
                 if(styles.Contains(root)||root.GetComponent<GameManager>()!=null||root.GetComponent<Camera>()!=null||root.GetComponent<SpiritController>()!=null||root.GetComponentInChildren<HUDManager>(true)!=null||root.GetComponent<EventSystem>()!=null)continue;
@@ -52,8 +55,10 @@ namespace Possession.Editor
             spirit.gameObject.AddComponent<PossessionCharge>();spirit.transform.position=Map(4,24);
             LevelBuildKit.BuildLighting();RenderSettings.ambientLight=new Color(.34f,.38f,.49f);
             var moon=Object.FindFirstObjectByType<Light>();moon.color=new Color(.6f,.73f,1f);moon.intensity=.55f;
-            camera.backgroundColor=new Color(.025f,.035f,.055f);camera.fieldOfView=45;camera.transform.rotation=Quaternion.Euler(57,0,0);camera.transform.position=spirit.transform.position+new Vector3(0,17,-11);
-            Set(camera.GetComponent<CameraFollow>(),"target",spirit.transform);Set(camera.GetComponent<CameraFollow>(),"offset",new Vector3(0,17,-11));
+            camera.backgroundColor=new Color(.025f,.035f,.055f);
+            var follow=camera.GetComponent<CameraFollow>();var cameraSettings=new SerializedObject(follow);
+            camera.transform.position=spirit.transform.position+cameraSettings.FindProperty("offset").vector3Value;
+            Set(follow,"target",spirit.transform);
             if(camera.GetComponent<Level03FloorVisibility>()==null)camera.gameObject.AddComponent<Level03FloorVisibility>();
             floorMat=Mat("Slate",new Color(.34f,.37f,.43f));wallMat=Mat("NightStone",new Color(.31f,.36f,.46f));coverMat=Mat("Cargo",new Color(.26f,.24f,.22f));chargeMat=Mat("Charge",new Color(.35f,1f,.72f),true);wireMat=Mat("Wire",new Color(.2f,.6f,1f),true);
             var layout=JsonUtility.FromJson<Layout>(File.ReadAllText("Assets/Level03/CompoundLayout.json"));
@@ -64,7 +69,7 @@ namespace Possession.Editor
                 var root=new GameObject(data.name=="ground"?"GroundFloor":"UpperFloor").transform;root.SetParent(world);
                 Geometry(root,data);
                 for(int i=0;i<data.rooms.Length;i++)
-                {var r=data.rooms[i];var zone=new GameObject(i<6?(data.height==0?"G":"U")+(i+1):"D"+(i-5+(data.height==0?0:2)));zone.transform.SetParent(root);zone.transform.position=Map(r.x+r.width/2,r.y+r.height/2,data.height,0);}
+                {var r=data.rooms[i];var zone=new GameObject(!string.IsNullOrEmpty(r.label)?r.label.Replace(' ','_'):i<6?(data.height==0?"G":"U")+(i+1):"D"+(i-5+(data.height==0?0:2)));zone.transform.SetParent(root);zone.transform.position=Map(r.x+r.width/2,r.y+r.height/2,data.height,0);}
                 for(int i=0;i<data.cover.Length;i++){var r=data.cover[i];Cube(root,"Cover_"+i,Map(r.x+r.width/2,r.y+r.height/2,data.height,1f),new Vector3(r.width*Unit*.72f,2f,r.height*Unit*.72f),coverMat);}
                 for(int i=0;i<data.actors.Length;i++)if(data.actors[i].enabled)Enemy(root,data.actors[i],data.height,i);
                 foreach(var p in data.pickups)Shard(root,p,data.height);
@@ -78,12 +83,16 @@ namespace Possession.Editor
             Stair(world,"A",16,3,5,6);Stair(world,"B",29,19,5,6);Stair(world,"C",29,3,5,6);
             var t1=Target(world,"T1",7,7.5f,0);var jw=Target(world,"JW",3,3.5f,0);
             var relay=Target(world,"R",3,3.5f,Height);var je=Target(world,"JE",15,24.5f,Height);var t3=Target(world,"T3",20,20,Height);var se=Target(world,"SE",22,19.5f,Height);
-            var pw=Barrier(world,"PW",7,24.5f,Height,1.4f,.5f,1.4f);var pe=Barrier(world,"PE",28,24.5f,Height,1.4f,.5f,1.4f);
+            // These are physical wall openings, not isolated smashable control boxes.
+            Wall(world,1,24,5.5f,24,Height);Wall(world,8.5f,24,9,24,Height);
+            var pw=Barrier(world,"PW",7,24,Height,3*Unit,.4f,6f);
+            var pe=Barrier(world,"PE",28,24,Height,2*Unit,.4f,6f);
             Barrier(world,"B1",31.5f,24.8f,0,5*Unit,.4f,6f);Barrier(world,"B3",31.5f,9.4f,0,5*Unit,.4f,6f);
             var mainGate=Gate(world,"Gate_A",16,9,21,9,0);var maintenanceGate=Gate(world,"Gate_C",29,9,34,9,0);var bridge=Gate(world,"West_Bridge",16,14.5f,19,14.5f,Height);
             var ew=Gate(world,"Extraction_West",25.5f,5,25.5f,8,Height);var es=Gate(world,"Extraction_South",29,11,32,11,Height);var service=Gate(world,"PE_Service",27,23,29,23,Height);
             // Seal the panel pocket; its target-operated entrance is the sole approach.
             Cube(world,"PE_Pocket_Wall",Map(29.25f,24.5f,Height,3f),new Vector3(.3f,6f,3f*Unit),wallMat);
+            Wall(world,29.25f,26,35,26,Height); // The power-service passage starts behind PE, not around the stair.
             foreach(var old in manager.GetComponents<Level03RouteMap>())Object.DestroyImmediate(old);
             var map=manager.gameObject.AddComponent<Level03RouteMap>();Set(map,"layout",AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Level03/CompoundLayout.json"));
             var director=manager.gameObject.AddComponent<Level03Director>();var west=manager.gameObject.AddComponent<Level03Circuit>();var east=manager.gameObject.AddComponent<Level03Circuit>();
@@ -91,7 +100,7 @@ namespace Possession.Editor
             Set(east,"wing",1);Set(east,"junction",je);Set(east,"panel",pe);Array(east,"wires",circuits["east"].Cast<Object>().ToArray());
             Set(director,"spirit",spirit);Set(director,"mainTarget",t1);Set(director,"relay",relay);Set(director,"exitTarget",t3);Set(director,"serviceTarget",se);
             Set(director,"stairA",mainGate);Set(director,"bridge",bridge);Set(director,"extractionWest",ew);Set(director,"extractionSouth",es);Set(director,"maintenance",maintenanceGate);Set(director,"service",service);Set(director,"west",west);Set(director,"east",east);
-            var exit=new GameObject("Extraction_Exit");exit.transform.SetParent(world);exit.transform.position=Map(34.7f,3.5f,Height,1.4f);var trigger=exit.AddComponent<BoxCollider>();trigger.isTrigger=true;trigger.size=new Vector3(2.3f,2.8f,2.3f);exit.AddComponent<Level03Exit>();Cube(exit.transform,"Exit pad",Map(34.7f,3.5f,Height,.18f),new Vector3(2.3f,.15f,2.3f),AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/P5_Exit.mat"));
+            BuildExtraction(world);
             RouteSign(world,"MAIN A ↑",4.5f,17.5f,0,new Color(.3f,.65f,1f));
             RouteSign(world,"SERVICE B →",9,22.5f,0,new Color(1f,.72f,.28f));
             RouteSign(world,"SERVICE B →",23,22.5f,0,new Color(1f,.72f,.28f));
@@ -99,6 +108,12 @@ namespace Possession.Editor
             RouteSign(world,"B ↑",31.5f,26.5f,0,new Color(1f,.72f,.28f));
             RouteSign(world,"RECORDS →",9,22.5f,Height,new Color(.7f,.85f,1f));
             RouteSign(world,"EXIT ↑",30.5f,15,Height,new Color(.35f,1f,.65f));
+            RouteSign(world,"SMASH → RECORDS",7,23.1f,Height,new Color(1f,.72f,.28f));
+            RouteSign(world,"SMASH → POWER BAY",28,23.1f,Height,new Color(1f,.72f,.28f));
+            RouteSign(world,"EXTRACTION →",34.5f,2.6f,Height,new Color(.35f,1f,.65f));
+            RouteSign(world,"POWER BAY",38,27.1f,Height,new Color(.4f,.85f,.75f));
+            Cube(world,"Power equipment",Map(38.4f,29.3f,Height,1f),new Vector3(2.2f,2f,1.2f),coverMat);
+            var powerLight=Cube(world,"Power indicator",Map(38.4f,29f,Height,1.5f),new Vector3(1.6f,.15f,.08f),Mat("PowerStatus",new Color(.3f,1f,.65f),true));Object.DestroyImmediate(powerLight.GetComponent<Collider>());
             Checkpoint(world,"Main stair shelter",22,6.5f,0,"K2");Checkpoint(world,"Records shelter",14,23,Height,"K5");
             foreach(var item in styles)Object.DestroyImmediate(item);
             FinalizePatrols(world);
@@ -106,7 +121,38 @@ namespace Possession.Editor
             Set(spirit,"damageCooldown",5f);Set(spirit,"initialDamageGrace",12f);
             foreach(var h in world.GetComponentsInChildren<EnemyBase>()){Set(h,"detectionRange",h is HeavyEnemy?2.8f:3.2f);Set(h,"chaseStopDistance",1.8f);Set(h,"aiSpeedMultiplier",.4f);Set(h,"detectionDelay",2f);Set(h,"requireLineOfSight",true);Set(h,"waypointWaitTime",1.5f);Set(h,"visionAngle",45f);Set(h,"loseSightSearchTime",1.5f);}
             EditorSceneManager.MarkSceneDirty(scene);EditorSceneManager.SaveScene(scene,ScenePath);LevelBuildKit.RegisterScene(ScenePath);AssetDatabase.SaveAssets();
-            Debug.Log("Level 3 Alarm Compound built: two floors, three physical stairs, nine hosts, ten charge sources, two alarm circuits.");
+            Debug.Log("Level 3 rebuilt from shared Level 1 systems: physical breach routes and a dedicated extraction bay.");
+        }
+        static void BuildExtraction(Transform world)
+        {
+            var shell=Mat("ExtractionMetal",new Color(.12f,.18f,.22f));
+            var glow=Mat("ExtractionGlow",new Color(.2f,1f,.65f),true);
+            var pad=Mat("ExtractionDeck",new Color(.13f,.28f,.24f));
+            var exit=new GameObject("Extraction_Exit");exit.transform.SetParent(world);exit.transform.position=Map(37.5f,5.5f,Height,1.4f);
+            var trigger=exit.AddComponent<BoxCollider>();trigger.isTrigger=true;trigger.size=new Vector3(4f,3.2f,4f);exit.AddComponent<Level03Exit>();
+            var presentation=new GameObject("ExtractionGateway").transform;presentation.SetParent(exit.transform,false);
+            Cube(presentation,"Extraction deck",Map(37.5f,5.5f,Height,.18f),new Vector3(8f,.15f,6.8f),pad);
+            var signals=new List<Renderer>();
+            foreach(float y in new[]{4.2f,6.8f})
+            {
+                Cube(presentation,"Gateway pillar",Map(36.3f,y,Height,1.5f),new Vector3(.55f,3f,.55f),shell);
+                var strip=Cube(presentation,"Gateway light",Map(36.12f,y,Height,1.5f),new Vector3(.12f,2.8f,.28f),glow);Object.DestroyImmediate(strip.GetComponent<Collider>());signals.Add(strip.GetComponent<Renderer>());
+            }
+            Cube(presentation,"Gateway arch",Map(36.3f,5.5f,Height,3.1f),new Vector3(.65f,.3f,6.3f),shell);
+            foreach(float y in new[]{4.1f,6.9f})
+            {var line=Cube(presentation,"Extraction boundary",Map(37.5f,y,Height,.29f),new Vector3(8f,.035f,.09f),glow);Object.DestroyImmediate(line.GetComponent<Collider>());signals.Add(line.GetComponent<Renderer>());}
+            for(int i=0;i<4;i++)
+            {
+                var chevron=new GameObject("Extraction chevron").transform;chevron.SetParent(presentation);chevron.position=Map(34.7f+i*.55f,5.5f,Height,.23f);
+                foreach(int side in new[]{-1,1}){var bar=Cube(chevron,"Guide light",chevron.position+Vector3.forward*(side*.25f),new Vector3(.7f,.035f,.08f),glow);bar.transform.rotation=Quaternion.Euler(0,side*45,0);Object.DestroyImmediate(bar.GetComponent<Collider>());signals.Add(bar.GetComponent<Renderer>());}
+            }
+            var column=GameObject.CreatePrimitive(PrimitiveType.Cylinder);column.name="Extraction beacon";column.transform.SetParent(presentation);column.transform.position=Map(38.1f,5.5f,Height,2f);column.transform.localScale=new Vector3(.13f,2f,.13f);Object.DestroyImmediate(column.GetComponent<Collider>());column.GetComponent<Renderer>().sharedMaterial=glow;signals.Add(column.GetComponent<Renderer>());
+            var ring=new GameObject("Extraction ring").AddComponent<LineRenderer>();ring.transform.SetParent(presentation);ring.transform.position=Map(37.5f,5.5f,Height,.3f);ring.useWorldSpace=false;ring.loop=true;ring.widthMultiplier=.09f;ring.positionCount=64;ring.sharedMaterial=glow;
+            for(int i=0;i<64;i++){float a=i*Mathf.PI*2/64;ring.SetPosition(i,new Vector3(Mathf.Cos(a)*1.7f,0,Mathf.Sin(a)*1.7f));}
+            signals.Add(ring);
+            var lamp=new GameObject("Extraction light").AddComponent<Light>();lamp.transform.SetParent(presentation);lamp.transform.position=Map(37.5f,5.5f,Height,2.3f);lamp.type=LightType.Point;lamp.range=9;lamp.shadows=LightShadows.None;
+            var sign=new GameObject("Extraction status").transform;sign.SetParent(presentation);sign.position=Map(37.5f,5.5f,Height,3f);sign.rotation=Quaternion.Euler(57,0,0);sign.localScale=Vector3.one*.075f;var text=sign.gameObject.AddComponent<TextMesh>();text.text="EXTRACTION";text.fontSize=48;text.anchor=TextAnchor.MiddleCenter;
+            var beacon=exit.AddComponent<Level03ExtractionBeacon>();Array(beacon,"signals",signals.Cast<Object>().ToArray());Set(beacon,"ring",ring.transform);Set(beacon,"lamp",lamp);Set(beacon,"status",text);
         }
         static void FinalizePatrols(Transform world)
         {

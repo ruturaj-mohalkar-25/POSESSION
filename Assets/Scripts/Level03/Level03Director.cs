@@ -14,7 +14,7 @@ namespace Possession
         [SerializeField] private Target mainTarget, relay, exitTarget, serviceTarget;
         [SerializeField] private Level03SecurityGate stairA, bridge, extractionWest, extractionSouth, maintenance, service;
         [SerializeField] private Level03Circuit west, east;
-        private BreakableWall serviceWall;
+        private BreakableWall serviceWall, maintenanceWall;
         private Level03Checkpoint[] shelters;
         private static Snapshot checkpoint;
         private static bool resume;
@@ -24,6 +24,8 @@ namespace Possession
         public EnemyBase[] Hosts { get; private set; }
         public Level03Circuit West => west;
         public Level03Circuit East => east;
+        public bool CanExtract => extractionWest.IsOpen || extractionSouth.IsOpen
+            || maintenance.IsOpen && maintenanceWall != null && maintenanceWall.CurrentHP <= 0;
         public bool HasCheckpoint => checkpoint != null;
         public string CheckpointName => checkpoint?.name;
         public Level03Checkpoint NearbyCheckpoint { get; private set; }
@@ -34,6 +36,7 @@ namespace Possession
             var roots=gameObject.scene.GetRootGameObjects();
             Hosts=roots.SelectMany(r=>r.GetComponentsInChildren<EnemyBase>()).ToArray();
             serviceWall=roots.SelectMany(r=>r.GetComponentsInChildren<BreakableWall>(true)).First(w=>w.name=="B1");
+            maintenanceWall=roots.SelectMany(r=>r.GetComponentsInChildren<BreakableWall>(true)).First(w=>w.name=="B3");
             shelters=roots.SelectMany(r=>r.GetComponentsInChildren<Level03Checkpoint>()).ToArray();
         }
         private IEnumerator Start()
@@ -79,8 +82,8 @@ namespace Possession
             {
                 var player=Possession.PossessedEnemy!=null?Possession.PossessedEnemy.transform:spirit.transform;
                 if(player.position.y>5.5f)
-                    return east.Latched?"EAST LOCKDOWN · SE target, then PE panel"
-                        : extractionWest.IsOpen?"EXIT OPEN · Head to green extraction"
+                    return CanExtract?"EXTRACTION READY · Follow the green lights"
+                        : east.Latched?"EAST LOCKDOWN · SE target, then breach PE"
                         : "Find RECORDS · Shoot T3 for extraction";
                 return west.Latched ? "MAIN A LOCKED · Use gold SERVICE B"
                     : mainTarget.IsHit || west.Disabled ? "MAIN A OPEN · Take the blue stairs"

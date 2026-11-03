@@ -108,7 +108,7 @@ namespace Possession.Tests
         {
             OpenAll();var heavy=Host("Upper_Heavy_7");yield return Possess("K6",heavy);pc.enabled=false;heavy.enabled=true;
             Move(heavy,Map(31.5f,2.5f,Upper));yield return Walk(heavy,Map(34.7f,2.5f,Upper));
-            yield return Walk(heavy,Map(34.7f,3.5f,Upper));
+            yield return Walk(heavy,Map(34.7f,5.5f,Upper));yield return Walk(heavy,Object.FindFirstObjectByType<Level03Exit>().transform.position);
             Assert.That(GameManager.Instance.CurrentState,Is.EqualTo(LevelState.Complete));
         }
         [UnityTest] public IEnumerator LinkedWitnessWarnsThenLatchesAndJunctionDoesNotClearExistingAlarm()
@@ -261,6 +261,49 @@ namespace Possession.Tests
             Set(level.Spirit,"nextDamageTime",Time.time);level.Spirit.TakeDamage(1);level.Spirit.TakeDamage(1);
             Assert.That(level.Spirit.CurrentHP,Is.EqualTo(hp-1),"Simultaneous attacks must not stack damage.");
             yield return new WaitForSeconds(5.1f);level.Spirit.TakeDamage(1);Assert.That(level.Spirit.CurrentHP,Is.EqualTo(hp-2));
+        }
+        [UnityTest] public IEnumerator HeavyBreachesRealWorkshopAndPowerBayPassages()
+        {
+            Assert.That(Physics.SphereCast(Map(34.5f,25.5f,Upper),.55f,Vector3.back,out _,3f,1,QueryTriggerInteraction.Ignore),Is.True,"The power bay must not have an open bypass around the intact wall.");
+            var heavy=Host("Upper_Heavy_5");yield return Possess("K7",heavy);pc.enabled=false;
+            foreach(var passage in new[]{("PW",7f),("PE",28f)})
+            {
+                if(passage.Item1=="PE"){Target("SE").OnHit();yield return null;level.ApplyGates();}
+                Vector3 before=Map(passage.Item2,23.1f,Upper),after=Map(passage.Item2,25.1f,Upper);
+                Move(heavy,before);var body=heavy.GetComponent<CharacterController>();
+                for(int i=0;i<20;i++){body.Move(Vector3.back*.12f);yield return null;}
+                Assert.That(heavy.transform.position.z,Is.GreaterThan(Wall(passage.Item1).transform.position.z+.4f),"Intact wall must block the passage.");
+                Move(heavy,before);heavy.GetComponent<SmashAbility>().ResetUses();Smash(passage.Item1,before,Vector3.back);
+                yield return Walk(heavy,after);
+                if(passage.Item1=="PW"){yield return Walk(heavy,Map(11,25.1f,Upper));yield return Walk(heavy,Map(14,25.1f,Upper));}
+                else {yield return Walk(heavy,Map(28,27,Upper));yield return Walk(heavy,Map(38,27,Upper));yield return Walk(heavy,Map(38,28.5f,Upper));}
+            }
+            Assert.That(GameObject.Find("POWER_BAY"),Is.Not.Null);
+        }
+        [UnityTest] public IEnumerator ExtractionBayChangesFromLockedToReadyAndFinishesOnlyThePlayer()
+        {
+            var exit=Object.FindFirstObjectByType<Level03Exit>();var beacon=exit.GetComponent<Level03ExtractionBeacon>();Assert.That(beacon,Is.Not.Null);
+            Assert.That(GameObject.Find("EXIT_BAY"),Is.Not.Null);Assert.That(GameObject.Find("Gateway arch"),Is.Not.Null);
+            level.Spirit.RestoreAt(exit.transform.position);Physics.SyncTransforms();Assert.That(exit.IsReady,Is.False);
+            Assert.That(exit.TryFinish(level.Spirit.GetComponent<Collider>()),Is.False);yield return null;
+            Assert.That(GameObject.Find("Extraction status").GetComponent<TextMesh>().text,Does.Contain("RESTORE"));
+            Target("T3").OnHit();level.ApplyGates();yield return null;
+            Assert.That(exit.IsReady,Is.True);Assert.That(GameObject.Find("Extraction status").GetComponent<TextMesh>().text,Is.EqualTo("EXTRACTION READY"));
+            Assert.That(exit.TryFinish(level.Spirit.GetComponent<Collider>())||GameManager.Instance.CurrentState==LevelState.Complete,Is.True);
+            Assert.That(GameManager.Instance.CurrentState,Is.EqualTo(LevelState.Complete));
+        }
+        [UnityTest] public IEnumerator Level3ContainsTheCurrentTeamPlayerEnemyAndHudComponents()
+        {
+            yield return SceneManager.LoadSceneAsync("Level_01",LoadSceneMode.Additive);
+            var reference=SceneManager.GetSceneByName("Level_01");var roots=reference.GetRootGameObjects();
+            var samples=new MonoBehaviour[]{roots.SelectMany(r=>r.GetComponentsInChildren<SpiritController>(true)).First(),roots.SelectMany(r=>r.GetComponentsInChildren<GuardEnemy>(true)).First(),roots.SelectMany(r=>r.GetComponentsInChildren<HeavyEnemy>(true)).First(),roots.SelectMany(r=>r.GetComponentsInChildren<HUDManager>(true)).First()};
+            var actual=new MonoBehaviour[]{level.Spirit,level.Hosts.OfType<GuardEnemy>().First(),level.Hosts.OfType<HeavyEnemy>().First(),level.gameObject.scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<HUDManager>(true)).First()};
+            for(int i=0;i<samples.Length;i++)foreach(var component in samples[i].GetComponents<MonoBehaviour>())
+                if(component!=null)Assert.That(actual[i].GetComponent(component.GetType()),Is.Not.Null,"Missing team component "+component.GetType().Name);
+            var teamCamera=roots.SelectMany(r=>r.GetComponentsInChildren<Camera>(true)).First();var localCamera=level.gameObject.scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<Camera>(true)).First();
+            Assert.That(localCamera.fieldOfView,Is.EqualTo(teamCamera.fieldOfView));Assert.That(Quaternion.Angle(localCamera.transform.rotation,teamCamera.transform.rotation),Is.LessThan(.1f));
+            Assert.That(Read<Vector3>(localCamera.GetComponent<CameraFollow>(),"offset"),Is.EqualTo(Read<Vector3>(teamCamera.GetComponent<CameraFollow>(),"offset")));
+            yield return SceneManager.UnloadSceneAsync(reference);
         }
         private static T Read<T>(object obj,string field)
         {for(var t=obj.GetType();t!=null;t=t.BaseType){var f=t.GetField(field,BindingFlags.NonPublic|BindingFlags.Instance|BindingFlags.DeclaredOnly);if(f!=null)return (T)f.GetValue(obj);}throw new System.MissingFieldException(field);}

@@ -10,7 +10,7 @@ namespace Possession
         [SerializeField] private TextAsset layout;
         [Serializable] private class Plan { public Floor[] floors; }
         [Serializable] private class Floor { public Area[] rooms,halls; }
-        [Serializable] private class Area { public float x,y,width,height; }
+        [Serializable] private class Area { public float x,y,width,height; public string label; }
         private Level03Director level;
         private GameObject overlay;
         private RectTransform[] frames = new RectTransform[2];
@@ -63,7 +63,7 @@ namespace Possession
             Text(overlay.transform,"Choose A or B to reach the upper-floor exit. C is an optional shortcut.",new Vector2(0,375),new Vector2(1600,45),24,new Color(.7f,.8f,.9f));
             var close=Box(overlay.transform,"Resume",new Vector2(690,440),new Vector2(220,55),new Color(.18f,.3f,.4f));close.GetComponent<Image>().raycastTarget=true;var button=close.gameObject.AddComponent<Button>();button.targetGraphic=close.GetComponent<Image>();button.onClick.AddListener(Close);Text(close,"RESUME [M]",Vector2.zero,new Vector2(220,50),24,Color.white);
             var plan=JsonUtility.FromJson<Plan>(layout.text);
-            string[][] names={new[]{"SECURITY","MAIN A","MAINT. C","START","COURTYARD","SERVICE B","D1","D2"},new[]{"OPERATIONS","GALLERY","EXTRACTION","WORKSHOP","RECORDS","EAST CONTROL","D3","D4"}};
+            string[][] names={new[]{"SECURITY","MAIN A","MAINT. C","START","COURTYARD","SERVICE B","D1","D2"},new[]{"OPERATIONS","GALLERY","C LANDING","WORKSHOP","RECORDS","EAST CONTROL","D3","D4"}};
             for(int floor=0;floor<2;floor++)
             {
                 var frame=Box(overlay.transform,floor==0?"Ground plan":"Upper plan",new Vector2(floor==0?-400:400,10),new Vector2(740,600),new Color(.06f,.085f,.12f));frames[floor]=frame;
@@ -72,7 +72,8 @@ namespace Possession
                 for(int i=0;i<plan.floors[floor].rooms.Length;i++)
                 {
                     var area=plan.floors[floor].rooms[i];AreaBox(frame,area,new Color(.28f,.35f,.44f));
-                    Text(frame,names[floor][i],new Vector2((area.x+area.width/2-18)*14,(14-area.y+.5f)*14),new Vector2(area.width*14,25),14,new Color(.9f,.93f,1f));
+                    string title=!string.IsNullOrEmpty(area.label)?area.label:i<names[floor].Length?names[floor][i]:"SERVICE";
+                    Text(frame,title,new Vector2((area.x+area.width/2-18)*14,(14-area.y+.5f)*14),new Vector2(Mathf.Max(100,area.width*14),25),string.IsNullOrEmpty(area.label)?14:12,new Color(.9f,.93f,1f));
                 }
                 Stair(frame,"A",16,3,new Color(.25f,.55f,.9f));Stair(frame,"B",29,19,new Color(.8f,.54f,.17f));Stair(frame,"C",29,3,new Color(.25f,.55f,.6f));
             }
