@@ -14,11 +14,11 @@ namespace Possession.Editor
                 AssetDatabase.CreateFolder("Assets", "Config");
 
             Write("LevelConfig_Level_01", "Level_01", 12f, 300f,
-                3f, 3, 5f, 0.75f, 1.5f, 100f, 150f, 225f);
+                3f, 3, 10f, 0.75f, 1.5f, 100f, 150f, 225f);
             Write("LevelConfig_Level_02", "Level_02", 10f, 240f,
-                3f, 3, 5f, 0.75f, 1.5f, 80f, 120f, 180f);
+                3f, 3, 12f, 0.75f, 1.5f, 80f, 120f, 180f);
             Write("LevelConfig_Level_03", "Level_03", 8f, 180f,
-                3.25f, 3, 5f, 0.5f, 1.25f, 60f, 90f, 135f);
+                3.25f, 3, 12f, 0.5f, 1.25f, 60f, 90f, 135f);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
