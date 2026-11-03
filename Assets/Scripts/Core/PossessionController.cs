@@ -82,7 +82,7 @@ namespace Possession
             foreach (var hit in hits)
             {
                 var enemy = hit.GetComponent<EnemyBase>();
-                if (enemy == null || !enemy.CanBePossessed) continue;
+                if (enemy == null || !enemy.CanBePossessedFrom(transform)) continue;
                 if (!HasLineOfSight(enemy)) continue;
 
                 float dist = Vector3.Distance(transform.position, hit.transform.position);

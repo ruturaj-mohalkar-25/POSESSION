@@ -28,6 +28,8 @@ namespace Possession.Tests
             heavy = heavyObject.AddComponent<HeavyEnemy>();
             Set(heavy, "moveSpeed", 1.8f);
             Set(heavy, "maxHP", 5);
+            // Vision is directional now; point the enemy at the Spirit used by these tests (+x).
+            heavyObject.transform.rotation = Quaternion.LookRotation(Vector3.right);
             heavyObject.SetActive(true);
             heavy.GetComponent<CharacterController>().minMoveDistance = 0f;
             yield return null;
@@ -268,6 +270,8 @@ namespace Possession.Tests
         [UnityTest]
         public IEnumerator DetectsChildColliderChasesAndResumesPatrolWhenSpiritLeaves()
         {
+            // Lose-sight search is covered in EnemyAttackTests; this checks the direct return.
+            Set(heavy, "loseSightSearchTime", 0f);
             Set(heavy, "waypoints", new[] { Create("Patrol WP", new Vector3(-20f, 1f, 0f)).transform });
             var spirit = CreateSpirit(new Vector3(5f, 1f, 0f), true);
             yield return new WaitForSeconds(0.3f);
