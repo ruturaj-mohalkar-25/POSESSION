@@ -15,6 +15,7 @@ namespace Possession
         [SerializeField] private int damage = 1;
         [SerializeField] private float firstAttackDelay = 0.75f; // grace period to run after ejecting
         [SerializeField] private float spotReactionTime = 0.6f;  // warning before the first attack after spotting the spirit
+        [SerializeField] private float ejectGraceTime = 2f;      // the body the spirit just left holds fire this long
 
         [Header("Guard: shoot")]
         [SerializeField] private GameObject projectilePrefab;
@@ -78,10 +79,10 @@ namespace Possession
 
         private void OnEjected(EnemyBase ejected, bool forced)
         {
-            if (ejected != enemy || !forced) return;
-            hostile = true;
+            if (ejected != enemy) return;
             smashAt = 0f;
-            nextAttackTime = Time.time + firstAttackDelay;
+            nextAttackTime = Time.time + Mathf.Max(ejectGraceTime, forced ? firstAttackDelay : 0f);
+            if (forced) hostile = true;
         }
 
         private void OnPossessed(EnemyBase possessed, PlayerState state)

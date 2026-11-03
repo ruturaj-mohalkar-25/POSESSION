@@ -209,6 +209,8 @@ namespace Possession.Tests
             var pc = guide.Possession;
             Set(pc, "possessDuration", 0.05f);
             Set(pc, "hostileTime", 2f);
+            // Shorten the post-eject grace so the hostile attack lands inside this window.
+            Set(guide.Guard.GetComponent<EnemyContactDamage>(), "ejectGraceTime", 0.5f);
             Possess(guide, guide.Guard);
             yield return new WaitForSeconds(0.1f);
             var spirit = pc.GetComponent<SpiritController>();

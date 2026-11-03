@@ -8,7 +8,8 @@ using UnityEngine.TestTools;
 namespace Possession.Tests
 {
     // Person 2: enemies attack from the start of the level once they spot the Spirit,
-    // and search its last seen position before returning to patrol.
+    // and search its last seen position before returning to patrol. An eject drops the
+    // Spirit behind the body it left, and that body holds its attack for a short grace time.
     public class EnemyAttackTests
     {
         private readonly List<GameObject> objects = new List<GameObject>();
@@ -135,6 +136,45 @@ namespace Possession.Tests
             Assert.That(guard.IsSearching, Is.False);
         }
 
+        [UnityTest]
+        public IEnumerator EjectedSpiritLandsBehindEnemyOutsideItsCone()
+        {
+            var spirit = CreateSpirit(new Vector3(3f, 1f, 0f));
+            var possession = spirit.gameObject.AddComponent<PossessionController>();
+            Invoke(possession, "Possess", guard);
+            yield return null;
+
+            Assert.That(possession.TryEject(false), Is.True);
+            Physics.SyncTransforms();
+            Assert.That(spirit.transform.position.x, Is.LessThan(guard.transform.position.x),
+                "Spirit should be ejected behind the body it left.");
+            Assert.That(guard.CanSee(spirit.transform), Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator EjectedBodyWaitsBeforeAttacking()
+        {
+            Set(attack, "spotReactionTime", 0f);
+            Set(attack, "ejectGraceTime", 0.8f);
+            var spirit = CreateSpirit(new Vector3(3f, 1f, 0f));
+            var possession = spirit.gameObject.AddComponent<PossessionController>();
+            Invoke(possession, "Possess", guard);
+            yield return null;
+            Assert.That(possession.TryEject(false), Is.True);
+
+            // Step into the body's view and touch range straight after the eject.
+            spirit.transform.position = guard.transform.position + new Vector3(1.6f, 0f, 0f);
+            Physics.SyncTransforms();
+            yield return new WaitForSeconds(0.5f);
+            Assert.That(guard.IsChasing, Is.True);
+            Assert.That(spirit.CurrentHP, Is.EqualTo(spirit.MaxHP),
+                "The body the Spirit just left should hold its attack during the grace time.");
+
+            yield return new WaitForSeconds(0.6f);
+            Assert.That(spirit.CurrentHP, Is.LessThan(spirit.MaxHP),
+                "The body should attack once the grace time ends.");
+        }
+
         private GameObject Create(string name, Vector3 position)
         {
             var obj = new GameObject(name);
@@ -170,6 +210,12 @@ namespace Possession.Tests
                 type = type.BaseType;
             }
             throw new System.MissingFieldException(target.GetType().Name, field);
+        }
+
+        private static void Invoke(object target, string method, params object[] args)
+        {
+            target.GetType().GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(target, args);
         }
 
         private static void SetBase(object target, string field, object value)
