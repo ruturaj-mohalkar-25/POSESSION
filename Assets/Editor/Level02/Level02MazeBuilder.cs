@@ -141,7 +141,7 @@ namespace Possession.Editor
             var exit=new GameObject("ExitZone");exit.transform.SetParent(world);exit.transform.position=Map(31,12,1.3f);
             var ec=exit.AddComponent<BoxCollider>();ec.isTrigger=true;ec.size=new Vector3(3f,3f,3f);
             Set(exit.AddComponent<Level02Exit>(),"director",director);
-            Cube(exit.transform,"ExitPlatform",Map(31,12,.18f),new Vector3(3f,.15f,3f),AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/P5_Exit.mat"));
+            Cube(exit.transform,"ExitPlatform",Map(31,12,.18f),new Vector3(3f,.15f,3f),AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/P5_CheckerMat.mat")); // same checkered finish mat as Level_01
             var enemies=new GameObject("HuntedEnemies").transform;enemies.SetParent(world);
             Enemy(enemies,guardTemplate,"Guard_Entrance",4.7f,10.5f,5,14,5.5f);
             Enemy(enemies,guardTemplate,"Guard_Courtyard",10.5f,10.5f,14,10.5f,5f);
@@ -204,10 +204,8 @@ namespace Possession.Editor
         {
             var go=new GameObject(name);go.transform.SetParent(parent);go.transform.position=Map(x,y,.1f);
             var collider=go.AddComponent<SphereCollider>();collider.isTrigger=true;collider.radius=1.1f;
-            var shard=GameObject.CreatePrimitive(PrimitiveType.Cube);shard.name="Energy shard";shard.transform.SetParent(go.transform,false);
-            shard.transform.localPosition=Vector3.up;shard.transform.localScale=new Vector3(.45f,.7f,.45f);shard.transform.localRotation=Quaternion.Euler(35,45,35);
-            Object.DestroyImmediate(shard.GetComponent<Collider>());shard.GetComponent<Renderer>().sharedMaterial=mat;
-            var pickup=go.AddComponent<PossessionChargePickup>();Set(pickup,"reforms",repeat);Set(pickup,"shard",shard.GetComponent<Renderer>());
+            var pickup=go.AddComponent<PossessionChargePickup>();Set(pickup,"reforms",repeat);
+            SoulCoinPrefabBuilder.DressAsSoulCoin(pickup); // shared collectible look (gold Soul Coin)
         }
         static void Enemy(Transform parent,GameObject template,string name,float x,float y,float endX,float endY,float detect)
         {

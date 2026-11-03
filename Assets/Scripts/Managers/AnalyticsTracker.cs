@@ -20,6 +20,8 @@ namespace Possession
         public float completionTime;
         public int stars;
         public List<PossessionEntry> possessions;
+        public int coinsCollected; // Soul Coins picked up
+        public int chargesUsed;    // possessions that spent a charge
     }
 
     public class AnalyticsTracker : MonoBehaviour
@@ -31,6 +33,8 @@ namespace Possession
         private float totalPossessionTime;
         private string currentEnemyType;
         private readonly List<PossessionEntry> possessions = new();
+        private int coinsCollected;
+        private int chargesUsed;
 
         private void OnEnable()
         {
@@ -38,6 +42,8 @@ namespace Possession
             EventBus.Ejected += OnEjected;
             EventBus.SpiritDied += OnSpiritDied;
             EventBus.LevelCompletedWithStats += OnLevelComplete;
+            EventBus.ChargeCollected += OnChargeCollected;
+            EventBus.ChargeSpent += OnChargeSpent;
         }
 
         private void OnDisable()
@@ -46,7 +52,12 @@ namespace Possession
             EventBus.Ejected -= OnEjected;
             EventBus.SpiritDied -= OnSpiritDied;
             EventBus.LevelCompletedWithStats -= OnLevelComplete;
+            EventBus.ChargeCollected -= OnChargeCollected;
+            EventBus.ChargeSpent -= OnChargeSpent;
         }
+
+        private void OnChargeCollected() => coinsCollected++;
+        private void OnChargeSpent() => chargesUsed++;
 
         private void OnPossessed(EnemyBase enemy, PlayerState state)
         {
@@ -94,7 +105,9 @@ namespace Possession
                 totalPossessionTime = totalPossessionTime,
                 completionTime = elapsedTime,
                 stars = stars,
-                possessions = new List<PossessionEntry>(possessions)
+                possessions = new List<PossessionEntry>(possessions),
+                coinsCollected = coinsCollected,
+                chargesUsed = chargesUsed
             };
             EventBus.AnalyticsReady?.Invoke(data);
             var firebase = FindFirstObjectByType<FirebaseReporter>();
