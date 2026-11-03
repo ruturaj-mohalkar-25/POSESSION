@@ -134,7 +134,7 @@ MonoBehaviour:
   moveSpeed: 3
   maxHP: 3
   waypoints: []
-  detectionRange: 10
+  detectionRange: 5
   spiritLayer:
     serializedVersion: 2
     m_Bits: 4294967295
