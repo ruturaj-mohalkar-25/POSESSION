@@ -30,9 +30,15 @@ namespace Possession
             checkpoint.interactable=director.CheckpointReached;
             state.text = director.CanExit ? "Route clear · Reach the exit in any form"
                 : director.Possession.CurrentState != PlayerState.Spirit ? "Body borrowed · E to eject · R to restart"
-                : director.Charge.HasCharge ? "POSSESSION READY · E near a body"
-                : "Find an energy shard to possess a body";
+                : director.Charge.HasCharge ? $"POSSESSION READY ({ChargeCount()}) · E near a body"
+                : "Find a soul coin to possess a body";
             state.color=director.Charge.HasCharge || director.CanExit ? new Color(0.45f,1f,0.7f) : Color.white;
+        }
+        // "1/1" shows the carry limit, so a coin that is not picked up while full reads as expected
+        private string ChargeCount()
+        {
+            var charge=director.Charge;
+            return charge.MaxCharges>0 ? $"{charge.Count}/{charge.MaxCharges}" : charge.Count.ToString();
         }
         private static RectTransform Panel(Transform parent,string name,Vector2 anchor,Vector2 pos,Vector2 size)
         {

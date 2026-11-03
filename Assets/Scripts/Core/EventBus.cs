@@ -29,6 +29,11 @@ namespace Possession
         // Abilities
         public static Action<int, int> AmmoUpdated; // usesLeft, maxUses
 
+        // Possession charges (Soul Coins)
+        public static Action<int, int> ChargesChanged; // count, maxCharges (0 = no cap)
+        public static Action ChargeCollected;
+        public static Action ChargeSpent;
+
         // Analytics
         public static Action<AnalyticsData> AnalyticsReady;
 
@@ -49,6 +54,9 @@ namespace Possession
             LevelCompletedWithStats = null;
             GameComplete = null;
             AmmoUpdated = null;
+            ChargesChanged = null;
+            ChargeCollected = null;
+            ChargeSpent = null;
             AnalyticsReady = null;
         }
     }

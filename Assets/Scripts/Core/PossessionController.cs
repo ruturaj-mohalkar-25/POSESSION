@@ -159,6 +159,10 @@ namespace Possession
             return currentState == PlayerState.Spirit;
         }
 
+        // Eject behind the body first so the Spirit lands outside the enemy's vision cone;
+        // the sides come next and straight ahead is the last resort
+        private static readonly float[] EjectAngles = { 180f, 135f, 225f, 90f, 270f, 45f, 315f, 0f };
+
         private bool TryFindEjectionPosition(out Vector3 position)
         {
             const float clearance = 0.1f;
@@ -177,9 +181,9 @@ namespace Possession
 
             for (int ring = 0; ring < 2; ring++)
             {
-                for (int i = 0; i < 8; i++)
+                for (int i = 0; i < EjectAngles.Length; i++)
                 {
-                    Vector3 direction = Quaternion.AngleAxis(i * 45f, Vector3.up)
+                    Vector3 direction = Quaternion.AngleAxis(EjectAngles[i], Vector3.up)
                         * possessedEnemy.transform.forward;
                     direction.y = 0f;
                     direction.Normalize();

@@ -69,9 +69,12 @@ namespace Possession
         private ResultsView activeResults;
         private int stars;
         private AnalyticsData? analytics;
+        private Text chargeText; // created under the level timer the first time a level reports charges
+        private static readonly Color CoinGold = new Color(1f, 0.8f, 0.25f);
 
         private void OnEnable()
         {
+            EventBus.ChargesChanged += OnChargesChanged;
             EventBus.SpiritDamaged += OnSpiritDamaged;
             EventBus.LevelTimerUpdated += UpdateLevelTimer;
             EventBus.PossessTimerUpdated += UpdatePossessTimer;
@@ -92,6 +95,7 @@ namespace Possession
 
         private void OnDisable()
         {
+            EventBus.ChargesChanged -= OnChargesChanged;
             EventBus.SpiritDamaged -= OnSpiritDamaged;
             EventBus.LevelTimerUpdated -= UpdateLevelTimer;
             EventBus.PossessTimerUpdated -= UpdatePossessTimer;
@@ -189,6 +193,27 @@ namespace Possession
             levelTimerText.color = current < 30f ? healthLow : Color.white;
 
             if (current <= 0f) OnLevelFailed();
+        }
+
+        // ---------------- Possession charges ----------------
+
+        // Levels without charges never raise this, so the line only appears where coins matter
+        private void OnChargesChanged(int count, int max)
+        {
+            if (chargeText == null)
+            {
+                if (levelTimerText == null) return;
+                chargeText = Instantiate(levelTimerText, levelTimerText.transform.parent);
+                chargeText.name = "ChargeCountText";
+                // Sit right after the timer so end screens draw over it like the rest of the HUD
+                chargeText.transform.SetSiblingIndex(levelTimerText.transform.GetSiblingIndex() + 1);
+                var timerRect = levelTimerText.rectTransform;
+                chargeText.rectTransform.anchoredPosition =
+                    timerRect.anchoredPosition - new Vector2(0f, timerRect.sizeDelta.y + 4f);
+                chargeText.color = CoinGold;
+            }
+            chargeText.text = max > 0 ? $"SOUL COINS {count}/{max}" : $"SOUL COINS {count}";
+            chargeText.color = count > 0 ? CoinGold : healthLow;
         }
 
         // ---------------- Possession timer ----------------
@@ -523,8 +548,12 @@ namespace Possession
         private static string Summary(AnalyticsData data)
         {
             int seconds = Mathf.FloorToInt(data.completionTime);
-            return $"TIME {seconds / 60}:{seconds % 60:D2}    POSSESSIONS {data.possessionCount}    " +
-                   $"FORCED EJECTS {data.forcedEjectCount}    DEATHS {data.deathCount}";
+            string summary = $"TIME {seconds / 60}:{seconds % 60:D2}    POSSESSIONS {data.possessionCount}    " +
+                             $"FORCED EJECTS {data.forcedEjectCount}    DEATHS {data.deathCount}";
+            // Only levels that use Soul Coins report any, so unlimited levels keep the short line
+            if (data.coinsCollected > 0 || data.chargesUsed > 0)
+                summary += $"    SOUL COINS {data.coinsCollected}";
+            return summary;
         }
 
         private void OnSpiritDied()
