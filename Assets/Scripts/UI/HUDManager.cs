@@ -508,7 +508,7 @@ namespace Possession
             // GameManager.LoadNextLevel raises GameComplete instead of loading when this is the last level
             if (nextButtonLabel != null)
             {
-                bool last = SceneManager.GetActiveScene().buildIndex >= SceneManager.sceneCountInBuildSettings - 1;
+                bool last = LevelFlow.IsLastCampaignLevel(SceneManager.GetActiveScene().name);
                 nextButtonLabel.text = last ? "FINISH" : "NEXT LEVEL";
             }
         }

@@ -9,10 +9,15 @@ namespace Possession
         [SerializeField, Min(0f)] private float windup = 1.2f;
         [SerializeField, Min(0.1f)] private float hitInterval = 3.2f;
         private EnemyBase enemy;
+        private EnemyContactDamage sharedAttack;
         private Level02Director level;
         private float readyAt = -1f;
         private float nextHit;
-        private void Awake() => enemy = GetComponent<EnemyBase>();
+        private void Awake()
+        {
+            enemy = GetComponent<EnemyBase>();
+            sharedAttack = GetComponent<EnemyContactDamage>();
+        }
         private void OnDisable() => readyAt = -1f;
         private void Update()
         {
@@ -20,6 +25,7 @@ namespace Possession
             if (level == null) return;
             var spirit = level.Spirit;
             bool canReach = enemy.CanBePossessed && !enemy.IsHostile && enemy.IsChasing
+                && (sharedAttack == null || !sharedAttack.IsInEjectGrace)
                 && spirit.isActiveAndEnabled && spirit.CurrentHP > 0
                 && level.Possession.CurrentState == PlayerState.Spirit
                 && (GameManager.Instance == null || GameManager.Instance.CurrentState == LevelState.InProgress)

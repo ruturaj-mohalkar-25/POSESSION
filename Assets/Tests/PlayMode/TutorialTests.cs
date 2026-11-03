@@ -249,7 +249,8 @@ namespace Possession.Tests
             Assert.That(tutorial, Is.EqualTo(1));
             Assert.That(level1, Is.EqualTo(2));
             // The test runner adds its own temporary scene after authored levels.
-            Assert.That(level3, Is.EqualTo(level1 + 2));
+            Assert.That(level3, Is.EqualTo(level1 + 1));
+            Assert.That(SceneUtility.GetBuildIndexByScenePath("Assets/Scenes/Level_02.unity"), Is.EqualTo(level1 + 2));
             Assert.That(tutorial, Is.LessThan(level1));
         }
 

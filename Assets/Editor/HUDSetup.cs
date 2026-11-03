@@ -511,23 +511,28 @@ namespace Possession.Editor
 
         static void AddScenesToBuild()
         {
-            // MainMenu first, then levels in order (Next Level uses build index + 1).
+            // Keep the menu/build list aligned with the explicit campaign order.
             // Any other scenes already in the list are kept after them.
             var scenes = new System.Collections.Generic.List<EditorBuildSettingsScene>
             {
                 new EditorBuildSettingsScene(MainMenuPath, true)
             };
-            foreach (var path in LevelPaths)
+            foreach (var name in LevelFlow.CampaignScenes)
+            {
+                string path = "Assets/Scenes/" + name + ".unity";
                 if (System.IO.File.Exists(path)) scenes.Add(new EditorBuildSettingsScene(path, true));
+            }
             foreach (var existing in EditorBuildSettings.scenes)
                 if (System.IO.File.Exists(existing.path) && !scenes.Exists(s => s.path == existing.path))
                     scenes.Add(existing);
             EditorBuildSettings.scenes = scenes.ToArray();
         }
 
-        static void SetupMainMenu()
+        public static void SetupMainMenu()
         {
-            var menuScene = EditorSceneManager.OpenScene(MainMenuPath, OpenSceneMode.Additive);
+            var menuScene = UnityEngine.SceneManagement.SceneManager.GetSceneByPath(MainMenuPath);
+            bool openedHere = !menuScene.isLoaded;
+            if (openedHere) menuScene = EditorSceneManager.OpenScene(MainMenuPath, OpenSceneMode.Additive);
 
             Transform canvas = null, play = null, quit = null;
             foreach (var root in menuScene.GetRootGameObjects())
@@ -586,14 +591,16 @@ namespace Possession.Editor
                 select.anchorMax = Vector2.one;
                 select.offsetMin = select.offsetMax = Vector2.zero;
                 var buttonsProp = cso.FindProperty("levelButtons");
-                buttonsProp.arraySize = 3;
-                for (int i = 0; i < 3; i++)
+                var scenesProp = cso.FindProperty("levelScenes");
+                buttonsProp.arraySize = scenesProp.arraySize = LevelFlow.CampaignScenes.Count;
+                for (int i = 0; i < LevelFlow.CampaignScenes.Count; i++)
                 {
                     var btn = StyleButton(FindOrCreateRect(select, $"Level{i + 1}Button"), $"LEVEL {i + 1}",
                         new Vector2(0, 80 - i * 105), new Color(0.3f, 0.45f, 0.85f), new Vector2(480, 85));
                     ClearListeners(btn.onClick);
                     UnityEventTools.AddIntPersistentListener(btn.onClick, controller.OnLevelButton, i);
                     buttonsProp.GetArrayElementAtIndex(i).objectReferenceValue = btn;
+                    scenesProp.GetArrayElementAtIndex(i).stringValue = LevelFlow.CampaignScenes[i];
                 }
                 var back = StyleButton(FindOrCreateRect(select, "BackButton"), "BACK",
                     new Vector2(0, -260), new Color(0.22f, 0.22f, 0.26f), new Vector2(300, 75));
@@ -610,7 +617,7 @@ namespace Possession.Editor
 
             EditorSceneManager.MarkSceneDirty(menuScene);
             EditorSceneManager.SaveScene(menuScene);
-            EditorSceneManager.CloseScene(menuScene, true);
+            if (openedHere) EditorSceneManager.CloseScene(menuScene, true);
         }
 
         static Transform FindDeep(Transform parent, string name)

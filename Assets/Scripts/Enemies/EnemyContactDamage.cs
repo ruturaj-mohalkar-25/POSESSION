@@ -49,6 +49,8 @@ namespace Possession
         private bool hostile;
         private bool spotted;
         private float nextAttackTime;
+        private float ejectGraceUntil;
+        public bool IsInEjectGrace => Time.time < ejectGraceUntil;
         private float smashAt;       // > 0 while winding up
         private float blinkUntil;
 
@@ -82,6 +84,7 @@ namespace Possession
             if (ejected != enemy) return;
             smashAt = 0f;
             nextAttackTime = Time.time + Mathf.Max(ejectGraceTime, forced ? firstAttackDelay : 0f);
+            ejectGraceUntil = nextAttackTime;
             if (forced) hostile = true;
         }
 

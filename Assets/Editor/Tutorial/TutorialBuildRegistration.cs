@@ -23,7 +23,7 @@ namespace Possession.Editor
             scenes.Insert(menu + 1, new EditorBuildSettingsScene(TutorialScene.Path, true));
             if (current.Length == scenes.Count && current.Zip(scenes,
                 (a, b) => a.path == b.path && a.enabled == b.enabled).All(equal => equal)) return;
-            // Tutorial precedes Level_01, so the normal campaign still ends at Level_03.
+            // Tutorial stays outside the explicitly ordered campaign.
             EditorBuildSettings.scenes = scenes.ToArray();
         }
     }

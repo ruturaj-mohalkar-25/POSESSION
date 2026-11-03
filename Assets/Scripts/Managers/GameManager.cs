@@ -104,17 +104,9 @@ namespace Possession
 
         public void LoadNextLevel()
         {
-            int next = SceneManager.GetActiveScene().buildIndex + 1;
-            if (next < SceneManager.sceneCountInBuildSettings)
-            {
-                Time.timeScale = 1f;
-                EventBus.Clear();
-                SceneManager.LoadScene(next);
-            }
-            else
-            {
-                EventBus.GameComplete?.Invoke();
-            }
+            string current = SceneManager.GetActiveScene().name;
+            if (LevelFlow.TryGetNextLevel(current, out string next)) LevelFlow.Load(next);
+            else if (LevelFlow.IsLastCampaignLevel(current)) EventBus.GameComplete?.Invoke();
         }
 
         public void QuitToMenu()
