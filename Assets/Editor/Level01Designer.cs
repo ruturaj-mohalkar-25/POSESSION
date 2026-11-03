@@ -64,8 +64,8 @@ namespace Possession.Editor
             exitObject.GetComponent<BoxCollider>().isTrigger = true;
 
             var pickups = new GameObject("ChargePickups").transform;
-            LevelBuildKit.PlacePickup(pickups, "Pickup_01", new Vector3(-3f, 0.1f, 15f));
-            LevelBuildKit.PlacePickup(pickups, "Pickup_02", new Vector3(3f, 0.1f, 27f));
+            LevelBuildKit.PlacePickup(pickups, "Pickup_01", new Vector3(5f, 0.1f, 8f));
+            LevelBuildKit.PlacePickup(pickups, "Pickup_02", new Vector3(-5.5f, 0.1f, 23f));
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
