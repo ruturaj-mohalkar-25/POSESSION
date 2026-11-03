@@ -26,8 +26,6 @@ namespace Possession.Tests
             var guardObject = Create("Guard", new Vector3(0f, 1.05f, 0f));
             guardObject.SetActive(false);
             guard = guardObject.AddComponent<GuardEnemy>();
-            // Vision is directional now; point the enemy at the Spirit used by these tests (+x).
-            guardObject.transform.rotation = Quaternion.LookRotation(Vector3.right);
             guardObject.SetActive(true);
             guard.GetComponent<CharacterController>().minMoveDistance = 0f;
             yield return null;
@@ -92,20 +90,20 @@ namespace Possession.Tests
         }
 
         [UnityTest]
-        public IEnumerator Level02HasFiveConfiguredStaggeredGuardPatrols()
+        public IEnumerator Level02HasTwoConfiguredStaggeredGuardPatrols()
         {
             yield return SceneManager.LoadSceneAsync("Level_02", LoadSceneMode.Additive);
             levelScene = SceneManager.GetSceneByName("Level_02");
             var guards = FindLevelGuards(levelScene);
 
-            Assert.That(guards, Has.Count.EqualTo(5));
+            Assert.That(guards, Has.Count.EqualTo(2));
             AssertConfiguredRoutes(guards);
             Assert.That(guards[0].PatrolStartDelay, Is.Not.EqualTo(guards[1].PatrolStartDelay),
                 "Level 2 Guard patrols should start at different times.");
             foreach (GuardEnemy levelGuard in guards)
             {
                 Assert.That(levelGuard.CurrentHP, Is.EqualTo(3));
-                Assert.That(levelGuard.DetectionRange, Is.EqualTo(5.5f).Within(0.01f));
+                Assert.That(levelGuard.DetectionRange, Is.EqualTo(12f).Within(0.01f));
                 Assert.That(Read<float>(levelGuard, "moveSpeed"), Is.EqualTo(3f).Within(0.01f));
                 Assert.That(Read<float>(levelGuard, "waypointWaitTime"), Is.EqualTo(0.75f).Within(0.01f));
             }
@@ -159,8 +157,6 @@ namespace Possession.Tests
         [UnityTest]
         public IEnumerator OverlapSphereDetectsChildColliderAndReturnsToPatrol()
         {
-            // Lose-sight search is covered in EnemyAttackTests; this checks the direct return.
-            SetBase(guard, "loseSightSearchTime", 0f);
             SetBase(guard, "waypoints", new[] {
                 Create("Patrol WP", new Vector3(-20f, 1f, 0f)).transform });
             var spirit = CreateSpirit(new Vector3(5f, 1f, 0f), true);

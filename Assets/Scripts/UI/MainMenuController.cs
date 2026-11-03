@@ -12,7 +12,7 @@ namespace Possession
         [Header("Level Select")]
         [SerializeField] private GameObject levelSelectPanel;
         [SerializeField] private Button[] levelButtons;
-        [SerializeField] private string[] levelScenes = { "Level_01", "Level_03", "Level_02" };
+        [SerializeField] private string[] levelScenes = { "Level_01", "Level_02", "Level_03" };
 
         private void Start()
         {

@@ -41,19 +41,10 @@ namespace Possession
 
         public void ShowChart(List<PossessionEntry> entries)
         {
-            if (chartContainer == null) return;
+            if (chartContainer == null || entries == null || entries.Count == 0) return;
 
             for (int i = chartContainer.childCount - 1; i >= 0; i--)
-            {
-                GameObject oldBar = chartContainer.GetChild(i).gameObject;
-                // Destroy is deferred until the end of the frame. Remove old bars from
-                // the layout immediately when results are refreshed in the same frame.
-                oldBar.SetActive(false);
-                oldBar.transform.SetParent(null, false);
-                Destroy(oldBar);
-            }
-
-            if (entries == null || entries.Count == 0) return;
+                Destroy(chartContainer.GetChild(i).gameObject);
 
             float total = 0f;
             foreach (var e in entries) total += e.duration;

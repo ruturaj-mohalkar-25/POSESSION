@@ -692,8 +692,8 @@ MonoBehaviour:
   - {fileID: 1646562300}
   levelScenes:
   - Level_01
-  - Level_03
   - Level_02
+  - Level_03
 --- !u!1 &668499143
 GameObject:
   m_ObjectHideFlags: 0

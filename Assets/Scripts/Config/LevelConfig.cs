@@ -20,7 +20,7 @@ namespace Possession
         [Tooltip("Guard health for this level.")]
         [SerializeField, Min(1)] private int guardMaxHP = 3;
         [Tooltip("Metres at which a Guard notices the Spirit.")]
-        [SerializeField, Min(0f)] private float guardDetectionRange = 5f;
+        [SerializeField, Min(0f)] private float guardDetectionRange = 10f;
         [Tooltip("Seconds a Guard waits after reaching a waypoint.")]
         [SerializeField, Min(0f)] private float guardWaypointWaitTime = 0.75f;
         [Tooltip("Distance a chasing Guard keeps from the Spirit.")]

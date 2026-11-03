@@ -34,39 +34,37 @@ namespace Possession.Editor
         {
             Debug.Log("=== Full Build All Levels: starting ===");
 
-            Debug.Log("Step 1/10: Creating level configs...");
-            LevelConfigAssets.CreateAll();
-
-            Debug.Log("Step 2/10: Building Level_01 skeleton...");
+            Debug.Log("Step 1/7: Building Level_01 skeleton...");
             SceneBuilder.BuildLevel01();
             Level01Designer.RefineLevel01();
 
-            Debug.Log("Step 3/10: Building Level_02 charge maze...");
-            Level02MazeBuilder.Build();
-
-            Debug.Log("Step 4/10: Building Level_03 layout...");
-            if (System.IO.File.Exists("Assets/Scenes/Level_03.unity"))
-                AssetDatabase.DeleteAsset("Assets/Scenes/Level_03.unity");
+            Debug.Log("Step 2/7: Building Level_02 and Level_03 layouts (P4)...");
+            LevelConfigAssets.CreateAll();
+            foreach (string path in new[] { "Assets/Scenes/Level_02.unity", "Assets/Scenes/Level_03.unity" })
+                if (System.IO.File.Exists(path)) AssetDatabase.DeleteAsset(path);
+            BuildLevel02.Build();
             BuildLevel03.Build();
 
-            Debug.Log("Step 5/10: Updating Guard prefab...");
+            Debug.Log("Step 3/7: Updating Guard prefab (P1)...");
             GuardSetup.PrepareAssets();
 
-            Debug.Log("Step 6/10: Placing Guards in levels...");
+            Debug.Log("Step 4/7: Placing Guards in L02-L03 (P1)...");
             GuardLevelSetup.PrepareLevels();
 
-            Debug.Log("Step 7/10: Updating Heavy prefab + placing Heavies...");
+            Debug.Log("Step 5/7: Updating Heavy prefab + placing Heavies (P3)...");
             HeavySetup.PrepareAssets();
             HeavyLevelSetup.PrepareLevels();
 
-            Debug.Log("Step 8/10: Applying visuals to all levels...");
+            Debug.Log("Step 6/7: Applying visuals to all levels (P5)...");
             VisualSetup.ApplyVisuals();
 
-            Debug.Log("Step 9/10: Setting up HUD in all levels...");
+            Debug.Log("Step 7/8: Setting up HUD in all levels (P5)...");
             HUDSetup.SetupHUD();
+
+            Debug.Log("Step 8/9: Applying HUD cleanup to all levels (P1)...");
             HUDSetup.ApplyHUDCleanup();
 
-            Debug.Log("Step 10/10: Building Tutorial practice level...");
+            Debug.Log("Step 9/9: Building Tutorial practice level...");
             TutorialBuilder.Build();
 
             UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/Scenes/MainMenu.unity");

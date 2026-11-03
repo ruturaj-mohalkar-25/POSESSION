@@ -39,10 +39,7 @@ namespace Possession.Editor
             Barrier(layout.transform, "WallPuzzle_Left", -3.8f);
             Barrier(layout.transform, "WallPuzzle_Right", 3.8f);
 
-            var spiritObj = Require("Spirit");
-            spiritObj.transform.position = new Vector3(0f, 1.15f, 3.5f);
-            if (spiritObj.GetComponent<PossessionCharge>() == null)
-                spiritObj.AddComponent<PossessionCharge>();
+            Require("Spirit").transform.position = new Vector3(0f, 1.15f, 3.5f);
             // Projectile travels at FirePoint height (1.6 m), so make its target easy to read/hit.
             Resize("Target", new Vector3(3.5f, 1.6f, 21f), new Vector3(1.2f, 1.2f, 0.6f));
 
@@ -63,14 +60,10 @@ namespace Possession.Editor
             exitSettings.ApplyModifiedPropertiesWithoutUndo();
             exitObject.GetComponent<BoxCollider>().isTrigger = true;
 
-            var pickups = new GameObject("ChargePickups").transform;
-            LevelBuildKit.PlacePickup(pickups, "Pickup_01", new Vector3(5f, 0.1f, 8f));
-            LevelBuildKit.PlacePickup(pickups, "Pickup_02", new Vector3(-5.5f, 0.1f, 23f));
-
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.SaveAssets();
-            Debug.Log("P4 Level_01 refined: three rooms, sealed puzzle passages, 2 charge pickups, spirit-only gated exit.");
+            Debug.Log("P4 Level_01 refined: three rooms, sealed puzzle passages, spirit-only gated exit.");
         }
 
         private static GameObject Require(string name)

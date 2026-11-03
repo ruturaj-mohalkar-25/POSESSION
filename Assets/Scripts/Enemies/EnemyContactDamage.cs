@@ -2,9 +2,8 @@ using UnityEngine;
 
 namespace Possession
 {
-    // Enemy attacks, using the body's own ability: a Guard shoots visible bullets at the
-    // spirit, a Heavy winds up and smashes when close. Enemies attack while hostile after a
-    // forced eject, and also from the start of the level once they spot the spirit on patrol.
+    // Hostile behaviour after a forced eject, using the body's own ability:
+    // a Guard shoots visible bullets at the spirit, a Heavy winds up and smashes when close.
     // Bodies with neither ability fall back to a touch hit.
     // Kept separate from EnemyBase so the Guard/Heavy scripts stay untouched.
     [RequireComponent(typeof(EnemyBase))]
@@ -14,7 +13,6 @@ namespace Possession
 
         [SerializeField] private int damage = 1;
         [SerializeField] private float firstAttackDelay = 0.75f; // grace period to run after ejecting
-        [SerializeField] private float spotReactionTime = 0.6f;  // warning before the first attack after spotting the spirit
 
         [Header("Guard: shoot")]
         [SerializeField] private GameObject projectilePrefab;
@@ -46,7 +44,6 @@ namespace Possession
         private MaterialPropertyBlock block;
         private Attack attack;
         private bool hostile;
-        private bool spotted;
         private float nextAttackTime;
         private float smashAt;       // > 0 while winding up
         private float blinkUntil;
@@ -98,22 +95,12 @@ namespace Possession
                 SetTint(null);
             }
 
+            if (!hostile) return;
+
             // EnemyBase makes the enemy possessable again once its hostile timer ends
-            if (hostile && (enemy.CanBePossessed || enemy.CurrentHP <= 0))
+            if (enemy.CanBePossessed || enemy.CurrentHP <= 0)
+            {
                 StopHostile();
-
-            // A patrolling enemy that sees the spirit attacks too, after a short warning.
-            bool nowSpotted = !hostile && enemy.IsChasing && enemy.CurrentHP > 0;
-            if (nowSpotted && !spotted)
-            {
-                nextAttackTime = Mathf.Max(nextAttackTime, Time.time + spotReactionTime);
-                Blink();
-            }
-            spotted = nowSpotted;
-
-            if (!hostile && !spotted)
-            {
-                CancelWindup();
                 return;
             }
 
@@ -194,14 +181,6 @@ namespace Possession
             hostile = false;
             smashAt = 0f;
             blinkUntil = 0f;
-            SetTint(null);
-        }
-
-        // Lost sight mid wind-up: drop the smash instead of landing it later.
-        private void CancelWindup()
-        {
-            if (smashAt <= 0f) return;
-            smashAt = 0f;
             SetTint(null);
         }
 

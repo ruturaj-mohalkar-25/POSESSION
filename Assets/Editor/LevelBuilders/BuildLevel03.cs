@@ -64,39 +64,32 @@ namespace Possession.Editor
             LevelBuildKit.WallRect(walls, "Exit_West", 3.75f, 4.25f, 0f, 6f);
             LevelBuildKit.WallRect(walls, "Exit_NorthRight", 12f, 14.25f, 5.75f, 6.25f);
 
-            var entryWall = LevelBuildKit.PlaceBreakableWall(layout, "BreakableWall_Entry", 0f, 14f);
+            var target = LevelBuildKit.PlaceTarget(layout, "Target_01", 0f, 9f);
+            var door = LevelBuildKit.PlaceDoor(layout, "Door", 0f, 14f, new[] { target });
             var wall1 = LevelBuildKit.PlaceBreakableWall(layout, "BreakableWall_01", 8f, 30f);
-            var target = LevelBuildKit.PlaceTarget(layout, "Target_01", 6f, 15f);
-            var exitDoor = LevelBuildKit.PlaceDoor(layout, "ExitDoor", 8f, 12f, new[] { target });
-            LevelBuildKit.PlaceExit(layout, "ExitZone", new Vector3(9f, 1f, 3f), exitDoor, wall1);
+            var wall2 = LevelBuildKit.PlaceBreakableWall(layout, "BreakableWall_02", 8f, 12f);
+            LevelBuildKit.PlaceExit(layout, "ExitZone", new Vector3(9f, 1f, 3f), door, wall2);
 
             var spirit = LevelBuildKit.BuildSpirit(new Vector3(0f, LevelBuildKit.SpiritHeight, 3f));
 
             var spawns = new GameObject("SpawnPoints").transform;
             spawns.SetParent(layout);
-            LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Heavy_03", 0f, 10f, 1.3f);
+            LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Guard_01", 0f, 6f);
             LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Guard_02", -8f, 30f);
             LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Heavy_01", 8f, 34f, 1.3f);
-            LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Guard_03", 8f, 18f);
+            LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Heavy_02", 8f, 18f, 1.3f);
 
             var enemies = new GameObject("Enemies").transform;
             enemies.SetParent(layout);
 
             var labels = new GameObject("P4_Labels").transform;
             labels.SetParent(layout);
-            LevelBuildKit.ObjectLabel(labels, "BREAKABLE", entryWall.gameObject, new Vector3(0f, 3.4f, -0.6f), Color.white);
-            LevelBuildKit.ObjectLabel(labels, "BREAKABLE", wall1.gameObject, new Vector3(0f, 3.4f, -0.6f), Color.white);
             LevelBuildKit.ObjectLabel(labels, "SHOOT ME", target.gameObject, new Vector3(0f, 1.3f, 0f),
                 new Color(1f, 0.35f, 0.3f), "HIT!");
-            LevelBuildKit.ObjectLabel(labels, "LOCKED", exitDoor.gameObject, new Vector3(0f, 3.4f, -0.6f),
+            LevelBuildKit.ObjectLabel(labels, "LOCKED", door.gameObject, new Vector3(0f, 3.4f, -0.6f),
                 new Color(0.85f, 0.62f, 0.15f), "OPEN");
-
-            var pickups = new GameObject("ChargePickups").transform;
-            pickups.SetParent(layout);
-            LevelBuildKit.PlacePickup(pickups, "Pickup_01", new Vector3(-10f, 0.1f, 18f));
-            LevelBuildKit.PlacePickup(pickups, "Pickup_02", new Vector3(-6f, 0.1f, 38f));
-            LevelBuildKit.PlacePickup(pickups, "Pickup_03", new Vector3(6f, 0.1f, 25f));
-            LevelBuildKit.PlacePickup(pickups, "Pickup_04", new Vector3(4f, 0.1f, 38f));
+            LevelBuildKit.ObjectLabel(labels, "BREAKABLE", wall1.gameObject, new Vector3(0f, 3.4f, -0.6f), Color.white);
+            LevelBuildKit.ObjectLabel(labels, "EXIT WALL", wall2.gameObject, new Vector3(0f, 3.4f, -0.6f), Color.white);
 
             LevelBuildKit.ApplyConfig(LevelConfigAssets.Load("Level_03"), manager, spirit);
 

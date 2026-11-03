@@ -84,13 +84,9 @@ namespace Possession.Tests
             Assert.That(objective.text.Length, Is.LessThan(50));
             Assert.That(objective.text, Does.Not.Contain("unlock the door").IgnoreCase);
             Assert.That(objective.text, Does.Not.Contain("BREAKABLE").IgnoreCase);
-            // The current HUD uses yellow lettering on a dark translucent panel.
-            // Keep the semantic/readability checks without requiring the retired yellow panel.
-            Assert.That(objective.color.r, Is.GreaterThan(0.8f));
-            Assert.That(objective.color.g, Is.GreaterThan(0.55f));
-            Assert.That(objective.color.b, Is.LessThan(objective.color.r));
-            Assert.That(objectiveBar.color.maxColorComponent, Is.LessThan(0.4f));
-            Assert.That(objectiveBar.color.a, Is.InRange(0.3f, 0.8f));
+            Assert.That(objectiveBar.color.r, Is.GreaterThan(0.8f));
+            Assert.That(objectiveBar.color.g, Is.GreaterThan(0.55f));
+            Assert.That(objectiveBar.color.b, Is.LessThan(0.4f));
 
             var message = Read<Text>(hud, "messageText");
             Assert.That(message.rectTransform.anchorMin, Is.EqualTo(new Vector2(0.5f, 0.5f)));

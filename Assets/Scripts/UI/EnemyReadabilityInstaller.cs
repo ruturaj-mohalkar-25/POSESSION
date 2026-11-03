@@ -41,7 +41,7 @@ namespace Possession
     // a possess would actually succeed.
     public sealed class EnemyReadabilityController : MonoBehaviour
     {
-        [SerializeField] private float possessRange = 5f;
+        [SerializeField] private float possessRange = 7f;
 
         private EnemyReadability[] cues;
         private Transform spirit;
@@ -67,8 +67,7 @@ namespace Possession
 
             bool asSpirit = spirit != null && spirit.gameObject.activeInHierarchy
                 && (possession == null || possession.CurrentState == PlayerState.Spirit);
-            EnemyReadability green = asSpirit && (possession == null || possession.CanStartPossession)
-                ? PickPossessTarget() : null;
+            EnemyReadability green = asSpirit ? PickPossessTarget() : null;
 
             foreach (var cue in cues)
             {
@@ -97,7 +96,7 @@ namespace Possession
             {
                 if (cue == null) continue;
                 var enemy = cue.GetComponent<EnemyBase>();
-                if (enemy == null || !enemy.isActiveAndEnabled || !enemy.CanBePossessedFrom(spirit)) continue;
+                if (enemy == null || !enemy.isActiveAndEnabled || !enemy.CanBePossessed) continue;
 
                 float dist = Vector3.Distance(spirit.position, enemy.transform.position);
                 if (dist > bestDist || !CanSee(enemy)) continue;

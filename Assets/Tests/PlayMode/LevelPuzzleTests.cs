@@ -149,9 +149,6 @@ namespace Possession.Tests
             var spirit = Object.FindFirstObjectByType<SpiritController>();
             var possession = spirit.GetComponent<PossessionController>();
             var heavy = Object.FindFirstObjectByType<HeavyEnemy>();
-            heavy.enabled = false;
-            spirit.RestoreAt(heavy.transform.position - heavy.transform.forward * 1.5f);
-            Physics.SyncTransforms();
             typeof(PossessionController).GetMethod("Possess", BindingFlags.Instance | BindingFlags.NonPublic)
                 .Invoke(possession, new object[] { heavy });
             var controller = heavy.GetComponent<CharacterController>();

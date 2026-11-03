@@ -1,9 +1,7 @@
-using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.TestTools;
 
 namespace Possession.Tests
 {
@@ -132,35 +130,6 @@ namespace Possession.Tests
             };
             view.ShowChart(second);
             Assert.That(chartContainer.childCount, Is.EqualTo(1));
-        }
-
-        [TestCase(true)]
-        [TestCase(false)]
-        public void MissingOrEmptyResultsClearThePreviousChart(bool useNull)
-        {
-            view.ShowChart(new List<PossessionEntry>
-            {
-                new PossessionEntry { enemyType = "Guard", duration = 3f }
-            });
-            view.ShowChart(useNull ? null : new List<PossessionEntry>());
-            Assert.That(chartContainer.childCount, Is.Zero);
-        }
-
-        [UnityTest]
-        public IEnumerator RefreshHidesOldBarsImmediatelyAndDestroysThemAfterTheFrame()
-        {
-            var entries = new List<PossessionEntry>
-            {
-                new PossessionEntry { enemyType = "Guard", duration = 3f }
-            };
-            view.ShowChart(entries);
-            GameObject oldBar = chartContainer.GetChild(0).gameObject;
-            view.ShowChart(entries);
-            Assert.That(chartContainer.childCount, Is.EqualTo(1));
-            Assert.That(oldBar.activeSelf, Is.False);
-            Assert.That(oldBar.transform.parent, Is.Null);
-            yield return null;
-            Assert.That(oldBar == null, Is.True);
         }
 
         private GameObject Create(string name)
