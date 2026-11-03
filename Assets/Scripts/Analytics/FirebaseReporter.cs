@@ -51,6 +51,8 @@ namespace Possession
             FloatField(sb, "totalPossessionTime", data.totalPossessionTime); sb.Append(',');
             FloatField(sb, "completionTime", data.completionTime); sb.Append(',');
             IntField(sb, "stars", data.stars); sb.Append(',');
+            IntField(sb, "coinsCollected", data.coinsCollected); sb.Append(',');
+            IntField(sb, "chargesUsed", data.chargesUsed); sb.Append(',');
 
             sb.Append("\"possessions\":{\"arrayValue\":{\"values\":[");
             if (data.possessions != null)
