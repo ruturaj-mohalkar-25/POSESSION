@@ -322,7 +322,13 @@ namespace Possession
             Vector3 delta = position - transform.position;
             delta.y = 0f;
             float distance = delta.magnitude;
-            if (distance <= stopDistance) return;
+            if (distance <= stopDistance)
+            {
+                // Close enough to stop, but still turn to face the target, so an enemy
+                // with the Spirit right behind it can aim at it.
+                if (distance > 0.01f) transform.rotation = Quaternion.LookRotation(delta);
+                return;
+            }
 
             Move(delta.normalized * Mathf.Min(moveSpeed * Time.deltaTime,
                 distance - stopDistance));
