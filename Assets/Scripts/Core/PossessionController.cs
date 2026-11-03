@@ -13,9 +13,9 @@ namespace Possession
     public class PossessionController : MonoBehaviour
     {
         [Header("Possession Settings")]
-        [SerializeField] private float possessRange = 7f;
+        [SerializeField] private float possessRange = 5f;
         [SerializeField] private float possessDuration = 10f;
-        [SerializeField] private float ejectCooldown = 0.5f;
+        [SerializeField] private float ejectCooldown = 2f;
         [SerializeField] private float hostileTime = 5f;
         [SerializeField] private LayerMask enemyLayer;
 
@@ -25,15 +25,32 @@ namespace Possession
         private float ejectCooldownTimer;
         private SpiritController spirit;
         private Vector3 lastSpiritPosition;
+        private GameObject shieldBubble;
+        private Renderer shieldRenderer;
 
         public PlayerState CurrentState => currentState;
         public float PossessTimer => possessTimer;
         public float PossessDuration => possessDuration;
         public EnemyBase PossessedEnemy => possessedEnemy;
+        public bool CanStartPossession => GetComponent<PossessionCharge>() == null
+            || GetComponent<PossessionCharge>().HasCharge && ejectCooldownTimer <= 0f;
+
+        public bool IsEjectShielded => ejectCooldownTimer > 0f;
 
         private void Awake()
         {
             spirit = GetComponent<SpiritController>();
+            shieldBubble = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            shieldBubble.name = "EjectShield";
+            shieldBubble.layer = 2;
+            shieldBubble.transform.SetParent(transform, false);
+            shieldBubble.transform.localScale = Vector3.one * 1.8f;
+            var col = shieldBubble.GetComponent<Collider>();
+            if (col != null) { col.enabled = false; Destroy(col); }
+            shieldRenderer = shieldBubble.GetComponent<Renderer>();
+            shieldRenderer.material = new Material(Shader.Find("Sprites/Default"));
+            shieldRenderer.material.color = new Color(0.3f, 0.85f, 1f, 0.25f);
+            shieldBubble.SetActive(false);
         }
 
         private void Update()
@@ -42,6 +59,7 @@ namespace Possession
                 return;
 
             ejectCooldownTimer -= Time.deltaTime;
+            UpdateShield();
 
             if (currentState == PlayerState.Spirit)
             {
@@ -62,7 +80,7 @@ namespace Possession
         private void HandlePossessInput()
         {
             EnemyBase nearest = FindNearestEnemy();
-            bool canPossess = nearest != null && ejectCooldownTimer <= 0f;
+            bool canPossess = nearest != null && ejectCooldownTimer <= 0f && CanStartPossession;
 
             EventBus.PossessPromptUpdated?.Invoke(canPossess);
 
@@ -79,7 +97,7 @@ namespace Possession
             foreach (var hit in hits)
             {
                 var enemy = hit.GetComponent<EnemyBase>();
-                if (enemy == null || !enemy.CanBePossessed) continue;
+                if (enemy == null || !enemy.CanBePossessedFrom(transform)) continue;
                 if (!HasLineOfSight(enemy)) continue;
 
                 float dist = Vector3.Distance(transform.position, hit.transform.position);
@@ -106,6 +124,12 @@ namespace Possession
 
         private void Possess(EnemyBase enemy)
         {
+            if (GetComponent<PossessionCharge>() != null && (!CanStartPossession
+                || currentState != PlayerState.Spirit || enemy == null || !enemy.CanBePossessedFrom(transform)
+                || !enemy.gameObject.activeInHierarchy || ejectCooldownTimer > 0f
+                || (enemyLayer.value & (1 << enemy.gameObject.layer)) == 0
+                || Vector3.Distance(transform.position, enemy.transform.position) > possessRange
+                || !HasLineOfSight(enemy))) return;
             lastSpiritPosition = transform.position;
             possessedEnemy = enemy;
             possessTimer = possessDuration;
@@ -135,6 +159,10 @@ namespace Possession
                 possessedEnemy.OnEjected();
 
             spirit.RestoreAt(ejectPos);
+            Vector3 awayFromSpirit = possessedEnemy.transform.position - ejectPos;
+            awayFromSpirit.y = 0f;
+            if (awayFromSpirit.sqrMagnitude > 0.01f)
+                possessedEnemy.transform.rotation = Quaternion.LookRotation(awayFromSpirit.normalized);
             ejectCooldownTimer = ejectCooldown;
 
             var ejectedEnemy = possessedEnemy;
@@ -142,6 +170,12 @@ namespace Possession
             currentState = PlayerState.Spirit;
 
             EventBus.Ejected?.Invoke(ejectedEnemy, forced);
+        }
+
+        public bool TryEject(bool forced)
+        {
+            Eject(forced);
+            return currentState == PlayerState.Spirit;
         }
 
         private bool TryFindEjectionPosition(out Vector3 position)
@@ -153,8 +187,8 @@ namespace Possession
 
             Physics.SyncTransforms();
             var enemyCollider = possessedEnemy.GetComponent<Collider>();
-            Bounds bounds = enemyCollider != null ? enemyCollider.bounds
-                : new Bounds(possessedEnemy.transform.position, Vector3.one * 2f);
+            Bounds bounds = enemyCollider != null && enemyCollider.bounds.size.sqrMagnitude > 0.01f
+                ? enemyCollider.bounds : new Bounds(possessedEnemy.transform.position, Vector3.one * 2f);
             Vector3 scale = transform.lossyScale;
             float radius = capsule.radius * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z));
             float halfHeight = Mathf.Max(radius, capsule.height * Mathf.Abs(scale.y) * 0.5f);
@@ -211,6 +245,26 @@ namespace Possession
                 if (!hit.transform.IsChildOf(transform)) return false;
             }
             return true;
+        }
+
+        private void UpdateShield()
+        {
+            if (shieldBubble == null) return;
+            bool active = ejectCooldownTimer > 0f && currentState == PlayerState.Spirit;
+            shieldBubble.SetActive(active);
+            if (active && shieldRenderer != null)
+            {
+                float pulse = 0.15f + 0.15f * Mathf.Sin(Time.time * 6f);
+                var c = shieldRenderer.material.color;
+                c.a = pulse;
+                shieldRenderer.material.color = c;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (shieldRenderer != null)
+                Destroy(shieldRenderer.sharedMaterial);
         }
     }
 }

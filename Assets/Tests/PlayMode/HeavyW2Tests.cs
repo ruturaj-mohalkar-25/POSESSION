@@ -22,9 +22,9 @@ namespace Possession.Tests
         }
 
         [UnityTest] public IEnumerator Level01RetainsHeavyStats() => CheckPlacement("Level_01", 1, 1.8f);
-        [UnityTest] public IEnumerator Level02HasOneHeavyWithPatrolAndSpeed2() => CheckPlacement("Level_02", 1, 2f);
+        [UnityTest] public IEnumerator Level02HasThreeHeaviesWithPatrolAndSpeed2() => CheckPlacement("Level_02", 3, 2f);
         [UnityTest] public IEnumerator Level03HasTwoHeaviesWithPatrolAndSpeed22() => CheckPlacement("Level_03", 2, 2.2f);
-        [UnityTest] public IEnumerator Level02HeavySmashesWallAndSpiritFinishes() => CheckPuzzle("Level_02");
+        // Level02ChargeMazeTests exercises both replacement Level 2 solutions with charge collection.
         [UnityTest] public IEnumerator Level03HeaviesSmashBothWallsAndSpiritFinishes() => CheckPuzzle("Level_03");
 
         [UnityTest]
@@ -45,7 +45,8 @@ namespace Possession.Tests
                 yield return Load(name); FreezeHeavies();
                 var door = Object.FindFirstObjectByType<Door>();
                 Assert.That(door.IsOpen, Is.False);
-                Assert.That(Object.FindFirstObjectByType<LevelExit>().IsReady, Is.False);
+                Assert.That(name == "Level_02" ? Object.FindFirstObjectByType<Level02Director>().CanExit
+                    : Object.FindFirstObjectByType<LevelExit>().IsReady, Is.False);
                 foreach (var wall in Walls())
                 {
                     Assert.That(wall.MinDamageRequired, Is.EqualTo(2));
@@ -67,7 +68,7 @@ namespace Possession.Tests
             yield return Load(name);
             var heavies = Heavies();
             Assert.That(heavies.Length, Is.EqualTo(count));
-            if (name != "Level_01") Assert.That(Walls().Length, Is.EqualTo(count));
+            if (name != "Level_01") Assert.That(Walls().Length, Is.EqualTo(name == "Level_02" ? 2 : count));
             Assert.That(Object.FindObjectsByType<HUDManager>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
             var positions = heavies.Select(h => h.transform.position).ToArray();
             foreach (var heavy in heavies)
@@ -91,7 +92,7 @@ namespace Possession.Tests
                 if (name != "Level_01")
                 {
                     int index = heavy.name.EndsWith("02") ? 2 : 1;
-                    var marker = GameObject.Find("SpawnPoint_Heavy_0" + index);
+                    var marker = GameObject.Find(name == "Level_02" ? "SpawnPoint_" + heavy.name : "SpawnPoint_Heavy_0" + index);
                     Assert.That(heavy.transform.position.x, Is.EqualTo(marker.transform.position.x).Within(.1f));
                     Assert.That(heavy.transform.position.z, Is.EqualTo(marker.transform.position.z).Within(.1f));
                     Assert.That(Physics.SphereCast(points[0].position, .65f,
@@ -100,7 +101,7 @@ namespace Possession.Tests
                         QueryTriggerInteraction.Ignore), Is.False, "Patrol segment must clear the room walls.");
                 }
             }
-            yield return new WaitForSeconds(1.3f);
+            yield return new WaitForSeconds(heavies.Max(h => h.PatrolStartDelay) + 1.3f);
             for (int i = 0; i < heavies.Length; i++)
             {
                 Vector3 displacement = heavies[i].transform.position - positions[i]; displacement.y = 0;
@@ -122,6 +123,8 @@ namespace Possession.Tests
                 Vector3 forward = name == "Level_02" ? Vector3.forward : Vector3.back;
                 Vector3 attack = walls[i].transform.position - forward * 2.1f; attack.y = 1.45f;
                 Move(heavy, attack, forward);
+                spirit.RestoreAt(attack - forward * 1.5f);
+                Physics.SyncTransforms();
                 Invoke(player, "Possess", heavy);
                 Assert.That(player.CurrentState, Is.EqualTo(PlayerState.Possessed_Heavy));
                 Assert.That(heavy.GetComponent<HeavySmashIndicator>().IsVisible, Is.True);
@@ -130,7 +133,15 @@ namespace Possession.Tests
                 Assert.That(walls[i].gameObject.activeSelf, Is.False);
                 Assert.That(heavy.GetComponent<SmashAbility>().UsesLeft, Is.EqualTo(0));
                 Invoke(player, "Eject", false);
+                Set(player, "ejectCooldownTimer", 0f);
                 Assert.That(heavy.GetComponent<HeavySmashIndicator>().IsVisible, Is.False);
+                var charge = player.GetComponent<PossessionCharge>();
+                if (charge != null && !charge.HasCharge)
+                {
+                    var pickup = Object.FindObjectsByType<PossessionChargePickup>(FindObjectsSortMode.None)
+                        .FirstOrDefault(p => p.IsReady);
+                    if (pickup != null) { spirit.RestoreAt(pickup.transform.position + Vector3.up); Physics.SyncTransforms(); pickup.TryCollect(charge); }
+                }
                 if (i < walls.Length - 1) Assert.That(Object.FindFirstObjectByType<LevelExit>().IsReady, Is.False);
             }
             Assert.That(Object.FindFirstObjectByType<LevelExit>().IsReady, Is.True);
@@ -160,6 +171,15 @@ namespace Possession.Tests
             {
                 var field = type.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
                 if (field != null) return (T)field.GetValue(target);
+            }
+            throw new System.MissingFieldException(name);
+        }
+        private static void Set(object target, string name, object value)
+        {
+            for (var type = target.GetType(); type != null; type = type.BaseType)
+            {
+                var field = type.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                if (field != null) { field.SetValue(target, value); return; }
             }
             throw new System.MissingFieldException(name);
         }

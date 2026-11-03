@@ -9,7 +9,7 @@ namespace Possession
         [SerializeField] private float jumpForce = 8f;
 
         [Header("Health")]
-        [SerializeField] private int maxHP = 3;
+        [SerializeField] private int maxHP = 5;
 
         private Rigidbody rb;
         private int currentHP;
@@ -57,6 +57,8 @@ namespace Possession
 
         public void TakeDamage(int amount)
         {
+            var possession = GetComponent<PossessionController>();
+            if (possession != null && possession.IsEjectShielded) return;
             currentHP -= amount;
             EventBus.SpiritDamaged?.Invoke(currentHP, maxHP);
             if (currentHP <= 0)

@@ -51,7 +51,7 @@ namespace Possession.Editor
             var serialized = new SerializedObject(guard);
             serialized.FindProperty("moveSpeed").floatValue = 3f;
             serialized.FindProperty("maxHP").intValue = 3;
-            serialized.FindProperty("detectionRange").floatValue = 10f;
+            serialized.FindProperty("detectionRange").floatValue = 5f;
             serialized.FindProperty("waypointWaitTime").floatValue = 0.75f;
             serialized.FindProperty("waypointArrivalDistance").floatValue = 0.3f;
             serialized.FindProperty("chaseStopDistance").floatValue = 1.5f;

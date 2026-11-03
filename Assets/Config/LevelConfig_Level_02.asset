@@ -17,7 +17,7 @@ MonoBehaviour:
   levelTime: 240
   guardMoveSpeed: 3
   guardMaxHP: 3
-  guardDetectionRange: 12
+  guardDetectionRange: 5
   guardWaypointWaitTime: 0.75
   guardChaseStopDistance: 1.5
   goldParTime: 80
