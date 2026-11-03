@@ -30,7 +30,6 @@ namespace Possession
         public float PossessTimer => possessTimer;
         public float PossessDuration => possessDuration;
         public EnemyBase PossessedEnemy => possessedEnemy;
-        // Levels without a charge component retain their normal possession rules.
         public bool CanStartPossession => GetComponent<PossessionCharge>() == null
             || GetComponent<PossessionCharge>().HasCharge && ejectCooldownTimer <= 0f;
 

@@ -58,8 +58,10 @@ namespace Possession.Editor
                 Object.DestroyImmediate(root);
             }
             foreach(var old in manager.GetComponents<Level02Director>()) Object.DestroyImmediate(old);
-            foreach(var old in spirit.GetComponents<PossessionCharge>()) Object.DestroyImmediate(old);
-            spirit.gameObject.AddComponent<PossessionCharge>();
+            if(spirit.GetComponent<PossessionCharge>()==null) spirit.gameObject.AddComponent<PossessionCharge>();
+            var chargeSo=new SerializedObject(spirit.GetComponent<PossessionCharge>());
+            chargeSo.FindProperty("startingCharges").intValue=0;
+            chargeSo.ApplyModifiedPropertiesWithoutUndo();
             spirit.transform.position=Map(3,14);
             LevelBuildKit.BuildLighting(); RenderSettings.ambientLight=new Color(.38f,.42f,.5f);
             var daylight=Object.FindFirstObjectByType<Light>();daylight.intensity=.65f;daylight.color=new Color(.74f,.83f,1f);
@@ -134,7 +136,9 @@ namespace Possession.Editor
             Set(director,"northDoor",gateN);Set(director,"southDoor",gateS);
             Set(director,"northWall",barrierN);Set(director,"southWall",barrierS);
             Pickup(world,"C1",12,13.5f,true,shardMat);Pickup(world,"C2",23,3,true,shardMat);
-            Pickup(world,"C3",12,21,true,shardMat);Pickup(world,"C4",3.5f,22,false,shardMat);
+            Pickup(world,"C3",12,21,true,shardMat);Pickup(world,"C4",3.5f,22,true,shardMat);
+            Pickup(world,"C5",5,5,true,shardMat);Pickup(world,"C6",18,10,true,shardMat);
+            Pickup(world,"C7",26,21,true,shardMat);Pickup(world,"C8",30,8,true,shardMat);
             var checkpoint=new GameObject("Courtyard checkpoint");checkpoint.transform.SetParent(world);checkpoint.transform.position=Map(12,12.5f,2f);
             var cv=checkpoint.AddComponent<BoxCollider>();cv.isTrigger=true;cv.size=new Vector3(9.3f,5f,10.8f);
             Set(checkpoint.AddComponent<Level02CheckpointVolume>(),"director",director);
@@ -172,7 +176,7 @@ namespace Possession.Editor
             foreach(var t in world.GetComponentsInChildren<WorldLabel>())Object.DestroyImmediate(t.gameObject);
             EditorSceneManager.MarkSceneDirty(scene);EditorSceneManager.SaveScene(scene,Path);
             LevelBuildKit.RegisterScene(Path);AssetDatabase.SaveAssets();
-            Debug.Log("Level 2 Hunted built: 7 rooms, 3 dead ends, 8 enemies, 4 shards, 2 independent routes.");
+            Debug.Log("Level 2 Hunted built: 7 rooms, 3 dead ends, 8 enemies, 8 shards, 2 independent routes.");
         }
         static void Floor(Transform parent,string name,RectInt rect,Material mat)
         { var p=Map(rect.center.x,rect.center.y,0);Cube(parent,name,p,new Vector3(rect.width*Unit,.2f,rect.height*Unit),mat); }

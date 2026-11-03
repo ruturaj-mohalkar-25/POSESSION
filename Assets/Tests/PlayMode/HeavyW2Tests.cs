@@ -123,6 +123,8 @@ namespace Possession.Tests
                 Vector3 forward = name == "Level_02" ? Vector3.forward : Vector3.back;
                 Vector3 attack = walls[i].transform.position - forward * 2.1f; attack.y = 1.45f;
                 Move(heavy, attack, forward);
+                spirit.RestoreAt(attack - forward * 1.5f);
+                Physics.SyncTransforms();
                 Invoke(player, "Possess", heavy);
                 Assert.That(player.CurrentState, Is.EqualTo(PlayerState.Possessed_Heavy));
                 Assert.That(heavy.GetComponent<HeavySmashIndicator>().IsVisible, Is.True);
@@ -131,7 +133,15 @@ namespace Possession.Tests
                 Assert.That(walls[i].gameObject.activeSelf, Is.False);
                 Assert.That(heavy.GetComponent<SmashAbility>().UsesLeft, Is.EqualTo(0));
                 Invoke(player, "Eject", false);
+                Set(player, "ejectCooldownTimer", 0f);
                 Assert.That(heavy.GetComponent<HeavySmashIndicator>().IsVisible, Is.False);
+                var charge = player.GetComponent<PossessionCharge>();
+                if (charge != null && !charge.HasCharge)
+                {
+                    var pickup = Object.FindObjectsByType<PossessionChargePickup>(FindObjectsSortMode.None)
+                        .FirstOrDefault(p => p.IsReady);
+                    if (pickup != null) { spirit.RestoreAt(pickup.transform.position + Vector3.up); Physics.SyncTransforms(); pickup.TryCollect(charge); }
+                }
                 if (i < walls.Length - 1) Assert.That(Object.FindFirstObjectByType<LevelExit>().IsReady, Is.False);
             }
             Assert.That(Object.FindFirstObjectByType<LevelExit>().IsReady, Is.True);
@@ -161,6 +171,15 @@ namespace Possession.Tests
             {
                 var field = type.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
                 if (field != null) return (T)field.GetValue(target);
+            }
+            throw new System.MissingFieldException(name);
+        }
+        private static void Set(object target, string name, object value)
+        {
+            for (var type = target.GetType(); type != null; type = type.BaseType)
+            {
+                var field = type.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                if (field != null) { field.SetValue(target, value); return; }
             }
             throw new System.MissingFieldException(name);
         }

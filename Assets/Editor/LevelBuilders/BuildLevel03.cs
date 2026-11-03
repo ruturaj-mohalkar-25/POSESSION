@@ -91,6 +91,13 @@ namespace Possession.Editor
             LevelBuildKit.ObjectLabel(labels, "BREAKABLE", wall1.gameObject, new Vector3(0f, 3.4f, -0.6f), Color.white);
             LevelBuildKit.ObjectLabel(labels, "EXIT WALL", wall2.gameObject, new Vector3(0f, 3.4f, -0.6f), Color.white);
 
+            var pickups = new GameObject("ChargePickups").transform;
+            pickups.SetParent(layout);
+            LevelBuildKit.PlacePickup(pickups, "Pickup_01", new Vector3(0f, 0.1f, 10f));
+            LevelBuildKit.PlacePickup(pickups, "Pickup_02", new Vector3(-8f, 0.1f, 26f));
+            LevelBuildKit.PlacePickup(pickups, "Pickup_03", new Vector3(8f, 0.1f, 37f));
+            LevelBuildKit.PlacePickup(pickups, "Pickup_04", new Vector3(8f, 0.1f, 15f));
+
             LevelBuildKit.ApplyConfig(LevelConfigAssets.Load("Level_03"), manager, spirit);
 
             EditorSceneManager.MarkSceneDirty(scene);
