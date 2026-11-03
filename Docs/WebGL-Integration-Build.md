@@ -43,4 +43,6 @@ The source/package branch is **Omkar/web-build-integration**. GitHub Pages publi
 
 Unity **6000.3.22f1**: **175/175 PlayMode tests passed**, zero failed and zero skipped. This includes real coin collection, shared player shots and Heavy smash through the tutorial's completion, forced ejection, coin recovery, consistent starting charges/HUD across all scenes, campaign order, and once-only enemy projectile damage.
 
-Browser checks and the published package identity are recorded after the WebGL build completes. Automated checks do not replace a full human difficulty playtest.
+Browser checks confirmed welcome-to-play with no extra modal, actual WASD/jump coaching, Soul Coin collection and stacking, possession ability prompts, and the shared coin count in all three campaign scenes. The browser check had no JavaScript errors. The root and versioned release packages use the same tested files. Human difficulty playtesting remains separate.
+
+Versioned release URL: https://ruturaj-mohalkar-25.github.io/POSESSION/releases/tutorial-1183820/
