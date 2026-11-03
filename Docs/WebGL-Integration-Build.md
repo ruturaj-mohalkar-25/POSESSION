@@ -33,3 +33,5 @@ GitHub Pages currently publishes the root of **WebBuilds**. This branch is prepa
 ## Verification
 
 Unity PlayMode: **168/168 passed**, with zero failures and zero skipped. New checks cover actual level-select buttons, progression and final completion, integration camera/tutorial preservation, Soul Coin placement, and the maze's contact damage respecting eject grace.
+
+The final WebGL package was checked in Chrome: Main Menu and all three buttons load, Level 2 opens the old Level 3 layout, and Level 3 opens the maze with Soul Coin visuals, the charge counter, movement, red cones and enemy damage. All loader references and gzip payloads were validated. This is a browser smoke check, not a complete manual playthrough.
