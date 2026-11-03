@@ -57,6 +57,11 @@ namespace Possession.Tests
             if (possession != null) possession.enabled = false;
 
             spirit.gameObject.SetActive(false);
+            // A guard can glimpse the Spirit on the first frame after loading. Skip the
+            // lose-sight search here so this test checks the saved patrol routes directly.
+            foreach (GuardEnemy guard in guards)
+                typeof(EnemyBase).GetField("loseSightSearchTime",
+                    BindingFlags.Instance | BindingFlags.NonPublic).SetValue(guard, 0f);
             var starts = guards.Select(guard => guard.transform.position).ToArray();
             foreach (GuardEnemy guard in guards)
                 AssertRouteIsConfiguredAndClear(guard);

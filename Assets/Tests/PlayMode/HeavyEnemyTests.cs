@@ -270,6 +270,8 @@ namespace Possession.Tests
         [UnityTest]
         public IEnumerator DetectsChildColliderChasesAndResumesPatrolWhenSpiritLeaves()
         {
+            // Lose-sight search is covered in EnemyAttackTests; this checks the direct return.
+            Set(heavy, "loseSightSearchTime", 0f);
             Set(heavy, "waypoints", new[] { Create("Patrol WP", new Vector3(-20f, 1f, 0f)).transform });
             var spirit = CreateSpirit(new Vector3(5f, 1f, 0f), true);
             yield return new WaitForSeconds(0.3f);
