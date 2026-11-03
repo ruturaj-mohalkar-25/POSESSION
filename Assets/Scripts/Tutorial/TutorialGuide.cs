@@ -295,8 +295,9 @@ namespace Possession
             if (best == null) return false;
             body = best.transform;
             danger = best.IsHostile;
+            string action = best.CanBePossessedFrom(spirit.transform) ? "[E] POSSESS" : "GET BEHIND IT TO POSSESS";
             text = danger ? "HOSTILE — KEEP YOUR DISTANCE" : best == guard
-                ? "GUARD · shoots targets\n[E] POSSESS" : "HEAVY · breaks walls\n[E] POSSESS";
+                ? "GUARD · shoots targets\n" + action : "HEAVY · breaks walls\n" + action;
             return true;
         }
     }

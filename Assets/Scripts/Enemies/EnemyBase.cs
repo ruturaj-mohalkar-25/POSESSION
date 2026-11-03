@@ -20,6 +20,12 @@ namespace Possession
         [SerializeField, Min(0f)] protected float chaseStopDistance = 1.5f;
         [SerializeField, Min(0f)] protected float patrolStartDelay;
 
+        [Header("Vision Cone")]
+        // Full angle of the cone in front of the enemy. detectionRange is its length.
+        // The enemy only spots the Spirit inside the cone with a clear line of sight,
+        // and can only be possessed when it cannot see the Spirit (e.g. from behind).
+        [SerializeField, Range(1f, 360f)] protected float visionAngle = 45f;
+
         protected int currentHP;
         protected bool isPossessed;
         protected bool isHostile;
@@ -39,6 +45,8 @@ namespace Possession
         // True while the enemy is in its post-eject hostile state (chasing or not).
         public bool IsHostile => isHostile;
         public float DetectionRange => detectionRange;
+        public float VisionAngle => visionAngle;
+        public bool IsPossessed => isPossessed;
         public float PatrolStartDelay => patrolStartDelay;
 
         // Lets a readability/feel cue retune this enemy's speed at runtime without
@@ -175,6 +183,34 @@ namespace Possession
             chaseTarget = FindFirstObjectByType<SpiritController>(FindObjectsInactive.Include);
         }
 
+        // True when the target is inside the vision cone and nothing solid blocks the view.
+        public bool CanSee(Transform target)
+        {
+            if (target == null) return false;
+            Vector3 toTarget = target.position - transform.position;
+            toTarget.y = 0f;
+            float distance = toTarget.magnitude;
+            if (distance > detectionRange) return false;
+
+            Vector3 forward = transform.forward;
+            forward.y = 0f;
+            if (distance > 0.01f && forward.sqrMagnitude > 0.0001f
+                && Vector3.Angle(forward, toTarget) > visionAngle * 0.5f)
+                return false;
+
+            if (!Physics.Linecast(transform.position, target.position, out RaycastHit hit,
+                    ~0, QueryTriggerInteraction.Ignore))
+                return true;
+            return hit.collider.transform.IsChildOf(target)
+                || hit.collider.transform.IsChildOf(transform);
+        }
+
+        // Possession only works from outside the vision cone, for example from behind.
+        public bool CanBePossessedFrom(Transform spirit)
+        {
+            return CanBePossessed && !CanSee(spirit);
+        }
+
         public virtual void TakeDamage(int amount)
         {
             currentHP -= amount;
@@ -198,6 +234,8 @@ namespace Possession
             {
                 var spirit = hit.GetComponentInParent<SpiritController>();
                 if (spirit == null || !spirit.isActiveAndEnabled || spirit.CurrentHP <= 0)
+                    continue;
+                if (!CanSee(spirit.transform))
                     continue;
 
                 float distance = (spirit.transform.position - transform.position).sqrMagnitude;
@@ -277,7 +315,10 @@ namespace Possession
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(transform.position, detectionRange);
+            Vector3 left = Quaternion.Euler(0f, -visionAngle * 0.5f, 0f) * transform.forward;
+            Vector3 right = Quaternion.Euler(0f, visionAngle * 0.5f, 0f) * transform.forward;
+            Gizmos.DrawLine(transform.position, transform.position + left * detectionRange);
+            Gizmos.DrawLine(transform.position, transform.position + right * detectionRange);
             if (waypoints == null) return;
 
             Gizmos.color = Color.cyan;
