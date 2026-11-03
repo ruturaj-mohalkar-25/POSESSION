@@ -110,7 +110,7 @@ namespace Possession
         private void Possess(EnemyBase enemy)
         {
             if (GetComponent<PossessionCharge>() != null && (!CanStartPossession
-                || currentState != PlayerState.Spirit || enemy == null || !enemy.CanBePossessed
+                || currentState != PlayerState.Spirit || enemy == null || !enemy.CanBePossessedFrom(transform)
                 || !enemy.gameObject.activeInHierarchy || ejectCooldownTimer > 0f
                 || (enemyLayer.value & (1 << enemy.gameObject.layer)) == 0
                 || Vector3.Distance(transform.position, enemy.transform.position) > possessRange

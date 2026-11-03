@@ -13,7 +13,7 @@ Enter the courtyard to enable **C · Retry Courtyard**. C reloads the attempt at
 ## Charge rules
 
 - Only a living, free Spirit can collect a green shard. Capacity is one charge.
-- E spends the charge only on a successful possession of a valid, living host within range and line of sight. Failed input, cooldown, and blocked targets do not spend it.
+- E spends the charge only on a successful possession of a valid, living host within range and line of sight, outside its vision cone. Approach from behind or the side. Failed input, cooldown, front-facing approaches, and blocked targets do not spend it.
 - Movement, shooting, and smashing cost nothing more while in the body.
 - Manual ejection, expiry, and host defeat return an empty Spirit. Collect again before taking another body.
 - C1 in the courtyard, C2 in the north transfer room, and C3 in the south transfer room reform eight seconds after collection. C4 in the archive dead end is a one-use bonus per attempt. Full or occupied players cannot waste a source.
@@ -36,14 +36,16 @@ Level-specific runtime code is in `Assets/Scripts/Level02`; the builder is in `A
 
 The maze reuses the shared HUD, health/time display, following camera and wall occlusion, Guard/Heavy actors, shooting/smash abilities, target/door/wall visuals, analytics, completion screen, and scene flow. A small local status strip explains charge readiness without a popup. The camera retains its previous 57-degree angle, (0, 17, -11) follow offset, and 45-degree field of view. It uses the normal shared following behavior without room masking. Blue-gray walls, charcoal floors, and softer cool lighting replace the pale daytime palette; interactive puzzle colors and charge cues stay recognizable. The shared objective counter is hidden because either route can finish the level.
 
+The integration refresh retains the shared vision cone and enemy attack updates. Repeated results-chart displays now hide and detach old bars before their deferred destruction; empty results also clear the chart. Regression fixtures use the current HUD styling, matching controller minimum-move settings for the speed comparison, and clear chase lanes in each authored room. Enemy behavior, damage assertions, speed-ratio checks, and vision-cone rules remain covered.
+
 ## Verification
 
-The final dedicated PlayMode run passed all 12 Level02ChargeMazeTests, including the attack windup/shared grace period. Coverage includes layout and actor counts, invalid possession and charge handling, pickup cooldowns, actual expiry and host defeat, ordinary enemy damage, hostile projectile rejection, both timed routes using the actual shooting/smash abilities, checkpoint restoration, and exit validation. Route tests use the real possession duration and movement speed, including the shared possessed-Heavy slowdown.
+The refreshed full PlayMode run passed all 162 tests with zero failures and zero skipped tests in Unity 6000.3.22f1. All 13 Level02ChargeMazeTests passed, including the attack windup/shared grace period and front-facing possession rejection without charge loss. Coverage includes layout and actor counts, invalid possession and charge handling, pickup cooldowns, actual expiry and host defeat, ordinary enemy damage, hostile projectile rejection, both timed routes using the actual shooting/smash abilities, checkpoint restoration, and exit validation. Route tests use the real possession duration and movement speed, including the shared possessed-Heavy slowdown.
 
-The full PlayMode run reported 140 passes out of 145. Five existing integration failures remain: the repeated bar-chart display test, the Heavy movement-ratio test, and the HUD color checks in Levels 1–3. These were also reproduced on the unchanged integration baseline. The dedicated suite was rerun after the camera and combat tuning.
+Before the fixes, unchanged integration at `7a7e820` reproduced five failures out of 147 tests: repeated chart display, the Heavy movement-ratio fixture, and the three HUD styling checks. Combining the Level 2 design with that integration reproduced seven failures out of 158 tests, adding patrol-timing and contact-fixture issues. These failures are resolved in the refreshed branch. The suite also includes new checks for clearing stale charts and respecting directional possession. To reproduce the final run, open **Window → General → Test Runner → PlayMode → Run All** in the project’s Unity version.
 
 Scripted visual captures were checked at 16:9 and 4:3, including charge states, the following camera, wall occlusion, host abilities, and the shared completion screen. This is functional verification, not a novice-player balance study. Human playtesting should still check pursuit pressure, shard visibility, wrong-turn recovery, and the four-minute limit. The new pressure values are a playtest starting point, not a claim that the difficulty is finalized.
 
 ## Branch and integration
 
-The replacement is on `Omkar/level-two-charge-maze`, based on integration commit `f0d62d3`. The separate tutorial revision is not included. The Level 2 scene keeps its existing asset GUID and campaign slot. Teammates can use the scene directly or regenerate it through the Level 2 builder.
+The refreshed replacement is on `Omkar/level-two-integration-fixes`, based on integration commit `7a7e820`. It carries the Level 2 design from PR #46 plus the integration fixes. The separate tutorial and local Level 3 revisions are not included. The Level 2 scene keeps its existing asset GUID and campaign slot. Teammates can use the scene directly or regenerate it through the Level 2 builder.
