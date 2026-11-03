@@ -112,13 +112,18 @@ namespace Possession.Editor
             foreach (var spirit in AllInScene<SpiritController>()) BuildSpirit(spirit.gameObject);
             foreach (var guard in AllInScene<GuardEnemy>()) BuildGuard(guard.gameObject);
             foreach (var heavy in AllInScene<HeavyEnemy>()) BuildHeavy(heavy.gameObject);
-            foreach (var target in AllInScene<Target>()) BuildTarget(target.gameObject);
+            foreach (var target in AllInScene<Target>())
+            {
+                BuildTarget(target.gameObject);
+                SetupGlow(target.gameObject, new Color(1f, 0.85f, 0.3f));   // warm yellow on the white board
+            }
             var padlocks = new System.Collections.Generic.Dictionary<Door, GameObject>();
             foreach (var door in AllInScene<Door>()) padlocks[door] = BuildDoor(door.gameObject);
             foreach (var wall in AllInScene<BreakableWall>())
             {
                 BuildBrickWall(wall.gameObject);
                 BuildWallEffects(wall.gameObject);
+                SetupGlow(wall.gameObject, new Color(1f, 0.5f, 0.15f));     // orange on the red bricks
             }
             BuildExit();
 
@@ -350,6 +355,19 @@ namespace Possession.Editor
             return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
         }
 
+        // Pulsing glow strong enough to read from the top-down camera, but still a slow breathe rather than a blink
+        static void SetupGlow(GameObject go, Color color)
+        {
+            var glow = go.GetComponent<HintGlow>();
+            if (glow == null) glow = go.AddComponent<HintGlow>();
+            var so = new SerializedObject(glow);
+            so.FindProperty("glow").colorValue = color;
+            so.FindProperty("speed").floatValue = 2.2f;
+            so.FindProperty("min").floatValue = 0.15f;
+            so.FindProperty("max").floatValue = 0.85f;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         static void AddOnce<T>(GameObject go) where T : Component
         {
             if (go.GetComponent<T>() == null) go.AddComponent<T>();
@@ -426,7 +444,8 @@ namespace Possession.Editor
             if (old != null) Object.DestroyImmediate(old);
             var root = new GameObject("P5_Labels").transform;
 
-            // Objects P4 already labelled keep their label; it only learns to hide the padlock
+            // Objects P4 already labelled keep their label; it only learns to hide the padlock.
+            // Targets and breakable walls glow instead of carrying a text label, so those labels are switched off.
             var labelled = new System.Collections.Generic.HashSet<Transform>();
             foreach (var existing in AllInScene<WorldLabel>())
             {
@@ -434,6 +453,11 @@ namespace Possession.Editor
                 var follow = so.FindProperty("follow").objectReferenceValue as Transform;
                 if (follow == null) continue;
                 labelled.Add(follow);
+                if (follow.GetComponent<Target>() != null || follow.GetComponent<BreakableWall>() != null)
+                {
+                    existing.gameObject.SetActive(false);
+                    continue;
+                }
                 var door = follow.GetComponent<Door>();
                 if (door != null && padlocks.TryGetValue(door, out var padlock) && padlock != null)
                 {
@@ -446,12 +470,8 @@ namespace Possession.Editor
                 Label(root, labelled, "GUARD", guard.gameObject, new Vector3(0f, 1.7f, 0f), new Color(0.55f, 0.7f, 1f), "", null);
             foreach (var heavy in AllInScene<HeavyEnemy>())
                 Label(root, labelled, "HEAVY", heavy.gameObject, new Vector3(0f, 2.1f, 0f), WorkerOrange, "", null);
-            foreach (var target in AllInScene<Target>())
-                Label(root, labelled, "SHOOT ME", target.gameObject, new Vector3(0f, 1.3f, 0f), new Color(1f, 0.35f, 0.3f), "HIT!", null);
             foreach (var pair in padlocks)
                 Label(root, labelled, "LOCKED", pair.Key.gameObject, new Vector3(0f, 3.4f, -0.6f), DoorColor, "OPEN", pair.Value);
-            foreach (var wall in AllInScene<BreakableWall>())
-                Label(root, labelled, "BREAKABLE", wall.gameObject, new Vector3(0f, 3.4f, -0.6f), Color.white, "", null);
             var zone = Find("ExitZone");
             if (zone != null)
                 Label(root, labelled, "EXIT", zone, new Vector3(0f, 3.0f, -0.8f * BackWallSide(zone.transform.position)),

@@ -60,9 +60,6 @@ namespace Possession.Editor
             exitSettings.ApplyModifiedPropertiesWithoutUndo();
             exitObject.GetComponent<BoxCollider>().isTrigger = true;
 
-            // Built-in TextMesh draws over geometry; keep instructions in the unobstructed start area.
-            FloorSign(layout.transform, "StartInstructions", "POSSESSION\nWASD move   |   SPACE jump\nE possess / eject\nRed GUARD: mouse aim + LMB shoot\nBlue HEAVY: face wall + LMB smash\nReturn to SPIRIT at exit", new Vector3(0f, 0.13f, 5.5f));
-
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.SaveAssets();
@@ -94,21 +91,5 @@ namespace Possession.Editor
             wall.GetComponent<Renderer>().sharedMaterial = Require("Wall_Left").GetComponent<Renderer>().sharedMaterial;
         }
 
-        private static void FloorSign(Transform parent, string name, string text, Vector3 position)
-        {
-            var sign = new GameObject(name);
-            sign.transform.SetParent(parent);
-            sign.transform.position = position;
-            sign.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-            var label = sign.AddComponent<TextMesh>();
-            label.text = text;
-            label.anchor = TextAnchor.MiddleCenter;
-            label.alignment = TextAlignment.Center;
-            label.fontSize = 64;
-            label.characterSize = 0.055f;
-            label.color = Color.white;
-            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            sign.GetComponent<MeshRenderer>().sharedMaterial = label.font.material;
-        }
     }
 }

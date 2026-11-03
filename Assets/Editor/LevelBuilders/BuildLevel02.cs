@@ -71,20 +71,6 @@ namespace Possession.Editor
 
             var labels = new GameObject("P4_Labels").transform;
             labels.SetParent(layout);
-            LevelBuildKit.FloorSign(labels, "StartInstructions",
-                "LEVEL 02\nWASD move   |   SPACE jump   |   E possess / eject\n"
-                + "Possess a GUARD, shoot the target in the right room\n"
-                + "then shoot the second target in the left cache\n"
-                + "take the HEAVY and smash the wall to reach the exit",
-                new Vector3(0f, 0f, 4f));
-            LevelBuildKit.FloorSign(labels, "Sign_Target_01", "SHOOT THIS TARGET", new Vector3(6f, 0f, 13.5f));
-            LevelBuildKit.FloorSign(labels, "Sign_Cache", "CACHE: SHOOT THE SECOND TARGET", new Vector3(-6f, 0f, 13.5f));
-            LevelBuildKit.FloorSign(labels, "Sign_Door", "DOOR OPENS WHEN BOTH TARGETS ARE HIT",
-                new Vector3(0f, 0f, 22f));
-            LevelBuildKit.FloorSign(labels, "Sign_Wall", "SMASH THE WALL AS THE HEAVY", new Vector3(0f, 0f, 25f));
-            LevelBuildKit.FloorSign(labels, "Sign_Exit", "EJECT AND REACH THE EXIT AS THE SPIRIT",
-                new Vector3(0f, 0f, 29f), 0.045f);
-
             LevelBuildKit.ObjectLabel(labels, "SHOOT ME", target1.gameObject, new Vector3(0f, 1.3f, 0f),
                 new Color(1f, 0.35f, 0.3f), "HIT!");
             LevelBuildKit.ObjectLabel(labels, "SHOOT ME", target2.gameObject, new Vector3(0f, 1.3f, 0f),

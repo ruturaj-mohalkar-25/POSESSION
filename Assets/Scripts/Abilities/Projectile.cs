@@ -13,7 +13,18 @@ namespace Possession
 
         private void Update()
         {
-            transform.Translate(Vector3.forward * speed * Time.deltaTime);
+            float step = speed * Time.deltaTime;
+            Vector3 forward = transform.forward;
+
+            if (Physics.Raycast(transform.position, forward, out RaycastHit hit, step,
+                    ~0, QueryTriggerInteraction.Collide))
+            {
+                transform.position = hit.point;
+                HandleHit(hit.collider);
+                return;
+            }
+
+            transform.position += forward * step;
 
             timer += Time.deltaTime;
             if (timer >= lifetime)
@@ -25,7 +36,7 @@ namespace Possession
             ownerCollider = col;
         }
 
-        private void OnTriggerEnter(Collider other)
+        private void HandleHit(Collider other)
         {
             if (other == ownerCollider) return;
             var damageable = other.GetComponent<IDamageable>();
@@ -44,9 +55,10 @@ namespace Possession
                 return;
             }
 
-            // Hit a wall or floor
             if (!other.isTrigger)
                 Destroy(gameObject);
         }
+
+        private void OnTriggerEnter(Collider other) => HandleHit(other);
     }
 }

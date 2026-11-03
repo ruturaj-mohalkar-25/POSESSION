@@ -13,7 +13,7 @@ namespace Possession
     public class PossessionController : MonoBehaviour
     {
         [Header("Possession Settings")]
-        [SerializeField] private float possessRange = 5f;
+        [SerializeField] private float possessRange = 7f;
         [SerializeField] private float possessDuration = 10f;
         [SerializeField] private float ejectCooldown = 0.5f;
         [SerializeField] private float hostileTime = 5f;

@@ -36,8 +36,18 @@ namespace Possession
         public bool IsChasing => !isPossessed && chaseTarget != null
             && chaseTarget.isActiveAndEnabled;
         public bool IsIdle => !isPossessed && !IsChasing && waypointWaitTimer > 0f;
+        // True while the enemy is in its post-eject hostile state (chasing or not).
+        public bool IsHostile => isHostile;
         public float DetectionRange => detectionRange;
         public float PatrolStartDelay => patrolStartDelay;
+
+        // Lets a readability/feel cue retune this enemy's speed at runtime without
+        // touching the shared prefab (e.g. widening the Heavy's speed gap).
+        public float MoveSpeed
+        {
+            get => moveSpeed;
+            set => moveSpeed = Mathf.Max(0f, value);
+        }
 
         protected virtual void Awake()
         {
