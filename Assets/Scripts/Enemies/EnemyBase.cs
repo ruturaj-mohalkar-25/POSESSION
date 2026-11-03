@@ -20,6 +20,13 @@ namespace Possession
         [SerializeField, Min(0f)] protected float chaseStopDistance = 1.5f;
         [SerializeField, Min(0f)] protected float patrolStartDelay;
 
+        [Header("Awareness and pursuit tuning")]
+        [SerializeField, Range(.1f,1f)] private float aiSpeedMultiplier = 1f;
+        [SerializeField, Min(0f)] private float detectionDelay;
+        [SerializeField] private bool requireLineOfSight;
+        private SpiritController noticingTarget;
+        private float noticeTime;
+
         protected int currentHP;
         protected bool isPossessed;
         protected bool isHostile;
@@ -78,6 +85,7 @@ namespace Possession
                 {
                     isHostile = false;
                     chaseTarget = null;
+                    ResetAwareness();
                     ResumePatrolAtNearestWaypoint();
                 }
                 else
@@ -134,6 +142,9 @@ namespace Possession
 
         protected void HandlePossessedAbility()
         {
+            // Menu and map clicks must not consume the possessed body's ammunition.
+            if (UnityEngine.EventSystems.EventSystem.current != null
+                && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) return;
             if (Input.GetMouseButtonDown(0))
             {
                 var ability = GetComponent<Ability>();
@@ -153,6 +164,7 @@ namespace Possession
 
         public virtual void OnPossessed()
         {
+            ResetAwareness();
             isPossessed = true;
             chaseTarget = null;
             waypointWaitTimer = 0f;
@@ -162,6 +174,7 @@ namespace Possession
 
         public virtual void OnEjected()
         {
+            ResetAwareness();
             isPossessed = false;
             chaseTarget = null;
         }
@@ -200,6 +213,10 @@ namespace Possession
                 if (spirit == null || !spirit.isActiveAndEnabled || spirit.CurrentHP <= 0)
                     continue;
 
+                if (requireLineOfSight && Physics.Linecast(transform.position, spirit.transform.position,
+                    out var blocked, ~0, QueryTriggerInteraction.Ignore)
+                    && blocked.collider.GetComponentInParent<SpiritController>() != spirit
+                    && !blocked.collider.transform.IsChildOf(transform)) continue;
                 float distance = (spirit.transform.position - transform.position).sqrMagnitude;
                 if (distance < nearestDistance)
                 {
@@ -208,8 +225,13 @@ namespace Possession
                 }
             }
 
-            return nearest;
+            if (detectionDelay <= 0f) return nearest;
+            if (nearest == null) { ResetAwareness(); return null; }
+            if (noticingTarget != nearest) { noticingTarget=nearest;noticeTime=0f; }
+            noticeTime += Time.deltaTime;
+            return noticeTime >= detectionDelay ? nearest : null;
         }
+        private void ResetAwareness() { noticingTarget=null;noticeTime=0f; }
 
         private bool TryGetCurrentWaypoint(out Transform target)
         {
@@ -255,7 +277,7 @@ namespace Possession
             float distance = delta.magnitude;
             if (distance <= stopDistance) return;
 
-            Move(delta.normalized * Mathf.Min(moveSpeed * Time.deltaTime,
+            Move(delta.normalized * Mathf.Min(moveSpeed * (aiSpeedMultiplier > 0f ? aiSpeedMultiplier : 1f) * Time.deltaTime,
                 distance - stopDistance));
         }
 

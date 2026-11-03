@@ -204,6 +204,7 @@ namespace Possession
         {
             position = candidate;
             float groundY = float.NegativeInfinity;
+            float groundNormalY = 1f;
             Vector3 origin = new Vector3(candidate.x + centerOffset.x,
                 enemyBounds.max.y + 0.5f, candidate.z + centerOffset.z);
             foreach (RaycastHit hit in Physics.RaycastAll(origin, Vector3.down,
@@ -213,11 +214,13 @@ namespace Possession
                     || hit.collider.transform.IsChildOf(possessedEnemy.transform)
                     || hit.normal.y < 0.5f || hit.point.y > enemyBounds.min.y + 0.3f)
                     continue;
-                groundY = Mathf.Max(groundY, hit.point.y);
+                if (hit.point.y > groundY) { groundY = hit.point.y; groundNormalY = hit.normal.y; }
             }
             if (float.IsNegativeInfinity(groundY)) return false;
 
-            position.y = groundY + halfHeight - centerOffset.y + clearance;
+            // On a ramp the capsule must clear the slope at its lower hemisphere, not only at the center ray.
+            float slopeClearance = radius * (1f / Mathf.Max(.5f, groundNormalY) - 1f);
+            position.y = groundY + halfHeight - centerOffset.y + clearance + slopeClearance;
             Vector3 center = position + centerOffset;
             Vector3 segment = Vector3.up * (halfHeight - radius);
             foreach (Collider hit in Physics.OverlapCapsule(center + segment, center - segment,

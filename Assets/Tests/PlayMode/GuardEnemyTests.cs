@@ -110,21 +110,21 @@ namespace Possession.Tests
         }
 
         [UnityTest]
-        public IEnumerator Level03HasTwoTightTwelveMetreGuardPatrols()
+        public IEnumerator Level03HasFiveCalmGuardPatrolsAcrossBothFloors()
         {
             yield return SceneManager.LoadSceneAsync("Level_03", LoadSceneMode.Additive);
             levelScene = SceneManager.GetSceneByName("Level_03");
             var guards = FindLevelGuards(levelScene);
 
-            Assert.That(guards, Has.Count.EqualTo(2));
+            Assert.That(guards, Has.Count.EqualTo(5));
             AssertConfiguredRoutes(guards);
             foreach (GuardEnemy levelGuard in guards)
             {
                 Assert.That(levelGuard.CurrentHP, Is.EqualTo(3));
-                Assert.That(levelGuard.DetectionRange, Is.EqualTo(12f).Within(0.01f));
+                Assert.That(levelGuard.DetectionRange, Is.EqualTo(3.2f).Within(0.01f));
                 Assert.That(Read<float>(levelGuard, "moveSpeed"), Is.EqualTo(3.25f).Within(0.01f));
-                Assert.That(Read<float>(levelGuard, "waypointWaitTime"), Is.EqualTo(0.5f).Within(0.01f));
-                Assert.That(Read<float>(levelGuard, "chaseStopDistance"), Is.EqualTo(1.25f).Within(0.01f));
+                Assert.That(Read<float>(levelGuard, "waypointWaitTime"), Is.EqualTo(1.5f).Within(0.01f));
+                Assert.That(Read<float>(levelGuard, "chaseStopDistance"), Is.EqualTo(1.8f).Within(0.01f));
                 Transform[] route = GetRoute(levelGuard);
                 Assert.That(Vector3.Distance(route[0].position, route[1].position), Is.LessThan(8f),
                     levelGuard.name + " should use a compact Level 3 patrol route.");

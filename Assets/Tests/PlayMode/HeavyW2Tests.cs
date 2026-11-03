@@ -23,19 +23,9 @@ namespace Possession.Tests
 
         [UnityTest] public IEnumerator Level01RetainsHeavyStats() => CheckPlacement("Level_01", 1, 1.8f);
         [UnityTest] public IEnumerator Level02HasThreeHeaviesWithPatrolAndSpeed2() => CheckPlacement("Level_02", 3, 2f);
-        [UnityTest] public IEnumerator Level03HasTwoHeaviesWithPatrolAndSpeed22() => CheckPlacement("Level_03", 2, 2.2f);
+        [UnityTest] public IEnumerator Level03HasFourHeaviesWithPatrolAndSpeed22() => CheckPlacement("Level_03", 4, 2.2f);
         // Level02ChargeMazeTests exercises both replacement Level 2 solutions with charge collection.
-        [UnityTest] public IEnumerator Level03HeaviesSmashBothWallsAndSpiritFinishes() => CheckPuzzle("Level_03");
-
-        [UnityTest]
-        public IEnumerator Level03RightCorridorHasNoSolidCrossWallsBetweenGates()
-        {
-            yield return Load("Level_03");
-            FreezeHeavies(); Physics.SyncTransforms();
-            Assert.That(Physics.SphereCast(new Vector3(6, 1.5f, 28), .65f,
-                Vector3.back, out var hit, 14, ~0, QueryTriggerInteraction.Ignore), Is.False,
-                "The intended Heavy route must be clear between walls: " + (hit.collider != null ? hit.collider.name : "none"));
-        }
+        // Level03CompoundTests validates both directions of every stair and all four replacement strategies.
 
         [UnityTest]
         public IEnumerator GuardDoorAndHeavyWallsStillSealTheirOpenings()
@@ -46,14 +36,14 @@ namespace Possession.Tests
                 var door = Object.FindFirstObjectByType<Door>();
                 Assert.That(door.IsOpen, Is.False);
                 Assert.That(name == "Level_02" ? Object.FindFirstObjectByType<Level02Director>().CanExit
-                    : Object.FindFirstObjectByType<LevelExit>().IsReady, Is.False);
+                    : GameObject.Find("Gate_C").GetComponent<Level03SecurityGate>().IsOpen, Is.False);
                 foreach (var wall in Walls())
                 {
                     Assert.That(wall.MinDamageRequired, Is.EqualTo(2));
                     var bounds = wall.GetComponent<Collider>().bounds;
                     for (float offset = -1f; offset <= 1f; offset += .5f)
                     {
-                        var origin = bounds.center + new Vector3(offset, -1.5f, -1f);
+                        var origin = bounds.center + new Vector3(offset*Mathf.Min(1f,bounds.extents.x*.8f),0f,-bounds.extents.z-1f);
                         Assert.That(Physics.Raycast(origin, Vector3.forward, 2f, 1 << 7), Is.True);
                     }
                     int hp = wall.CurrentHP;
@@ -68,7 +58,7 @@ namespace Possession.Tests
             yield return Load(name);
             var heavies = Heavies();
             Assert.That(heavies.Length, Is.EqualTo(count));
-            if (name != "Level_01") Assert.That(Walls().Length, Is.EqualTo(name == "Level_02" ? 2 : count));
+            if (name != "Level_01") Assert.That(Walls().Length, Is.EqualTo(name == "Level_02" ? 2 : 4));
             Assert.That(Object.FindObjectsByType<HUDManager>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
             var positions = heavies.Select(h => h.transform.position).ToArray();
             foreach (var heavy in heavies)
@@ -92,7 +82,7 @@ namespace Possession.Tests
                 if (name != "Level_01")
                 {
                     int index = heavy.name.EndsWith("02") ? 2 : 1;
-                    var marker = GameObject.Find(name == "Level_02" ? "SpawnPoint_" + heavy.name : "SpawnPoint_Heavy_0" + index);
+                    var marker = GameObject.Find("SpawnPoint_" + heavy.name);
                     Assert.That(heavy.transform.position.x, Is.EqualTo(marker.transform.position.x).Within(.1f));
                     Assert.That(heavy.transform.position.z, Is.EqualTo(marker.transform.position.z).Within(.1f));
                     Assert.That(Physics.SphereCast(points[0].position, .65f,
@@ -101,7 +91,7 @@ namespace Possession.Tests
                         QueryTriggerInteraction.Ignore), Is.False, "Patrol segment must clear the room walls.");
                 }
             }
-            yield return new WaitForSeconds(heavies.Max(h => h.PatrolStartDelay) + 1.3f);
+            yield return new WaitForSeconds(heavies.Max(h => h.PatrolStartDelay+Read<float>(h,"waypointWaitTime")) + 1.3f);
             for (int i = 0; i < heavies.Length; i++)
             {
                 Vector3 displacement = heavies[i].transform.position - positions[i]; displacement.y = 0;
@@ -144,7 +134,7 @@ namespace Possession.Tests
         private static IEnumerator Load(string name)
         {
             Time.timeScale = 1; EventBus.Clear();
-            yield return SceneManager.LoadSceneAsync(name); yield return null;
+            yield return SceneManager.LoadSceneAsync(name); yield return null; yield return null;
         }
         private static HeavyEnemy[] Heavies() => Object.FindObjectsByType<HeavyEnemy>(FindObjectsSortMode.None).OrderBy(h => h.name).ToArray();
         private static BreakableWall[] Walls() => Object.FindObjectsByType<BreakableWall>(FindObjectsSortMode.None).OrderByDescending(w => w.transform.position.z).ToArray();

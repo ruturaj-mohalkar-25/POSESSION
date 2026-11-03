@@ -1,0 +1,723 @@
+{
+  "floors": [
+    {
+      "name": "ground",
+      "height": 0,
+      "rooms": [
+        {
+          "x": 1,
+          "y": 2,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "x": 13,
+          "y": 2,
+          "width": 10,
+          "height": 8
+        },
+        {
+          "x": 27,
+          "y": 2,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "x": 1,
+          "y": 18,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "x": 13,
+          "y": 18,
+          "width": 10,
+          "height": 8
+        },
+        {
+          "x": 27,
+          "y": 18,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "x": -4,
+          "y": 19,
+          "width": 3,
+          "height": 5
+        },
+        {
+          "x": 36,
+          "y": 19,
+          "width": 4,
+          "height": 6
+        }
+      ],
+      "halls": [
+        {
+          "x": 9,
+          "y": 5,
+          "width": 4,
+          "height": 3
+        },
+        {
+          "x": 23,
+          "y": 5,
+          "width": 4,
+          "height": 3
+        },
+        {
+          "x": 9,
+          "y": 21,
+          "width": 4,
+          "height": 3
+        },
+        {
+          "x": 23,
+          "y": 21,
+          "width": 4,
+          "height": 3
+        },
+        {
+          "x": 3,
+          "y": 10,
+          "width": 3,
+          "height": 8
+        },
+        {
+          "x": 16,
+          "y": 10,
+          "width": 3,
+          "height": 8
+        },
+        {
+          "x": 29,
+          "y": 10,
+          "width": 3,
+          "height": 8
+        },
+        {
+          "x": 6,
+          "y": 13,
+          "width": 10,
+          "height": 3
+        },
+        {
+          "x": 19,
+          "y": 13,
+          "width": 10,
+          "height": 3
+        },
+        {
+          "x": -1,
+          "y": 21,
+          "width": 2,
+          "height": 2
+        },
+        {
+          "x": 35,
+          "y": 21,
+          "width": 1,
+          "height": 2
+        },
+        {
+          "x": 28,
+          "y": 9,
+          "width": 7,
+          "height": 2
+        },
+        {
+          "x": 27,
+          "y": 26,
+          "width": 8,
+          "height": 2
+        }
+      ],
+      "cover": [
+        {
+          "x": 2,
+          "y": 19,
+          "width": 1,
+          "height": 1.5
+        },
+        {
+          "x": 5.5,
+          "y": 24,
+          "width": 1.5,
+          "height": 1
+        },
+        {
+          "x": 5,
+          "y": 5,
+          "width": 1,
+          "height": 1
+        },
+        {
+          "x": 2,
+          "y": 8,
+          "width": 1,
+          "height": 1
+        },
+        {
+          "x": 21.2,
+          "y": 4,
+          "width": 1,
+          "height": 2
+        },
+        {
+          "x": 14,
+          "y": 7.5,
+          "width": 0.8,
+          "height": 1
+        },
+        {
+          "x": 17,
+          "y": 20,
+          "width": 1,
+          "height": 1
+        },
+        {
+          "x": 20,
+          "y": 24,
+          "width": 1.5,
+          "height": 1
+        },
+        {
+          "x": 30.8,
+          "y": 11,
+          "width": 1,
+          "height": 1
+        },
+        {
+          "x": 27.3,
+          "y": 19,
+          "width": 1,
+          "height": 1.5
+        },
+        {
+          "x": -3.5,
+          "y": 21,
+          "width": 1,
+          "height": 1
+        },
+        {
+          "x": 37,
+          "y": 20,
+          "width": 1,
+          "height": 1
+        },
+        {
+          "x": 3.8,
+          "y": 21.4,
+          "width": 1,
+          "height": 0.5
+        }
+      ],
+      "actors": [
+        {
+          "kind": "G",
+          "x": 3,
+          "y": 22,
+          "wing": "",
+          "enabled": false
+        },
+        {
+          "kind": "W",
+          "x": 7,
+          "y": 23,
+          "wing": "",
+          "enabled": false
+        },
+        {
+          "kind": "G",
+          "x": 7,
+          "y": 4,
+          "wing": "west",
+          "enabled": true
+        },
+        {
+          "kind": "G",
+          "x": 3,
+          "y": 6.5,
+          "wing": "",
+          "enabled": true
+        },
+        {
+          "kind": "G",
+          "x": 14,
+          "y": 6,
+          "wing": "",
+          "enabled": false
+        },
+        {
+          "kind": "W",
+          "x": 27.5,
+          "y": 7,
+          "wing": "east",
+          "enabled": true
+        },
+        {
+          "kind": "G",
+          "x": 18,
+          "y": 23,
+          "wing": "east",
+          "enabled": false
+        },
+        {
+          "kind": "W",
+          "x": 28,
+          "y": 22,
+          "wing": "",
+          "enabled": true
+        }
+      ],
+      "pickups": [
+        {
+          "name": "K1",
+          "x": 5.5,
+          "y": 21,
+          "reforms": true
+        },
+        {
+          "name": "K2",
+          "x": 22,
+          "y": 8.5,
+          "reforms": true
+        },
+        {
+          "name": "K3",
+          "x": 28,
+          "y": 24,
+          "reforms": true
+        },
+        {
+          "name": "K8",
+          "x": 28,
+          "y": 9,
+          "reforms": true
+        },
+        {
+          "name": "K9",
+          "x": 38,
+          "y": 23,
+          "reforms": false
+        }
+      ],
+      "wires": [
+        {
+          "wing": "west",
+          "points": [
+            {
+              "x": 3,
+              "y": 3.5
+            },
+            {
+              "x": 7,
+              "y": 4
+            },
+            {
+              "x": 10,
+              "y": 4
+            },
+            {
+              "x": 15,
+              "y": 4
+            },
+            {
+              "x": 16,
+              "y": 5
+            },
+            {
+              "x": 18.5,
+              "y": 5
+            }
+          ]
+        },
+        {
+          "wing": "east",
+          "points": [
+            {
+              "x": 18,
+              "y": 23
+            },
+            {
+              "x": 22,
+              "y": 22
+            },
+            {
+              "x": 28,
+              "y": 16
+            },
+            {
+              "x": 27.5,
+              "y": 7
+            },
+            {
+              "x": 31.5,
+              "y": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "upper",
+      "height": 7.2,
+      "rooms": [
+        {
+          "x": 1,
+          "y": 2,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "x": 13,
+          "y": 2,
+          "width": 10,
+          "height": 8
+        },
+        {
+          "x": 27,
+          "y": 2,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "x": 1,
+          "y": 18,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "x": 13,
+          "y": 18,
+          "width": 10,
+          "height": 8
+        },
+        {
+          "x": 27,
+          "y": 18,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "x": -4,
+          "y": 3,
+          "width": 3,
+          "height": 5
+        },
+        {
+          "x": 36,
+          "y": 19,
+          "width": 4,
+          "height": 6
+        }
+      ],
+      "halls": [
+        {
+          "x": 9,
+          "y": 5,
+          "width": 4,
+          "height": 3
+        },
+        {
+          "x": 23,
+          "y": 5,
+          "width": 4,
+          "height": 3
+        },
+        {
+          "x": 9,
+          "y": 21,
+          "width": 4,
+          "height": 3
+        },
+        {
+          "x": 23,
+          "y": 21,
+          "width": 4,
+          "height": 3
+        },
+        {
+          "x": 3,
+          "y": 10,
+          "width": 3,
+          "height": 8
+        },
+        {
+          "x": 16,
+          "y": 10,
+          "width": 3,
+          "height": 8
+        },
+        {
+          "x": 29,
+          "y": 10,
+          "width": 3,
+          "height": 8
+        },
+        {
+          "x": -1,
+          "y": 5,
+          "width": 2,
+          "height": 2
+        },
+        {
+          "x": 35,
+          "y": 21,
+          "width": 1,
+          "height": 2
+        },
+        {
+          "x": 35,
+          "y": 2,
+          "width": 1,
+          "height": 8
+        }
+      ],
+      "cover": [
+        {
+          "x": 6,
+          "y": 3,
+          "width": 0.8,
+          "height": 2
+        },
+        {
+          "x": 7,
+          "y": 8,
+          "width": 1,
+          "height": 1
+        },
+        {
+          "x": 14.5,
+          "y": 3,
+          "width": 1,
+          "height": 1
+        },
+        {
+          "x": 21.3,
+          "y": 6,
+          "width": 1,
+          "height": 1
+        },
+        {
+          "x": 33.8,
+          "y": 7.5,
+          "width": 0.7,
+          "height": 1
+        },
+        {
+          "x": 4,
+          "y": 19,
+          "width": 1,
+          "height": 1.5
+        },
+        {
+          "x": 14,
+          "y": 20,
+          "width": 1,
+          "height": 1
+        },
+        {
+          "x": 21,
+          "y": 24,
+          "width": 1,
+          "height": 1
+        },
+        {
+          "x": 29,
+          "y": 25,
+          "width": 0.3,
+          "height": 1
+        },
+        {
+          "x": -3.5,
+          "y": 5,
+          "width": 1,
+          "height": 1
+        },
+        {
+          "x": 37,
+          "y": 20,
+          "width": 1,
+          "height": 1
+        },
+        {
+          "x": 22,
+          "y": 21.5,
+          "width": 0.6,
+          "height": 1.5
+        },
+        {
+          "x": 1.5,
+          "y": 22,
+          "width": 2.2,
+          "height": 0.4
+        }
+      ],
+      "actors": [
+        {
+          "kind": "G",
+          "x": 3,
+          "y": 6,
+          "wing": "",
+          "enabled": true
+        },
+        {
+          "kind": "G",
+          "x": 14,
+          "y": 6,
+          "wing": "west",
+          "enabled": true
+        },
+        {
+          "kind": "W",
+          "x": 21,
+          "y": 8,
+          "wing": "west",
+          "enabled": false
+        },
+        {
+          "kind": "G",
+          "x": 27.5,
+          "y": 6.5,
+          "wing": "east",
+          "enabled": false
+        },
+        {
+          "kind": "G",
+          "x": 3,
+          "y": 23,
+          "wing": "",
+          "enabled": false
+        },
+        {
+          "kind": "W",
+          "x": 7,
+          "y": 20,
+          "wing": "west",
+          "enabled": true
+        },
+        {
+          "kind": "G",
+          "x": 18,
+          "y": 23,
+          "wing": "east",
+          "enabled": true
+        },
+        {
+          "kind": "W",
+          "x": 28,
+          "y": 22,
+          "wing": "east",
+          "enabled": true
+        }
+      ],
+      "pickups": [
+        {
+          "name": "K4",
+          "x": 5,
+          "y": 8.5,
+          "reforms": true
+        },
+        {
+          "name": "K5",
+          "x": 16,
+          "y": 21,
+          "reforms": true
+        },
+        {
+          "name": "K6",
+          "x": 28,
+          "y": 20,
+          "reforms": true
+        },
+        {
+          "name": "K7",
+          "x": 2.5,
+          "y": 21,
+          "reforms": true
+        },
+        {
+          "name": "K10",
+          "x": 38,
+          "y": 23,
+          "reforms": false
+        }
+      ],
+      "wires": [
+        {
+          "wing": "west",
+          "points": [
+            {
+              "x": 18.5,
+              "y": 5
+            },
+            {
+              "x": 14,
+              "y": 6
+            },
+            {
+              "x": 21,
+              "y": 8
+            }
+          ]
+        },
+        {
+          "wing": "west",
+          "points": [
+            {
+              "x": 14,
+              "y": 6
+            },
+            {
+              "x": 10,
+              "y": 7
+            },
+            {
+              "x": 4.5,
+              "y": 12
+            },
+            {
+              "x": 4.5,
+              "y": 18
+            },
+            {
+              "x": 7,
+              "y": 20
+            },
+            {
+              "x": 7,
+              "y": 24.5
+            }
+          ]
+        },
+        {
+          "wing": "east",
+          "points": [
+            {
+              "x": 15,
+              "y": 24.5
+            },
+            {
+              "x": 22,
+              "y": 22.5
+            },
+            {
+              "x": 30.5,
+              "y": 16
+            },
+            {
+              "x": 27.5,
+              "y": 6.5
+            },
+            {
+              "x": 31.5,
+              "y": 5
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

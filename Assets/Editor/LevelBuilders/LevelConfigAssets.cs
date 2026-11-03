@@ -17,8 +17,8 @@ namespace Possession.Editor
                 3f, 3, 10f, 0.75f, 1.5f, 100f, 150f, 225f);
             Write("LevelConfig_Level_02", "Level_02", 10f, 240f,
                 3f, 3, 12f, 0.75f, 1.5f, 80f, 120f, 180f);
-            Write("LevelConfig_Level_03", "Level_03", 8f, 180f,
-                3.25f, 3, 12f, 0.5f, 1.25f, 60f, 90f, 135f);
+            Write("LevelConfig_Level_03", "Level_03", 12f, 480f,
+                3.25f, 3, 3.2f, 1.5f, 1.8f, 240f, 360f, 450f);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();

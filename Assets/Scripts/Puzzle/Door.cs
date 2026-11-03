@@ -8,6 +8,7 @@ namespace Possession
         [SerializeField] private bool isExit;
 
         private bool isOpen;
+        private bool securityControlled;
 
         public bool IsOpen => isOpen;
 
@@ -24,13 +25,13 @@ namespace Possession
         private void Start()
         {
             // Exit with no required targets starts open
-            if (requiredTargets == null || requiredTargets.Length == 0)
+            if (!securityControlled && (requiredTargets == null || requiredTargets.Length == 0))
                 isOpen = true;
         }
 
         private void OnTargetHit(Target target)
         {
-            if (isOpen) return;
+            if (isOpen || securityControlled) return;
 
             foreach (var t in requiredTargets)
             {
@@ -38,6 +39,16 @@ namespace Possession
             }
 
             Open();
+        }
+
+        // Security controllers may relock a door; ordinary target doors retain their existing behavior.
+        public void SetSecurityState(bool open)
+        {
+            securityControlled = true;
+            if (open) { if (!isOpen) Open(); return; }
+            isOpen = false;
+            var blocker = GetComponent<Collider>();
+            if (blocker != null) blocker.isTrigger = false;
         }
 
         private void Open()

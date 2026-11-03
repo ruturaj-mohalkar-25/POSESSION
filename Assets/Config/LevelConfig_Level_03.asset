@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: LevelConfig_Level_03
   m_EditorClassIdentifier: Possession.Runtime::Possession.LevelConfig
   levelName: Level_03
-  possessionTimer: 8
-  levelTime: 180
+  possessionTimer: 12
+  levelTime: 480
   guardMoveSpeed: 3.25
   guardMaxHP: 3
-  guardDetectionRange: 12
-  guardWaypointWaitTime: 0.5
-  guardChaseStopDistance: 1.25
-  goldParTime: 60
-  silverParTime: 90
-  bronzeParTime: 135
+  guardDetectionRange: 3.2
+  guardWaypointWaitTime: 1.5
+  guardChaseStopDistance: 1.8
+  goldParTime: 240
+  silverParTime: 360
+  bronzeParTime: 450

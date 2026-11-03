@@ -12,6 +12,9 @@ namespace Possession
         private bool consumed;
         public bool IsReady => !consumed && Time.time >= readyAt;
         public bool Reforms => reforms;
+        public struct State { public bool consumed; public float remaining; }
+        public State CaptureState() => new State { consumed = consumed, remaining = Mathf.Max(0f,readyAt-Time.time) };
+        public void RestoreState(State state) { consumed=state.consumed;readyAt=Time.time+Mathf.Max(0f,state.remaining); }
         private void Awake() { GetComponent<SphereCollider>().isTrigger = true; }
         private void Update()
         {
@@ -30,7 +33,9 @@ namespace Possession
         public bool TryCollect(PossessionCharge charge)
         {
             if (!IsReady || charge == null) return false;
-            Vector3 offset = charge.transform.position - transform.position; offset.y = 0f;
+            Vector3 offset = charge.transform.position - transform.position;
+            if (Mathf.Abs(offset.y) > 2f) return false;
+            offset.y = 0f;
             if (offset.sqrMagnitude > 2.56f || !charge.TryCollect()) return false;
             if (reforms) readyAt = Time.time + cooldown; else consumed = true;
             return true;

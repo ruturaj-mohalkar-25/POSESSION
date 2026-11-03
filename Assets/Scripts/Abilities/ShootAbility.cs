@@ -17,7 +17,7 @@ namespace Possession
         protected override void Execute()
         {
             if (mainCam == null) mainCam = Camera.main;
-            Plane groundPlane = new Plane(Vector3.up, 0f);
+            Plane groundPlane = new Plane(Vector3.up, Level03AimPlane.Height(transform));
             Ray ray = mainCam.ScreenPointToRay(Input.mousePosition);
 
             if (groundPlane.Raycast(ray, out float distance))

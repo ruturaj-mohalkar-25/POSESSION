@@ -171,9 +171,9 @@ namespace Possession
             if (!show) return;
 
             Vector3 start = possessed.transform.position;
-            start.y = aimHeight;
+            start.y = Level03AimPlane.Height(possessed.transform) + aimHeight;
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-            if (!new Plane(Vector3.up, 0f).Raycast(ray, out float distance))
+            if (!new Plane(Vector3.up, Level03AimPlane.Height(possessed.transform)).Raycast(ray, out float distance))
             {
                 aimLine.enabled = false;
                 return;
