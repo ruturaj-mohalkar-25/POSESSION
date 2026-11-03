@@ -141,6 +141,8 @@ MonoBehaviour:
   waypointArrivalDistance: 0.3
   chaseStopDistance: 1.5
   patrolStartDelay: 0
+  loseSightSearchTime: 1.5
+  visionAngle: 45
 --- !u!114 &6693207823745644827
 MonoBehaviour:
   m_ObjectHideFlags: 0
