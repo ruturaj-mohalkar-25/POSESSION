@@ -4,11 +4,27 @@ namespace Possession
 {
     public class CameraFollow : MonoBehaviour
     {
+        // One shared view keeps cones, labels, body timers and wall fading readable in
+        // every level without taking ownership of the Level_02/Level_03 scene files.
+        public static readonly Vector3 SharedOffset = new Vector3(0f, 22f, -9f);
+        public static readonly Vector3 SharedEuler = new Vector3(63f, 0f, 0f);
+        public const float SharedFieldOfView = 42f;
+
         [SerializeField] private Transform target;
-        [SerializeField] private Vector3 offset = new Vector3(0, 25f, -13f);
+        [SerializeField] private Vector3 offset = new Vector3(0f, 22f, -9f);
         [SerializeField] private float smoothSpeed = 5f;
 
         private Transform spiritTransform;
+
+        private void Awake() => ApplySharedView();
+
+        public void ApplySharedView()
+        {
+            offset = SharedOffset;
+            transform.rotation = Quaternion.Euler(SharedEuler);
+            var view = GetComponent<Camera>();
+            if (view != null) view.fieldOfView = SharedFieldOfView;
+        }
 
         private void Start()
         {

@@ -1,16 +1,28 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Possession
 {
     public static class ChargeHUDInstaller
     {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void Initialize()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Install()
+        private static void AfterFirstScene() => Install();
+
+        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode) => Install();
+
+        public static void Install()
         {
             if (Object.FindFirstObjectByType<Level02Director>() != null) return;
             var charge = Object.FindFirstObjectByType<PossessionCharge>();
-            if (charge == null) return;
+            if (charge == null || charge.GetComponent<ChargeHUD>() != null) return;
             charge.gameObject.AddComponent<ChargeHUD>();
         }
     }

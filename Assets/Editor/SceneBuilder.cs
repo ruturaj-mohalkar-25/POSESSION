@@ -348,10 +348,10 @@ namespace Possession.Editor
             cam.backgroundColor = new Color(0.08f, 0.08f, 0.1f);
             camGO.tag = "MainCamera";
 
-            camGO.transform.position = new Vector3(0, 25f, -10f);
-            camGO.transform.rotation = Quaternion.Euler(55f, 0f, 0f);
+            camGO.transform.position = CameraFollow.SharedOffset;
+            camGO.transform.rotation = Quaternion.Euler(CameraFollow.SharedEuler);
 
-            cam.fieldOfView = 40f;
+            cam.fieldOfView = CameraFollow.SharedFieldOfView;
 
             camGO.AddComponent<AudioListener>();
             camGO.AddComponent<CameraFollow>();

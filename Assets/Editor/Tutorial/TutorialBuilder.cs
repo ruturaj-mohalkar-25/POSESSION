@@ -26,6 +26,7 @@ namespace Possession.Editor
             var roots = scene.GetRootGameObjects();
             var spirit = Find<SpiritController>(roots);
             var possession = spirit.GetComponent<PossessionController>();
+            var charges = spirit.GetComponent<PossessionCharge>() ?? spirit.gameObject.AddComponent<PossessionCharge>();
             var guard = Find<GuardEnemy>(roots);
             var heavy = Find<HeavyEnemy>(roots);
             var target = Find<Target>(roots);
@@ -36,15 +37,40 @@ namespace Possession.Editor
             LevelBuildKit.ApplyConfig(config, manager, spirit.gameObject);
             Set(possession, "possessRange", 7f);
             Set(possession, "hostileTime", 5f);
+            Set(charges, "startingCharges", 1);
             spirit.transform.position = new Vector3(0f, 1.15f, 3.5f);
             guard.transform.position = new Vector3(0f, 1.1f, 16f);
+            guard.transform.rotation = Quaternion.identity; // Spirit approaches from safely behind the cone.
             Set(guard, "detectionRange", 4f);
             foreach (var waypoint in roots.Where(r => r.name.StartsWith("Guard_WP")))
                 waypoint.transform.position = new Vector3(waypoint.name.EndsWith("1") ? -2f : 2f, 1.1f, 16f);
             Set(heavy, "detectionRange", 4f);
+            heavy.transform.rotation = Quaternion.identity;
             target.transform.position = new Vector3(2.8f, 1.6f, 20.5f);
             // A slightly wider board makes the first shooting lesson forgiving.
             target.transform.localScale = new Vector3(1.6f, 1.4f, 0.6f);
+
+            var pickups = roots.SelectMany(r => r.GetComponentsInChildren<PossessionChargePickup>(true)).ToArray();
+            if (pickups.Length < 2)
+            {
+                var pickupRoot = roots.FirstOrDefault(r => r.name == "ChargePickups")?.transform
+                    ?? new GameObject("ChargePickups").transform;
+                for (int i = pickups.Length; i < 2; i++)
+                    LevelBuildKit.PlacePickup(pickupRoot, "Pickup_0" + (i + 1),
+                        i == 0 ? new Vector3(-3f, 0.1f, 10f) : new Vector3(3f, 0.1f, 27f));
+                roots = scene.GetRootGameObjects();
+                pickups = roots.SelectMany(r => r.GetComponentsInChildren<PossessionChargePickup>(true)).ToArray();
+            }
+            if (pickups.Length > 0) pickups[0].transform.position = new Vector3(-3f, 0.1f, 10f);
+            if (pickups.Length > 1) pickups[1].transform.position = new Vector3(3f, 0.1f, 27f);
+
+            var camera = Camera.main;
+            if (camera != null)
+            {
+                var follow = camera.GetComponent<CameraFollow>();
+                if (follow != null) follow.ApplySharedView();
+                camera.transform.position = spirit.transform.position + CameraFollow.SharedOffset;
+            }
 
             var hud = Find<HUDManager>(roots);
             var hudSettings = new SerializedObject(hud);
@@ -70,6 +96,7 @@ namespace Possession.Editor
             var so = new SerializedObject(guide);
             so.FindProperty("spirit").objectReferenceValue = spirit;
             so.FindProperty("possession").objectReferenceValue = possession;
+            so.FindProperty("charges").objectReferenceValue = charges;
             so.FindProperty("guard").objectReferenceValue = guard;
             so.FindProperty("heavy").objectReferenceValue = heavy;
             so.FindProperty("target").objectReferenceValue = target;
@@ -122,6 +149,7 @@ namespace Possession.Editor
             var so = new SerializedObject(target);
             var prop = so.FindProperty(field);
             if (value is float number) prop.floatValue = number;
+            else if (value is int count) prop.intValue = count;
             else if (value is string text) prop.stringValue = text;
             so.ApplyModifiedPropertiesWithoutUndo();
         }

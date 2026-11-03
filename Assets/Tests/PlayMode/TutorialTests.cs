@@ -261,7 +261,12 @@ namespace Possession.Tests
         private static void Dismiss(TutorialGuide guide)
         { for (int i = 0; i < 5 && guide.IsCoaching; i++) guide.ContinueCoaching(); }
         private static void Possess(TutorialGuide guide, EnemyBase body)
-        { Invoke(guide.Possession, "Possess", body); Dismiss(guide); }
+        {
+            var charges = guide.Possession.GetComponent<PossessionCharge>();
+            if (charges != null && !charges.HasCharge) Assert.That(charges.TryCollect(), Is.True);
+            Invoke(guide.Possession, "Possess", body);
+            Dismiss(guide);
+        }
         private static void Set(object item, string name, object value) => item.GetType()
             .GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).SetValue(item, value);
         private static void Invoke(object item, string name, params object[] args) => item.GetType()

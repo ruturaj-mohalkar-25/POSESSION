@@ -7,6 +7,7 @@ namespace Possession
     {
         [SerializeField] private SpiritController spirit;
         [SerializeField] private PossessionController possession;
+        [SerializeField] private PossessionCharge charges;
         [SerializeField] private GuardEnemy guard;
         [SerializeField] private HeavyEnemy heavy;
         [SerializeField] private Target target;
@@ -37,6 +38,7 @@ namespace Possession
         public GuardEnemy Guard => guard;
         public HeavyEnemy Heavy => heavy;
         public PossessionController Possession => possession;
+        public PossessionCharge Charges => charges;
         public float LevelSeconds => manager != null ? manager.LevelTimer : 300f;
         public SpiritController Spirit => spirit;
         public EnemyBase HostileEnemy => hostileEnemy != null ? hostileEnemy : guard;
@@ -44,6 +46,23 @@ namespace Possession
         public Transform TargetBody => target.transform;
         public Transform WallBody => wall.transform;
         public Transform ExitBody => exitTrigger.transform;
+        public Transform ChargeTarget
+        {
+            get
+            {
+                PossessionChargePickup best = null;
+                float distance = float.MaxValue;
+                foreach (var pickup in FindObjectsByType<PossessionChargePickup>(FindObjectsSortMode.None))
+                {
+                    if (!pickup.IsReady) continue;
+                    float candidate = (pickup.transform.position - spirit.transform.position).sqrMagnitude;
+                    if (candidate >= distance) continue;
+                    best = pickup;
+                    distance = candidate;
+                }
+                return best != null ? best.transform : null;
+            }
+        }
         public TutorialFocus CoachingFocus { get; private set; }
         public bool IsCoaching => CoachingFocus != TutorialFocus.None;
 
@@ -75,6 +94,7 @@ namespace Possession
 
         private void Start()
         {
+            if (charges == null) charges = possession.GetComponent<PossessionCharge>();
             lastPosition = spirit.transform.position;
             if (exitTrigger != null) exitTrigger.enabled = true;
             overlay = gameObject.AddComponent<TutorialOverlay>();
@@ -227,13 +247,13 @@ namespace Possession
         public string Title => Progress.Lesson switch
         {
             TutorialLesson.Movement => MovementAction,
-            TutorialLesson.FindGuard => "MEET THE GUARD",
+            TutorialLesson.FindGuard => charges != null && !charges.HasCharge ? "FIND A CHARGE" : "GET BEHIND THE GUARD",
             TutorialLesson.ShootTarget => "SHOOT TO OPEN THE DOOR",
             TutorialLesson.ManualEject => "LEAVE BEFORE TIME RUNS OUT",
             TutorialLesson.RepossessGuard => "BORROW THE GUARD AGAIN",
             TutorialLesson.WaitForTimer => "WATCH THE POSSESSION TIMER",
             TutorialLesson.EscapeHostile => "FORCED OUT! MOVE AWAY",
-            TutorialLesson.FindHeavy => "MEET THE WALL BREAKER",
+            TutorialLesson.FindHeavy => charges != null && !charges.HasCharge ? "COLLECT A CHARGE" : "GET BEHIND THE WALL BREAKER",
             TutorialLesson.SmashWall => "WALL BREAKER · LMB TO SMASH",
             TutorialLesson.ReachExit => "FINISH AS THE SPIRIT",
             _ => "HOW TO PLAY"
@@ -255,7 +275,9 @@ namespace Possession
                 {
                     TutorialLesson.Movement => Progress.NextMovement == TutorialMovement.Jump ? "Press SPACE to jump."
                         : "Hold " + MovementKey + " to " + MovementAction.ToLowerInvariant() + ". The next key appears when you have done it.",
-                    TutorialLesson.FindGuard => "The Guard can shoot targets. Walk into the next room; when its green E cue appears, press E to possess it.",
+                    TutorialLesson.FindGuard => charges != null && !charges.HasCharge
+                        ? "Collect a green shard. Each possession spends one charge."
+                        : "The red cone is the Guard's vision. Stay outside it, approach from behind, then press E when the green cue appears.",
                     TutorialLesson.ShootTarget => asGuard
                         ? "Move the mouse to aim. LEFT CLICK shoots. Hit the marked target to unlock the gold door."
                         : "Return to the Guard and press E. The Spirit cannot shoot; use the Guard to hit the target.",
@@ -265,7 +287,9 @@ namespace Possession
                         : "When the Guard is safe again, possess it with E, then press E once more to practise leaving early.",
                     TutorialLesson.WaitForTimer => "At zero you auto-eject. Run from the enemy! Press E to leave early instead.",
                     TutorialLesson.EscapeHostile => "AUTO-EJECTED! Use WASD to move away from the red " + HostileName.ToLowerInvariant() + ".",
-                    TutorialLesson.FindHeavy => "Go through the open door. Approach the Wall Breaker and press E.",
+                    TutorialLesson.FindHeavy => charges != null && !charges.HasCharge
+                        ? "Collect the green shard in the next room. Only the Spirit can collect it."
+                        : "Stay outside the Wall Breaker's red cone. Approach from behind and press E when the green cue appears.",
                     TutorialLesson.SmashWall => asHeavy
                         ? "Move close. Face the brick wall with WASD. Press LMB to smash it."
                         : "Press E near the Wall Breaker, face the brick wall, then LMB to smash.",
@@ -295,7 +319,8 @@ namespace Possession
             if (best == null) return false;
             body = best.transform;
             danger = best.IsHostile;
-            string action = best.CanBePossessedFrom(spirit.transform) ? "[E] POSSESS" : "GET BEHIND IT TO POSSESS";
+            string action = charges != null && !charges.HasCharge ? "COLLECT A CHARGE FIRST"
+                : best.CanBePossessedFrom(spirit.transform) ? "[E] POSSESS" : "GET BEHIND IT TO POSSESS";
             text = danger ? "HOSTILE — KEEP YOUR DISTANCE" : best == guard
                 ? "GUARD · shoots targets\n" + action : "HEAVY · breaks walls\n" + action;
             return true;

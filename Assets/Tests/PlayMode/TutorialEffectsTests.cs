@@ -194,6 +194,7 @@ namespace Possession.Tests
             Invoke(guide.Possession, "Possess", guide.Guard); Dismiss();
             Object.FindFirstObjectByType<Target>().OnHit();
             Invoke(guide.Possession, "Eject", false);
+            Assert.That(guide.Charges.TryCollect(), Is.True, "Simulate collecting the tutorial shard.");
             guide.Heavy.MoveSpeed = 0f;
             guide.Spirit.RestoreAt(guide.Heavy.transform.position + Vector3.back * 2.5f);
             Physics.SyncTransforms(); yield return null;
@@ -250,7 +251,15 @@ namespace Possession.Tests
 
         private void Begin() { guide.BeginPractice(); Dismiss(); }
         private void Dismiss() { for (int i = 0; i < 5 && guide.IsCoaching; i++) guide.ContinueCoaching(); }
-        private static void Invoke(object item, string method, params object[] args) => item.GetType()
-            .GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(item, args);
+        private static void Invoke(object item, string method, params object[] args)
+        {
+            if (method == "Possess" && item is PossessionController controller)
+            {
+                var charges = controller.GetComponent<PossessionCharge>();
+                if (charges != null && !charges.HasCharge)
+                    Assert.That(charges.TryCollect(), Is.True, "Simulate collecting the tutorial shard.");
+            }
+            item.GetType().GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(item, args);
+        }
     }
 }

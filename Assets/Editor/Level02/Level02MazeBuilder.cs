@@ -65,9 +65,9 @@ namespace Possession.Editor
             spirit.transform.position=Map(3,14);
             LevelBuildKit.BuildLighting(); RenderSettings.ambientLight=new Color(.38f,.42f,.5f);
             var daylight=Object.FindFirstObjectByType<Light>();daylight.intensity=.65f;daylight.color=new Color(.74f,.83f,1f);
-            camera.backgroundColor=new Color(.035f,.045f,.065f); camera.fieldOfView=45f;
-            camera.transform.rotation=Quaternion.Euler(57,0,0); camera.transform.position=spirit.transform.position+new Vector3(0,17,-11);
-            Set(camera.GetComponent<CameraFollow>(),"offset",new Vector3(0,17,-11));
+            camera.backgroundColor=new Color(.035f,.045f,.065f); camera.fieldOfView=CameraFollow.SharedFieldOfView;
+            camera.transform.rotation=Quaternion.Euler(CameraFollow.SharedEuler); camera.transform.position=spirit.transform.position+CameraFollow.SharedOffset;
+            Set(camera.GetComponent<CameraFollow>(),"offset",CameraFollow.SharedOffset);
             Set(camera.GetComponent<CameraFollow>(),"target",spirit.transform);
             var world=new GameObject("Level02_ChargeMaze").transform;
             var floor=Material("CourtyardStone",new Color(.27f,.30f,.34f));

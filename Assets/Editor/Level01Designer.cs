@@ -63,9 +63,21 @@ namespace Possession.Editor
             exitSettings.ApplyModifiedPropertiesWithoutUndo();
             exitObject.GetComponent<BoxCollider>().isTrigger = true;
 
+            var oldPickups = GameObject.Find("ChargePickups");
+            if (oldPickups != null) Object.DestroyImmediate(oldPickups);
             var pickups = new GameObject("ChargePickups").transform;
+            // One required shard is in the open room before the locked door; the spare
+            // is in the next open room before the Heavy's breakable-wall gate.
             LevelBuildKit.PlacePickup(pickups, "Pickup_01", new Vector3(-3f, 0.1f, 15f));
             LevelBuildKit.PlacePickup(pickups, "Pickup_02", new Vector3(3f, 0.1f, 27f));
+
+            var camera = Camera.main;
+            if (camera != null)
+            {
+                var follow = camera.GetComponent<CameraFollow>();
+                if (follow != null) follow.ApplySharedView();
+                camera.transform.position = spiritObj.transform.position + CameraFollow.SharedOffset;
+            }
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);

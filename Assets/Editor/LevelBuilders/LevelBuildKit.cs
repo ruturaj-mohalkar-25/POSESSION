@@ -53,10 +53,10 @@ namespace Possession.Editor
             var cam = camGO.AddComponent<Camera>();
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.08f, 0.08f, 0.1f);
-            cam.fieldOfView = 40f;
+            cam.fieldOfView = CameraFollow.SharedFieldOfView;
             camGO.tag = "MainCamera";
-            camGO.transform.position = new Vector3(0f, 25f, -10f);
-            camGO.transform.rotation = Quaternion.Euler(55f, 0f, 0f);
+            camGO.transform.position = CameraFollow.SharedOffset;
+            camGO.transform.rotation = Quaternion.Euler(CameraFollow.SharedEuler);
             camGO.AddComponent<AudioListener>();
             camGO.AddComponent<CameraFollow>();
         }
@@ -369,36 +369,9 @@ namespace Possession.Editor
             renderer.sharedMaterial = mat;
         }
 
-        private static readonly Color ShardColor = new Color(0.35f, 1f, 0.72f);
-
         public static GameObject PlacePickup(Transform parent, string name, Vector3 position)
         {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent);
-            go.transform.position = position;
-            var col = go.AddComponent<SphereCollider>();
-            col.isTrigger = true;
-            col.radius = 1.1f;
-
-            var shard = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            shard.name = "Energy shard";
-            shard.transform.SetParent(go.transform, false);
-            shard.transform.localPosition = Vector3.up;
-            shard.transform.localScale = new Vector3(0.45f, 0.7f, 0.45f);
-            shard.transform.localRotation = Quaternion.Euler(35, 45, 35);
-            Object.DestroyImmediate(shard.GetComponent<Collider>());
-
-            var mat = new Material(Shader.Find("Sprites/Default"));
-            mat.color = ShardColor;
-            shard.GetComponent<Renderer>().sharedMaterial = mat;
-
-            var pickup = go.AddComponent<PossessionChargePickup>();
-            var so = new SerializedObject(pickup);
-            so.FindProperty("reforms").boolValue = true;
-            so.FindProperty("shard").objectReferenceValue = shard.GetComponent<Renderer>();
-            so.ApplyModifiedPropertiesWithoutUndo();
-
-            return go;
+            return PossessionChargePickup.Create(parent, name, position).gameObject;
         }
     }
 }
