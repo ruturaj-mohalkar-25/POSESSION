@@ -211,6 +211,12 @@ namespace Possession
                 case TutorialLesson.FindGuard:
                 case TutorialLesson.RepossessGuard:
                 case TutorialLesson.FindHeavy:
+                    if (guide.Charges != null && !guide.Charges.HasCharge && guide.ChargeTarget != null)
+                    {
+                        target = guide.ChargeTarget; key = "WASD"; label = "POSSESSION CHARGE";
+                        arrow = "COLLECT AS THE SPIRIT"; color = Green;
+                        break;
+                    }
                     target = lesson == TutorialLesson.FindHeavy ? guide.Heavy.transform : guide.Guard.transform;
                     label = target == guide.Guard.transform ? "GUARD · SHOOT" : "WALL BREAKER";
                     key = "WASD"; arrow = "MOVE CLOSER";
