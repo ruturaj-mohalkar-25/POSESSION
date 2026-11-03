@@ -92,20 +92,20 @@ namespace Possession.Tests
         }
 
         [UnityTest]
-        public IEnumerator Level02HasTwoConfiguredStaggeredGuardPatrols()
+        public IEnumerator Level02HasFiveConfiguredStaggeredGuardPatrols()
         {
             yield return SceneManager.LoadSceneAsync("Level_02", LoadSceneMode.Additive);
             levelScene = SceneManager.GetSceneByName("Level_02");
             var guards = FindLevelGuards(levelScene);
 
-            Assert.That(guards, Has.Count.EqualTo(2));
+            Assert.That(guards, Has.Count.EqualTo(5));
             AssertConfiguredRoutes(guards);
             Assert.That(guards[0].PatrolStartDelay, Is.Not.EqualTo(guards[1].PatrolStartDelay),
                 "Level 2 Guard patrols should start at different times.");
             foreach (GuardEnemy levelGuard in guards)
             {
                 Assert.That(levelGuard.CurrentHP, Is.EqualTo(3));
-                Assert.That(levelGuard.DetectionRange, Is.EqualTo(12f).Within(0.01f));
+                Assert.That(levelGuard.DetectionRange, Is.EqualTo(5.5f).Within(0.01f));
                 Assert.That(Read<float>(levelGuard, "moveSpeed"), Is.EqualTo(3f).Within(0.01f));
                 Assert.That(Read<float>(levelGuard, "waypointWaitTime"), Is.EqualTo(0.75f).Within(0.01f));
             }

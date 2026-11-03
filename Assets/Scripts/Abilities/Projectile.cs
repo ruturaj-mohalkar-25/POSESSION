@@ -48,7 +48,7 @@ namespace Possession
             }
 
             var target = other.GetComponent<Target>();
-            if (target != null)
+            if (target != null && GetComponent<EnemyShot>() == null)
             {
                 target.OnHit();
                 Destroy(gameObject);

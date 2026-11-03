@@ -228,9 +228,18 @@ namespace Possession.Tests
             var guard = Create("Guard", new Vector3(0f, 1f, 20f)).AddComponent<GuardEnemy>();
             Set(guard, "waypoints", new[] { Create("Guard WP", new Vector3(50f, 1f, 20f)).transform });
             Set(heavy, "waypoints", new[] { Create("Heavy WP", new Vector3(50f, 1f, 0f)).transform });
+            // Match the Heavy fixture: otherwise fast batch-mode frames can produce
+            // Guard steps below CharacterController's default minimum distance.
+            guard.GetComponent<CharacterController>().minMoveDistance = 0f;
+            yield return null;
+            float guardStart = guard.transform.position.x;
+            float heavyStart = heavy.transform.position.x;
             yield return new WaitForSeconds(0.5f);
-            Assert.That(heavy.transform.position.x, Is.GreaterThan(0.5f));
-            Assert.That(heavy.transform.position.x / guard.transform.position.x,
+            float heavyDistance = heavy.transform.position.x - heavyStart;
+            float guardDistance = guard.transform.position.x - guardStart;
+            Assert.That(heavyDistance, Is.GreaterThan(0.5f));
+            Assert.That(guardDistance, Is.GreaterThan(0.5f));
+            Assert.That(heavyDistance / guardDistance,
                 Is.EqualTo(0.6f).Within(0.02f));
         }
 
