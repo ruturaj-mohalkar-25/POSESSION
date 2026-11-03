@@ -123,6 +123,12 @@ namespace Possession.Tests
                 Vector3 forward = name == "Level_02" ? Vector3.forward : Vector3.back;
                 Vector3 attack = walls[i].transform.position - forward * 2.1f; attack.y = 1.45f;
                 Move(heavy, attack, forward);
+                // Set up a legal charged approach; this case tests puzzle abilities and ejection.
+                var charges = player.GetComponent<PossessionCharge>();
+                if (charges != null && !charges.HasCharge) Assert.That(charges.TryCollect(), Is.True);
+                typeof(PossessionController).GetField("ejectCooldownTimer", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(player, 0f);
+                spirit.RestoreAt(heavy.transform.position - forward * 2.5f);
+                Physics.SyncTransforms();
                 Invoke(player, "Possess", heavy);
                 Assert.That(player.CurrentState, Is.EqualTo(PlayerState.Possessed_Heavy));
                 Assert.That(heavy.GetComponent<HeavySmashIndicator>().IsVisible, Is.True);

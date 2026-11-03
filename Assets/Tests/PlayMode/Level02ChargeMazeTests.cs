@@ -13,10 +13,11 @@ namespace Possession.Tests
         private Level02Director level;
         private PossessionController pc;
         private PossessionCharge charge;
+        private int authoredStartCharges;
         [UnitySetUp] public IEnumerator Setup()
         {
             Time.timeScale=1f;EventBus.Clear();yield return SceneManager.LoadSceneAsync("Level_02");yield return null;
-            Bind();Freeze();
+            Bind();Freeze();authoredStartCharges=charge.Count;charge.Clear();
         }
         private void Bind(){level=Object.FindFirstObjectByType<Level02Director>();pc=level.Possession;charge=level.Charge;}
         private static void Freeze()
@@ -36,7 +37,7 @@ namespace Possession.Tests
             Assert.That(Object.FindObjectsByType<HeavyEnemy>(FindObjectsSortMode.None).Length,Is.EqualTo(3));
             Assert.That(Object.FindObjectsByType<PossessionChargePickup>(FindObjectsSortMode.None).Length,Is.EqualTo(4));
             foreach(string room in new[]{"R1","R2","R3","R4","R5","R6","R7","D1","D2","D3"})Assert.That(GameObject.Find(room),Is.Not.Null);
-            Assert.That(charge.Count,Is.Zero);Assert.That(pc.CanStartPossession,Is.False);Assert.That(level.CanExit,Is.False);
+            Assert.That(authoredStartCharges,Is.EqualTo(PossessionCharge.SharedStartCharges));Assert.That(charge.MaxCharges,Is.EqualTo(PossessionCharge.SharedMaxCharges));Assert.That(level.CanExit,Is.False);
             Assert.That(Object.FindObjectsByType<HUDManager>(FindObjectsSortMode.None).Length,Is.EqualTo(1));
         }
         [Test] public void EmptySpiritCannotPossessAndInvalidAttemptsNeverSpendACollectedCharge()
@@ -75,14 +76,15 @@ namespace Possession.Tests
             Assert.That(pc.PossessedEnemy,Is.SameAs(host));Assert.That(charge.HasCharge,Is.False);
             Assert.That(charge.SuccessfulPossessions,Is.EqualTo(1));
         }
-        [UnityTest] public IEnumerator FullCapacityAndOccupiedBodiesCannotWastePickups()
+        [UnityTest] public IEnumerator StackedChargesSurviveEjectionAndOccupiedBodiesCannotCollect()
         {
             Collect("C1");var optional=Pickup("C4");level.Spirit.RestoreAt(optional.transform.position+Vector3.up*1.05f);
-            Assert.That(optional.TryCollect(charge),Is.False);Assert.That(optional.IsReady,Is.True);
+            Assert.That(optional.TryCollect(charge),Is.True);Assert.That(charge.Count,Is.EqualTo(2));
             var host=Host("Guard_Courtyard");Approach(host);Invoke(pc,"Possess",host);
-            level.Spirit.transform.position=optional.transform.position+Vector3.up*1.05f;
-            Assert.That(optional.TryCollect(charge),Is.False);Assert.That(optional.IsReady,Is.True);
-            Assert.That(pc.TryEject(false),Is.True);Assert.That(charge.Count,Is.Zero);
+            Assert.That(charge.Count,Is.EqualTo(1));
+            var unused=Pickup("C2");level.Spirit.transform.position=unused.transform.position+Vector3.up*1.05f;
+            Assert.That(unused.TryCollect(charge),Is.False);Assert.That(unused.IsReady,Is.True);
+            Assert.That(pc.TryEject(false),Is.True);Assert.That(charge.Count,Is.EqualTo(1));
             yield return null;
         }
         [UnityTest] public IEnumerator ReformingSourcesPermitRetriesAndTheOptionalShardIsOneUse()
@@ -156,11 +158,11 @@ namespace Possession.Tests
             level.MarkCheckpoint();Collect("C1");GameObject.Find("TN").GetComponent<Target>().OnHit();GameObject.Find("BN").GetComponent<BreakableWall>().TakeDamage(2);
             Assert.That(level.NorthReady,Is.True);Host("Guard_Courtyard").TakeDamage(999);
             level.RetryCourtyard();yield return null;yield return null;Bind();Freeze();yield return new WaitForSeconds(.1f);
-            Assert.That(level.CheckpointReached,Is.True);Assert.That(level.Charge.Count,Is.Zero);Assert.That(level.CanExit,Is.False);
+            Assert.That(level.CheckpointReached,Is.True);Assert.That(level.Charge.Count,Is.EqualTo(PossessionCharge.SharedStartCharges));Assert.That(level.CanExit,Is.False);
             Assert.That(Object.FindObjectsByType<EnemyBase>(FindObjectsSortMode.None).Length,Is.EqualTo(8));
             foreach(var c in Object.FindObjectsByType<PossessionChargePickup>(FindObjectsSortMode.None))Assert.That(c.IsReady,Is.True);
             Assert.That(Vector3.Distance(level.Spirit.transform.position,Map(10,14)),Is.LessThan(.3f));
-            level.FullRestart();yield return null;yield return null;Bind();Freeze();Assert.That(level.CheckpointReached,Is.False);Assert.That(charge.Count,Is.Zero);
+            level.FullRestart();yield return null;yield return null;Bind();Freeze();Assert.That(level.CheckpointReached,Is.False);Assert.That(charge.Count,Is.EqualTo(PossessionCharge.SharedStartCharges));
         }
         [Test] public void ExitRejectsAnUnsolvedRouteAndUnoccupiedEnemies()
         {

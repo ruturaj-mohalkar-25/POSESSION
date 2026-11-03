@@ -8,6 +8,7 @@ namespace Possession
         private int damage = 1;
         private float maxDistance = 6f;
         private Vector3 start;
+        private bool consumed;
 
         public void Init(int damage, float maxDistance)
         {
@@ -23,12 +24,19 @@ namespace Possession
                 Destroy(gameObject);
         }
 
-        private void OnTriggerEnter(Collider other)
+        // Both swept movement and physics triggers must use the same hit path.
+        // Unity can deliver both callbacks before deferred destruction completes.
+        public bool TryHit(Collider other)
         {
+            if (consumed) return true;
             var spirit = other.GetComponentInParent<SpiritController>();
-            if (spirit == null) return;
+            if (spirit == null) return false;
+            consumed = true;
             spirit.TakeDamage(damage);
             Destroy(gameObject);
+            return true;
         }
+
+        private void OnTriggerEnter(Collider other) => TryHit(other);
     }
 }

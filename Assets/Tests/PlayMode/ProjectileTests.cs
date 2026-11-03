@@ -126,6 +126,47 @@ namespace Possession.Tests
                 "High-speed projectile should still hit thin wall via raycast");
         }
 
+        [UnityTest]
+        public IEnumerator EnemyShotSweepDamagesSpiritWithoutAnyTriggerCallback()
+        {
+            var spirit = CreateStationarySpirit();
+            var shot = FireProjectile(new Vector3(0f, 1f, 0f), Vector3.forward);
+            SetField(shot.GetComponent<Projectile>(), "speed", 100f);
+            shot.AddComponent<EnemyShot>().Init(1, 6f);
+            // No bullet collider: this explicitly exercises the swept raycast path.
+            yield return new WaitForSeconds(0.2f);
+            Assert.That(spirit.CurrentHP, Is.EqualTo(spirit.MaxHP - 1));
+            Assert.That(shot == null, Is.True);
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void EnemyShotSweepAndTriggerApplyDamageOnlyOnce(bool triggerFirst)
+        {
+            var spirit = CreateStationarySpirit();
+            var shot = FireProjectile(new Vector3(0f, 1f, 0f), Vector3.forward);
+            shot.AddComponent<EnemyShot>().Init(1, 6f);
+            var collider = spirit.GetComponent<Collider>();
+            var sweep = typeof(Projectile).GetMethod("HandleHit", System.Reflection.BindingFlags.NonPublic
+                | System.Reflection.BindingFlags.Instance);
+            if (triggerFirst) shot.SendMessage("OnTriggerEnter", collider);
+            sweep.Invoke(shot.GetComponent<Projectile>(), new object[] { collider });
+            shot.SendMessage("OnTriggerEnter", collider);
+            Assert.That(spirit.CurrentHP, Is.EqualTo(spirit.MaxHP - 1));
+        }
+
+        private SpiritController CreateStationarySpirit()
+        {
+            var spirit = Create("Spirit", new Vector3(0f, 1f, 3f));
+            var body = spirit.AddComponent<Rigidbody>();
+            body.useGravity = false;
+            body.constraints = RigidbodyConstraints.FreezeAll;
+            spirit.AddComponent<CapsuleCollider>();
+            var controller = spirit.AddComponent<SpiritController>();
+            Physics.SyncTransforms();
+            return controller;
+        }
+
         private GameObject FireProjectile(Vector3 origin, Vector3 direction, float lifetime = 3f)
         {
             var go = Create("Projectile", origin);

@@ -4,8 +4,8 @@ using UnityEngine.SceneManagement;
 namespace Possession
 {
     // Possession charges: each possession spends one, and the Spirit gains more from PossessionChargePickup.
-    // Defaults keep Level_02's rules (start empty, carry one). Any other level that contains a pickup
-    // gets this component at runtime with the shared rules: start with one charge, charges stack.
+    // Serialized scenes are configured with the shared rules by the preview setup. New levels
+    // containing pickups also get the shared rules: start with one charge, charges stack.
     [RequireComponent(typeof(PossessionController))]
     public sealed class PossessionCharge : MonoBehaviour
     {
@@ -75,9 +75,6 @@ namespace Possession
 
         public const int SharedStartCharges = 1;
         public const int SharedMaxCharges = 0; // charges stack
-        // Levels that always allow unlimited possessions, even if collectibles are placed in them
-        private static readonly string[] UnlimitedLevels = { "Level_01" };
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void InstallOnSceneLoad()
         {
@@ -90,7 +87,6 @@ namespace Possession
         // A level opts in by containing at least one pickup, so levels without collectibles keep free possession
         private static void Install(Scene scene)
         {
-            if (System.Array.IndexOf(UnlimitedLevels, scene.name) >= 0) return;
             if (FindFirstObjectByType<PossessionChargePickup>() == null) return;
             var possession = FindFirstObjectByType<PossessionController>();
             if (possession == null || possession.GetComponent<PossessionCharge>() != null) return;

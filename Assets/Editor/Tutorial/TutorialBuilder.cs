@@ -142,6 +142,10 @@ namespace Possession.Editor
             coin.name = objectName;
             coin.transform.SetParent(parent);
             coin.transform.position = position;
+            var settings = new SerializedObject(coin.GetComponent<PossessionChargePickup>());
+            settings.FindProperty("reforms").boolValue = true;
+            settings.FindProperty("cooldown").floatValue = 8f;
+            settings.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void Set(Object target, string field, object value)

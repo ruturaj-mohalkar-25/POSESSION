@@ -149,8 +149,11 @@ namespace Possession.Tests
             var spirit = Object.FindFirstObjectByType<SpiritController>();
             var possession = spirit.GetComponent<PossessionController>();
             var heavy = Object.FindFirstObjectByType<HeavyEnemy>();
+            spirit.RestoreAt(heavy.transform.position - heavy.transform.forward * 2.5f);
+            Physics.SyncTransforms();
             typeof(PossessionController).GetMethod("Possess", BindingFlags.Instance | BindingFlags.NonPublic)
                 .Invoke(possession, new object[] { heavy });
+            Assert.That(possession.PossessedEnemy, Is.SameAs(heavy));
             var controller = heavy.GetComponent<CharacterController>();
             controller.enabled = false;
             // Back to the exit: an eject drops the Spirit behind the body it leaves.

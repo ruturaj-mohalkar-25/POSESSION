@@ -1349,6 +1349,7 @@ MonoBehaviour:
   damage: 1
   firstAttackDelay: 2
   spotReactionTime: 0.6
+  ejectGraceTime: 2
   projectilePrefab: {fileID: 5592161369493967507, guid: 279603b0de41b417aafaaf47adf9e5ed, type: 3}
   firePoint: {fileID: 649406709}
   shootRange: 4.5
@@ -2632,6 +2633,7 @@ MonoBehaviour:
   damage: 1
   firstAttackDelay: 2
   spotReactionTime: 0.6
+  ejectGraceTime: 2
   projectilePrefab: {fileID: 5592161369493967507, guid: 279603b0de41b417aafaaf47adf9e5ed, type: 3}
   firePoint: {fileID: 1792895326}
   shootRange: 4.5
@@ -3108,8 +3110,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aa69b3ccc0ab34756a93825f382a1ff8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.PossessionCharge
-  startCharges: 0
-  maxCharges: 1
+  startCharges: 1
+  maxCharges: 0
 --- !u!1 &189876576
 GameObject:
   m_ObjectHideFlags: 0
@@ -10440,6 +10442,7 @@ MonoBehaviour:
   damage: 1
   firstAttackDelay: 2
   spotReactionTime: 0.6
+  ejectGraceTime: 2
   projectilePrefab: {fileID: 0}
   firePoint: {fileID: 0}
   shootRange: 4.5
@@ -13247,6 +13250,7 @@ MonoBehaviour:
   damage: 1
   firstAttackDelay: 2
   spotReactionTime: 0.6
+  ejectGraceTime: 2
   projectilePrefab: {fileID: 5592161369493967507, guid: 279603b0de41b417aafaaf47adf9e5ed, type: 3}
   firePoint: {fileID: 740373740}
   shootRange: 4.5
@@ -13453,6 +13457,7 @@ MonoBehaviour:
   damage: 1
   firstAttackDelay: 2
   spotReactionTime: 0.6
+  ejectGraceTime: 2
   projectilePrefab: {fileID: 5592161369493967507, guid: 279603b0de41b417aafaaf47adf9e5ed, type: 3}
   firePoint: {fileID: 1588335723}
   shootRange: 4.5
@@ -23324,6 +23329,7 @@ MonoBehaviour:
   damage: 1
   firstAttackDelay: 2
   spotReactionTime: 0.6
+  ejectGraceTime: 2
   projectilePrefab: {fileID: 0}
   firePoint: {fileID: 0}
   shootRange: 4.5
@@ -25571,6 +25577,7 @@ MonoBehaviour:
   damage: 1
   firstAttackDelay: 2
   spotReactionTime: 0.6
+  ejectGraceTime: 2
   projectilePrefab: {fileID: 5592161369493967507, guid: 279603b0de41b417aafaaf47adf9e5ed, type: 3}
   firePoint: {fileID: 523083864}
   shootRange: 4.5
@@ -28822,6 +28829,7 @@ MonoBehaviour:
   damage: 1
   firstAttackDelay: 2
   spotReactionTime: 0.6
+  ejectGraceTime: 2
   projectilePrefab: {fileID: 0}
   firePoint: {fileID: 0}
   shootRange: 4.5

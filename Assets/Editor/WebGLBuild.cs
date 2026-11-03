@@ -16,6 +16,9 @@ namespace Possession.Editor
             public string integrationBase;
             public string collectiblesRevision;
             public string ejectionRevision;
+            public string tutorialRevision;
+            public int startingCharges;
+            public int maxCharges;
             public string[] campaignOrder;
             public string unityVersion;
             public string builtAtUtc;
@@ -67,6 +70,9 @@ namespace Possession.Editor
                 integrationBase = "3b0ffaa2a87024293085f750aa92f110efaba32e",
                 collectiblesRevision = "90c36f3e7b8070b3b1cb073012ee17ca1a7526c0",
                 ejectionRevision = "7364f5dc57c3047a7037f1b988552ba635ff720f",
+                tutorialRevision = "39c248174210b03a6b5df153e24b0b9858bbfd0d",
+                startingCharges = PossessionCharge.SharedStartCharges,
+                maxCharges = PossessionCharge.SharedMaxCharges,
                 campaignOrder = LevelFlow.CampaignScenes.ToArray(),
                 unityVersion = Application.unityVersion,
                 builtAtUtc = DateTime.UtcNow.ToString("o"),

@@ -282,6 +282,10 @@ namespace Possession
                 if (Progress.Lesson == TutorialLesson.SmashWall && asHeavy
                     && heavy.GetComponent<SmashAbility>().UsesLeft == 0)
                     return "Smash used? E to eject, then E near the Wall Breaker to try again.";
+                if (charges != null && !charges.HasCharge && possession.CurrentState == PlayerState.Spirit
+                    && Progress.Lesson != TutorialLesson.Movement && Progress.Lesson != TutorialLesson.ReachExit
+                    && Progress.Lesson != TutorialLesson.EscapeHostile)
+                    return "Collect a Soul Coin as the Spirit. Each possession uses one charge.";
                 return Progress.Lesson switch
                 {
                     TutorialLesson.Movement => Progress.NextMovement == TutorialMovement.Jump ? "Press SPACE to jump."

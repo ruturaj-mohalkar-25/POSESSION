@@ -4834,6 +4834,7 @@ MonoBehaviour:
   damage: 1
   firstAttackDelay: 0.75
   spotReactionTime: 0.6
+  ejectGraceTime: 2
   projectilePrefab: {fileID: 0}
   firePoint: {fileID: 0}
   shootRange: 4.5
@@ -6336,6 +6337,7 @@ MonoBehaviour:
   damage: 1
   firstAttackDelay: 0.75
   spotReactionTime: 0.6
+  ejectGraceTime: 2
   projectilePrefab: {fileID: 5592161369493967507, guid: 279603b0de41b417aafaaf47adf9e5ed, type: 3}
   firePoint: {fileID: 436551381}
   shootRange: 4.5
@@ -6819,6 +6821,10 @@ PrefabInstance:
     - target: {fileID: 3830606884290388471, guid: 900daf9056f4e46b099ccd30fe791299, type: 3}
       propertyPath: m_Name
       value: SoulCoin_02
+      objectReference: {fileID: 0}
+    - target: {fileID: 8180658630666027043, guid: 900daf9056f4e46b099ccd30fe791299, type: 3}
+      propertyPath: reforms
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9218216099103357220, guid: 900daf9056f4e46b099ccd30fe791299, type: 3}
       propertyPath: m_LocalPosition.x
@@ -8140,6 +8146,10 @@ PrefabInstance:
     - target: {fileID: 3830606884290388471, guid: 900daf9056f4e46b099ccd30fe791299, type: 3}
       propertyPath: m_Name
       value: SoulCoin_01
+      objectReference: {fileID: 0}
+    - target: {fileID: 8180658630666027043, guid: 900daf9056f4e46b099ccd30fe791299, type: 3}
+      propertyPath: reforms
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9218216099103357220, guid: 900daf9056f4e46b099ccd30fe791299, type: 3}
       propertyPath: m_LocalPosition.x

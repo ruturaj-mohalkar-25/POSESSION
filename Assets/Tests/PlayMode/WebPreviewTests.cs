@@ -45,8 +45,8 @@ namespace Possession.Tests
             Assert.That(coins.Length, Is.EqualTo(4));
             foreach (var coin in coins) Assert.That(coin.GetComponentsInChildren<Transform>().Any(t => t.name == "Soul Coin"), Is.True);
             var charge = Object.FindFirstObjectByType<SpiritController>().GetComponent<PossessionCharge>();
-            Assert.That(charge.Count, Is.Zero);
-            Assert.That(charge.MaxCharges, Is.EqualTo(1));
+            Assert.That(charge.Count, Is.EqualTo(PossessionCharge.SharedStartCharges));
+            Assert.That(charge.MaxCharges, Is.EqualTo(PossessionCharge.SharedMaxCharges));
         }
 
         [UnityTest]
@@ -76,14 +76,15 @@ namespace Possession.Tests
         }
 
         [UnityTest]
-        public IEnumerator LevelOneAndTutorialKeepTheIntegrationCameraAndFreePossession()
+        public IEnumerator LevelOneAndTutorialKeepTheIntegrationCameraAndUseSharedCharges()
         {
             foreach (string name in new[] { "Level_01", TutorialScene.Name })
             {
                 yield return Load(name);
                 var spirit = Object.FindFirstObjectByType<SpiritController>();
-                Assert.That(spirit.GetComponent<PossessionCharge>(), Is.Null);
-                Assert.That(Object.FindObjectsByType<PossessionChargePickup>(FindObjectsSortMode.None), Is.Empty);
+                Assert.That(spirit.GetComponent<PossessionCharge>().Count, Is.EqualTo(1));
+                Assert.That(spirit.GetComponent<PossessionCharge>().MaxCharges, Is.Zero);
+                Assert.That(Object.FindObjectsByType<PossessionChargePickup>(FindObjectsSortMode.None).Length, Is.GreaterThanOrEqualTo(2));
                 Assert.That(Camera.main.fieldOfView, Is.EqualTo(40f));
                 Assert.That(Read<Vector3>(Camera.main.GetComponent<CameraFollow>(), "offset"), Is.EqualTo(new Vector3(0f,25f,-13f)));
             }
