@@ -57,6 +57,24 @@ namespace Possession.Tests
             var host=Host("Guard_Courtyard");Move(host,Map(16,11),Vector3.forward);Physics.SyncTransforms();
             Invoke(pc,"Possess",host);Assert.That(pc.CurrentState,Is.EqualTo(PlayerState.Spirit));Assert.That(charge.HasCharge,Is.True);
         }
+        [Test] public void GuardVisionBlocksChargedPossessionWithoutSpendingTheShard()
+        {
+            Collect("C1");var host=Host("Guard_Courtyard");Approach(host);
+            Vector3 towardSpirit=level.Spirit.transform.position-host.transform.position;towardSpirit.y=0f;
+            host.transform.rotation=Quaternion.LookRotation(towardSpirit);Physics.SyncTransforms();
+            Assert.That(host.CanSee(level.Spirit.transform),Is.True);
+            var nearest=typeof(PossessionController).GetMethod("FindNearestEnemy",BindingFlags.NonPublic|BindingFlags.Instance);
+            Assert.That(nearest.Invoke(pc,null),Is.Not.SameAs(host));
+            Invoke(pc,"Possess",host);
+            Assert.That(pc.CurrentState,Is.EqualTo(PlayerState.Spirit));Assert.That(charge.HasCharge,Is.True);
+            Assert.That(charge.SuccessfulPossessions,Is.Zero);
+
+            host.transform.rotation=Quaternion.LookRotation(-towardSpirit);Physics.SyncTransforms();
+            Assert.That(nearest.Invoke(pc,null),Is.SameAs(host));
+            Invoke(pc,"Possess",host);
+            Assert.That(pc.PossessedEnemy,Is.SameAs(host));Assert.That(charge.HasCharge,Is.False);
+            Assert.That(charge.SuccessfulPossessions,Is.EqualTo(1));
+        }
         [UnityTest] public IEnumerator FullCapacityAndOccupiedBodiesCannotWastePickups()
         {
             Collect("C1");var optional=Pickup("C4");level.Spirit.RestoreAt(optional.transform.position+Vector3.up*1.05f);
@@ -90,6 +108,8 @@ namespace Possession.Tests
         {
             var guard=Host("Guard_Courtyard");Approach(guard);
             level.Spirit.RestoreAt(guard.transform.position+Vector3.right*1.65f);
+            guard.transform.rotation=Quaternion.LookRotation(level.Spirit.transform.position-guard.transform.position);
+            Physics.SyncTransforms();
             guard.enabled=true;guard.GetComponent<HuntedEnemyPressure>().enabled=true;
             int before=level.Spirit.CurrentHP;yield return new WaitForSeconds(.6f);
             Assert.That(level.Spirit.CurrentHP,Is.EqualTo(before),"Contact damage must give time to retreat.");
@@ -155,13 +175,15 @@ namespace Possession.Tests
         }
         private void Approach(EnemyBase host)
         {
-            var options=new[]{Vector3.right,Vector3.back,Vector3.left,Vector3.forward};
+            var options=new[]{-host.transform.forward,Vector3.right,Vector3.back,Vector3.left,Vector3.forward};
             foreach(var dir in options)
             {
                 var p=host.transform.position+dir*1.8f;p.y=1.15f;
                 if(Physics.OverlapCapsule(p+Vector3.up*.45f,p-Vector3.up*.45f,.5f,1<<0,QueryTriggerInteraction.Ignore)
                     .Any(c => !c.transform.IsChildOf(level.Spirit.transform)))continue;
-                level.Spirit.RestoreAt(p);Physics.SyncTransforms();return;
+                level.Spirit.RestoreAt(p);Physics.SyncTransforms();
+                if(!host.CanBePossessedFrom(level.Spirit.transform))continue;
+                return;
             }
             Assert.Fail("No clear host approach: "+host.name);
         }
