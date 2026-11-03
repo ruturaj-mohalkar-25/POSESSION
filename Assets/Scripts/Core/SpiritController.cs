@@ -10,16 +10,20 @@ namespace Possession
 
         [Header("Health")]
         [SerializeField] private int maxHP = 3;
+        [SerializeField, Min(0f)] private float damageCooldown;
+        [SerializeField, Min(0f)] private float initialDamageGrace;
 
         private Rigidbody rb;
         private int currentHP;
         private bool isGrounded;
         private bool isVisible = true;
+        private float nextDamageTime;
 
         private void Awake()
         {
             rb = GetComponent<Rigidbody>();
             currentHP = maxHP;
+            nextDamageTime = Time.time + initialDamageGrace;
         }
 
         private void Update()
@@ -57,6 +61,8 @@ namespace Possession
 
         public void TakeDamage(int amount)
         {
+            if (Time.time < nextDamageTime) return;
+            nextDamageTime = Time.time + damageCooldown;
             currentHP -= amount;
             EventBus.SpiritDamaged?.Invoke(currentHP, maxHP);
             if (currentHP <= 0)

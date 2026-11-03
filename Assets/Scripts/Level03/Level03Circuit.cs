@@ -53,11 +53,8 @@ namespace Possession
                 || !watcher.gameObject.activeInHierarchy || watcher.CurrentHP <= 0 || level != null && level.Possession.PossessedEnemy == watcher) return false;
             var link = watcher.GetComponent<Level03AlarmLink>();
             if (link == null || link.wing != wing) return false;
-            Vector3 delta = suspect.position - watcher.transform.position;
-            if (delta.sqrMagnitude > 49f || Vector3.Angle(watcher.transform.forward, Vector3.ProjectOnPlane(delta,Vector3.up)) > 55f) return false;
-            Vector3 origin = watcher.transform.position + Vector3.up*.25f;
-            if (!Physics.Linecast(origin,suspect.position,out var hit,~0,QueryTriggerInteraction.Ignore)) return true;
-            return hit.collider.transform.IsChildOf(suspect) || hit.collider.transform.IsChildOf(watcher.transform);
+            // Alarm observation uses the same visible cone/range as Spirit detection.
+            return !watcher.IsPossessed && watcher.CanSee(suspect);
         }
         public void RestoreAlarm(bool latched) { Latched = latched && !Disabled; suspicion = 0f; witnessUntil = 0f; }
     }

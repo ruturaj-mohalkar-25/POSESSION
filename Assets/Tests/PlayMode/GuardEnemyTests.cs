@@ -26,6 +26,8 @@ namespace Possession.Tests
             var guardObject = Create("Guard", new Vector3(0f, 1.05f, 0f));
             guardObject.SetActive(false);
             guard = guardObject.AddComponent<GuardEnemy>();
+            // Vision is directional now; point the enemy at the Spirit used by these tests (+x).
+            guardObject.transform.rotation = Quaternion.LookRotation(Vector3.right);
             guardObject.SetActive(true);
             guard.GetComponent<CharacterController>().minMoveDistance = 0f;
             yield return null;
@@ -157,6 +159,8 @@ namespace Possession.Tests
         [UnityTest]
         public IEnumerator OverlapSphereDetectsChildColliderAndReturnsToPatrol()
         {
+            // Lose-sight search is covered in EnemyAttackTests; this checks the direct return.
+            SetBase(guard, "loseSightSearchTime", 0f);
             SetBase(guard, "waypoints", new[] {
                 Create("Patrol WP", new Vector3(-20f, 1f, 0f)).transform });
             var spirit = CreateSpirit(new Vector3(5f, 1f, 0f), true);

@@ -82,7 +82,7 @@ namespace Possession
             foreach (var hit in hits)
             {
                 var enemy = hit.GetComponent<EnemyBase>();
-                if (enemy == null || !enemy.CanBePossessed) continue;
+                if (enemy == null || !enemy.CanBePossessedFrom(transform)) continue;
                 if (!HasLineOfSight(enemy)) continue;
 
                 float dist = Vector3.Distance(transform.position, hit.transform.position);
@@ -110,7 +110,7 @@ namespace Possession
         private void Possess(EnemyBase enemy)
         {
             if (GetComponent<PossessionCharge>() != null && (!CanStartPossession
-                || currentState != PlayerState.Spirit || enemy == null || !enemy.CanBePossessed
+                || currentState != PlayerState.Spirit || enemy == null || !enemy.CanBePossessedFrom(transform)
                 || !enemy.gameObject.activeInHierarchy || ejectCooldownTimer > 0f
                 || (enemyLayer.value & (1 << enemy.gameObject.layer)) == 0
                 || Vector3.Distance(transform.position, enemy.transform.position) > possessRange

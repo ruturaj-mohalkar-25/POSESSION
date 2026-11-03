@@ -14,7 +14,6 @@ namespace Possession
         [SerializeField] private Target mainTarget, relay, exitTarget, serviceTarget;
         [SerializeField] private Level03SecurityGate stairA, bridge, extractionWest, extractionSouth, maintenance, service;
         [SerializeField] private Level03Circuit west, east;
-        private float nextContact;
         private BreakableWall serviceWall;
         private Level03Checkpoint[] shelters;
         private static Snapshot checkpoint;
@@ -39,7 +38,6 @@ namespace Possession
         }
         private IEnumerator Start()
         {
-            nextContact = Time.time + 12f;
             var hud = FindFirstObjectByType<HUDManager>();
             if (hud != null && hud.transform.Find("ObjectiveBar") is Transform bar) bar.gameObject.SetActive(false);
             gameObject.AddComponent<Level03StatusHUD>().Initialize(this);
@@ -95,11 +93,6 @@ namespace Possession
             if (other == null) return false;
             if (other.GetComponentInParent<SpiritController>() == spirit) return Possession.CurrentState == PlayerState.Spirit;
             return Possession.PossessedEnemy != null && other.GetComponentInParent<EnemyBase>() == Possession.PossessedEnemy;
-        }
-        public bool TryContactDamage()
-        {
-            if (Time.timeScale <= 0f || Time.time < nextContact || spirit.CurrentHP <= 0 || Possession.CurrentState != PlayerState.Spirit) return false;
-            nextContact = Time.time + 5f; spirit.TakeDamage(1); return true;
         }
         public bool SaveCheckpoint(Level03Checkpoint point)
         {

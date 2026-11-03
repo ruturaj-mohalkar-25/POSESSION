@@ -29,7 +29,7 @@ namespace Possession
             status.text=(player.position.y>5.5f?"UPPER FLOOR":"GROUND FLOOR")+" · "+level.NavigationHint;
             circuits.text=Circuit("WEST",level.West)+"     "+Circuit("EAST",level.East);
             circuits.color=level.West.Latched||level.East.Latched?new Color(1f,.4f,.3f):new Color(.6f,.8f,1f);
-            string charge=level.Possession.CurrentState!=PlayerState.Spirit?"BODY BORROWED":level.Charge.HasCharge?"E · POSSESS READY":"FIND A GREEN SHARD";
+            string charge=level.Possession.CurrentState!=PlayerState.Spirit?"BODY BORROWED":level.Charge.HasCharge?"SHARD READY · GET BEHIND ENEMY":"FIND A GREEN SHARD";
             prompt.text=level.NearbyCheckpoint!=null ? charge+"  ·  F · SAVE CHECKPOINT "
                 : charge+"  ·  M · PAUSE MAP"+(level.HasCheckpoint?"  ·  C · "+level.CheckpointName:"");
         }

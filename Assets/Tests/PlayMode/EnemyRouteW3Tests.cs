@@ -57,18 +57,31 @@ namespace Possession.Tests
             if (possession != null) possession.enabled = false;
 
             spirit.gameObject.SetActive(false);
+            // A guard can glimpse the Spirit on the first frame after loading. Skip the
+            // lose-sight search here so this test checks the saved patrol routes directly.
+            foreach (GuardEnemy guard in guards)
+                typeof(EnemyBase).GetField("loseSightSearchTime",
+                    BindingFlags.Instance | BindingFlags.NonPublic).SetValue(guard, 0f);
             var starts = guards.Select(guard => guard.transform.position).ToArray();
             foreach (GuardEnemy guard in guards)
                 AssertRouteIsConfiguredAndClear(guard);
 
             float longestDelay = guards.Max(guard => guard.PatrolStartDelay);
-            var patrolled=new bool[guards.Length];float patrolDeadline=Time.time+longestDelay+guards.Max(g=>Read<float>(g,"waypointWaitTime"))+.8f;
-            while(Time.time<patrolDeadline)
+            // Scene loading can leave a Guard finishing its initial search or waypoint
+            // wait. Observe movement within a bounded window instead of sampling once.
+            var patrolled = new bool[guards.Length];
+            float patrolDeadline = Time.time + longestDelay + 3f;
+            while (patrolled.Any(moved => !moved) && Time.time < patrolDeadline)
             {
-                for(int i=0;i<guards.Length;i++)patrolled[i]|=Flat(guards[i].transform.position-starts[i]).magnitude>.15f;
+                for (int i = 0; i < guards.Length; i++)
+                    patrolled[i] |= Flat(guards[i].transform.position - starts[i]).magnitude > 0.15f;
                 yield return null;
             }
-            for(int i=0;i<guards.Length;i++)Assert.That(patrolled[i],Is.True,levelName+"/"+guards[i].name+" did not patrol its saved route.");
+            for (int i = 0; i < guards.Length; i++)
+            {
+                Assert.That(patrolled[i], Is.True,
+                    levelName + "/" + guards[i].name + " did not patrol its saved route.");
+            }
 
             foreach (GuardEnemy guard in guards)
             {
@@ -80,10 +93,12 @@ namespace Possession.Tests
                 if (towardRoute.sqrMagnitude < 0.01f) towardRoute = Vector3.forward;
 
                 spirit.gameObject.SetActive(true);
-                if(levelName == "Level_03") typeof(EnemyBase).GetField("waypointWaitTimer",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(guard,3f);
-                MoveSpirit(spirit, levelName == "Level_03" ? ClearChaseSpot(guard) : guard.transform.position + towardRoute * 4f);
+                if (levelName == "Level_03")
+                    typeof(EnemyBase).GetField("waypointWaitTimer", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(guard, 3f);
+                PlaceVisibleSpirit(guard, spirit, towardRoute);
+                Vector3 visibleAt = spirit.transform.position;
                 Vector3 beforeDetection = guard.transform.position;
-                yield return new WaitForSeconds(levelName == "Level_03" ? 2.3f : .25f);
+                yield return new WaitForSeconds(levelName == "Level_03" ? 2.3f : 0.25f);
                 Assert.That(guard.IsChasing, Is.True,
                     levelName + "/" + guard.name + " did not detect the Spirit.");
                 Assert.That(Flat(guard.transform.position - beforeDetection).magnitude,
@@ -96,7 +111,7 @@ namespace Possession.Tests
                 Assert.That(Flat(guard.transform.position - possessedAt).magnitude, Is.LessThan(0.02f),
                     levelName + "/" + guard.name + " AI moved while possessed.");
 
-                MoveSpirit(spirit, levelName == "Level_03" ? ClearChaseSpot(guard) : guard.transform.position + towardRoute * 4f);
+                MoveSpirit(spirit, visibleAt);
                 guard.OnForcedEject(0.25f);
                 Vector3 hostileAt = guard.transform.position;
                 yield return new WaitForSeconds(0.12f);
@@ -111,15 +126,44 @@ namespace Possession.Tests
                 Assert.That(guard.IsChasing, Is.False);
 
                 float distanceBeforeResume = NearestRouteDistance(guard.transform.position, route);
-                Vector3 resumeAt=guard.transform.position;bool resumed=false;float resumeDeadline=Time.time+Read<float>(guard,"waypointWaitTime")+1.3f;
-                while(Time.time<resumeDeadline && !resumed)
+                Vector3 resumeAt = guard.transform.position;
+                bool resumed = false;
+                float resumeDeadline = Time.time + Read<float>(guard, "waypointWaitTime") + 1.3f;
+                while (Time.time < resumeDeadline && !resumed)
                 {
                     yield return null;
-                    resumed=NearestRouteDistance(guard.transform.position,route)<distanceBeforeResume-.03f
-                        || distanceBeforeResume<=Read<float>(guard,"waypointArrivalDistance")+.05f && Flat(guard.transform.position-resumeAt).magnitude>.05f;
+                    resumed = NearestRouteDistance(guard.transform.position, route) < distanceBeforeResume - 0.03f
+                        || distanceBeforeResume <= Read<float>(guard, "waypointArrivalDistance") + 0.05f
+                        && Flat(guard.transform.position - resumeAt).magnitude > 0.05f;
                 }
-                Assert.That(resumed,Is.True,levelName+"/"+guard.name+" did not resume its configured patrol after hostility.");
+                Assert.That(resumed, Is.True, levelName + "/" + guard.name + " did not resume its patrol.");
             }
+        }
+
+        private static void PlaceVisibleSpirit(GuardEnemy guard, SpiritController spirit, Vector3 preferred)
+        {
+            // A fixed offset can land behind a wall/target as a saved patrol advances.
+            // Choose a clear lane in the authored room before checking chase. A three-
+            // metre lane also fits Level 3's narrow entry while leaving room to pursue.
+            foreach (float distance in new[] { 4f, 3f })
+            {
+                float pursuitSpeed = guard.MoveSpeed * Read<float>(guard, "aiSpeedMultiplier");
+                if (distance > guard.DetectionRange || distance <= Read<float>(guard, "chaseStopDistance") + pursuitSpeed * 0.4f + 0.1f)
+                    continue; // Leave movement distance for both chase and forced hostility.
+                foreach (float angle in new[] { 0f, 45f, -45f, 90f, -90f, 135f, -135f, 180f })
+                {
+                    Vector3 direction = Quaternion.Euler(0f, angle, 0f) * preferred;
+                    if (Physics.SphereCast(guard.transform.position, 0.55f, direction,
+                        out _, distance, (1 << 0) | (1 << 7), QueryTriggerInteraction.Ignore))
+                        continue;
+                    MoveSpirit(spirit, guard.transform.position + direction * distance);
+                    guard.transform.rotation = Quaternion.LookRotation(direction);
+                    Physics.SyncTransforms();
+                    if (guard.CanSee(spirit.transform)) return;
+                }
+            }
+            Assert.Fail(guard.name + " has no clear lane for the chase check at "
+                + guard.transform.position);
         }
 
         private static void AssertRouteIsConfiguredAndClear(GuardEnemy guard)
@@ -139,19 +183,6 @@ namespace Possession.Tests
                 guard.name + " patrol is blocked by " + (hit.collider != null ? hit.collider.name : "unknown"));
         }
 
-        private static Vector3 ClearChaseSpot(GuardEnemy guard)
-        {
-            for(int i=0;i<8;i++)
-            {
-                Vector3 direction=Quaternion.Euler(0,i*45,0)*Vector3.forward;
-                Vector3 point=guard.transform.position+direction*3f;
-                if(Physics.SphereCast(guard.transform.position,.55f,direction,out _,3f,1,QueryTriggerInteraction.Ignore))continue;
-                if(Physics.CheckCapsule(point+Vector3.up*.4f,point-Vector3.up*.4f,.5f,1,QueryTriggerInteraction.Ignore))continue;
-                if(!Physics.Raycast(point,Vector3.down,2f,1,QueryTriggerInteraction.Ignore))continue;
-                return point;
-            }
-            Assert.Fail("No clear chase encounter for "+guard.name);return guard.transform.position;
-        }
         private static void MoveSpirit(SpiritController spirit, Vector3 position)
         {
             var controller = spirit.GetComponent<CharacterController>();

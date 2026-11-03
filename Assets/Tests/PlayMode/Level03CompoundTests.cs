@@ -22,7 +22,7 @@ namespace Possession.Tests
         private void Bind(){level=Object.FindFirstObjectByType<Level03Director>();pc=level.Possession;charge=level.Charge;}
         private void Freeze()
         {
-            foreach(var enemy in level.Hosts){enemy.enabled=false;enemy.GetComponent<EnemyContactDamage>().enabled=false;enemy.GetComponent<Level03EnemyPressure>().enabled=false;}
+            foreach(var enemy in level.Hosts){enemy.enabled=false;enemy.GetComponent<EnemyContactDamage>().enabled=false;}
             level.West.enabled=level.East.enabled=false;
         }
         [UnityTearDown] public IEnumerator Cleanup()
@@ -37,7 +37,7 @@ namespace Possession.Tests
             Assert.That(charge.Count,Is.Zero);Assert.That(pc.PossessDuration,Is.EqualTo(12));
             foreach(string zone in new[]{"G1","G2","G3","G4","G5","G6","U1","U2","U3","U4","U5","U6","D1","D2","D3","D4"})Assert.That(GameObject.Find(zone),Is.Not.Null,zone);
             foreach(var enemy in level.Hosts)
-            {Assert.That(enemy.GetComponent<CharacterController>(),Is.Not.Null);Assert.That(enemy.CurrentHP,Is.EqualTo(enemy is HeavyEnemy?5:3));Assert.That(enemy.GetComponent<EnemyContactDamage>(),Is.Not.Null);Assert.That(enemy.GetComponents<Level03AlarmLink>().Length,Is.LessThanOrEqualTo(1));Assert.That(enemy.GetComponents<Level03EnemyPressure>().Length,Is.EqualTo(1));}
+            {Assert.That(enemy.GetComponent<CharacterController>(),Is.Not.Null);Assert.That(enemy.CurrentHP,Is.EqualTo(enemy is HeavyEnemy?5:3));Assert.That(enemy.GetComponents<EnemyContactDamage>().Length,Is.EqualTo(1));Assert.That(enemy.GetComponents<Level03AlarmLink>().Length,Is.LessThanOrEqualTo(1));Assert.That(enemy.GetComponent<VisionConeView>(),Is.Not.Null);Assert.That(enemy.VisionAngle,Is.EqualTo(45f));}
         }
         [UnityTest] public IEnumerator FloorsBlockPossessionAndPickupsAndOverheadRenderingIsOnlyVisual()
         {
@@ -114,7 +114,8 @@ namespace Possession.Tests
         [UnityTest] public IEnumerator LinkedWitnessWarnsThenLatchesAndJunctionDoesNotClearExistingAlarm()
         {
             var watcher=Host("Upper_Guard_1");var suspect=Host("Upper_Heavy_5");yield return Possess("K7",suspect);
-            Move(watcher,Map(17,22,Upper));Move(suspect,Map(20,22,Upper));watcher.transform.forward=Vector3.right;Physics.SyncTransforms();
+            Move(watcher,Map(17,22,Upper));Move(suspect,Map(18.3f,22,Upper));watcher.transform.forward=Vector3.right;Physics.SyncTransforms();
+            watcher.transform.forward=Vector3.left;Assert.That(level.West.CanObserve(watcher,suspect.transform),Is.False,"Alarm must respect the displayed cone.");watcher.transform.forward=Vector3.right;Physics.SyncTransforms();
             level.West.enabled=true;Assert.That(level.West.CanObserve(watcher,suspect.transform),Is.True,"Sight blocked: "+SightBlocker(watcher,suspect));yield return new WaitForSeconds(1f);Assert.That(level.West.Latched,Is.False);Assert.That(level.West.Suspicion,Is.GreaterThan(0));
             yield return new WaitForSeconds(2.25f);Assert.That(level.West.Latched,Is.True);Target("JW").OnHit();yield return null;Assert.That(level.West.Connected,Is.False);Assert.That(level.West.Latched,Is.True);
             Wall("PW").TakeDamage(2);yield return null;yield return null;Assert.That(level.West.Latched,Is.False);Assert.That(level.West.Disabled,Is.True);Assert.That(Gate("Gate_A").IsOpen,Is.True);
@@ -181,6 +182,7 @@ namespace Possession.Tests
         [UnityTest] public IEnumerator GuardsNeedVisibleNoticeTimeAndChaseSlowerThanThePlayerBody()
         {
             var guard=Host("Ground_Guard_3");Move(guard,Map(18,22));level.Spirit.RestoreAt(Map(18,23.3f));
+            guard.transform.rotation=Quaternion.LookRotation(Vector3.back);Physics.SyncTransforms();
             typeof(EnemyBase).GetField("waypointWaitTimer",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(guard,8f);guard.enabled=true;Physics.SyncTransforms();
             yield return new WaitForSeconds(1f);Assert.That(guard.IsChasing,Is.False,"A Guard must not chase immediately.");
             var screen=GameObject.CreatePrimitive(PrimitiveType.Cube);screen.name="Temporary sight blocker";screen.transform.position=(guard.transform.position+level.Spirit.transform.position)*.5f;screen.transform.localScale=new Vector3(2,3,.3f);Physics.SyncTransforms();
@@ -191,6 +193,78 @@ namespace Possession.Tests
             Assert.That(delta.magnitude,Is.InRange(.15f,.8f),"Pursuit should be slower than the controllable Guard.");
             Assert.That(charge.TryCollect(),Is.True);Approach(guard);Invoke(pc,"Possess",guard);Assert.That(pc.PossessedEnemy,Is.SameAs(guard));Assert.That(guard.MoveSpeed,Is.EqualTo(3.25f));
         }
+        [Test] public void FrontFacingPossessionKeepsTheChargeAndBehindTheConeSpendsIt()
+        {
+            var guard=Host("Ground_Guard_3");Move(guard,Map(18,22));level.Spirit.RestoreAt(guard.transform.position+Vector3.right*2f);
+            guard.transform.forward=Vector3.right;Physics.SyncTransforms();Assert.That(charge.TryCollect(),Is.True);
+            Assert.That(guard.CanSee(level.Spirit.transform),Is.True);Invoke(pc,"Possess",guard);
+            Assert.That(pc.CurrentState,Is.EqualTo(PlayerState.Spirit));Assert.That(charge.HasCharge,Is.True);
+            guard.transform.forward=Vector3.left;Physics.SyncTransforms();Invoke(pc,"Possess",guard);
+            Assert.That(pc.PossessedEnemy,Is.SameAs(guard));Assert.That(charge.HasCharge,Is.False);
+        }
+        [UnityTest] public IEnumerator GuardsShootOnSightOnBothFloorsAfterTheWarning()
+        {
+            var spiritBody=level.Spirit.GetComponent<Rigidbody>();spiritBody.useGravity=false;spiritBody.constraints=RigidbodyConstraints.FreezeAll;
+            foreach(var encounter in new[]{("Ground_Guard_3",0f),("Upper_Guard_6",Upper)})
+            {
+                var guard=Host(encounter.Item1);Move(guard,Map(17,22,encounter.Item2));
+                level.Spirit.RestoreAt(guard.transform.position+Vector3.right*2.7f);guard.transform.forward=Vector3.right;
+                SetBase(guard,"waypointWaitTimer",10f);Set(level.Spirit,"nextDamageTime",Time.time);Physics.SyncTransforms();
+                int hp=level.Spirit.CurrentHP;var attack=guard.GetComponent<EnemyContactDamage>();guard.enabled=attack.enabled=true;
+                yield return new WaitForSeconds(1f);Assert.That(guard.IsChasing,Is.False);Assert.That(level.Spirit.CurrentHP,Is.EqualTo(hp));
+                yield return new WaitForSeconds(1.3f);Assert.That(guard.IsChasing,Is.True);Assert.That(guard.IsHostile,Is.False);Assert.That(level.Spirit.CurrentHP,Is.EqualTo(hp));
+                float until=Time.time+2.5f;
+                while(level.Spirit.CurrentHP==hp&&Time.time<until)yield return null;
+                Assert.That(level.Spirit.CurrentHP,Is.EqualTo(hp-1),encounter.Item1+" did not land a real projectile after spotting the Spirit.");
+                attack.enabled=guard.enabled=false;
+            }
+        }
+        [UnityTest] public IEnumerator HeavyCancelsItsTelegraphedSmashWhenSightIsBlocked()
+        {
+            var heavy=Host("Ground_Heavy_7");Move(heavy,Map(17,22));level.Spirit.RestoreAt(heavy.transform.position+Vector3.right*2.4f);
+            var spiritBody=level.Spirit.GetComponent<Rigidbody>();spiritBody.useGravity=false;spiritBody.constraints=RigidbodyConstraints.FreezeAll;
+            heavy.transform.forward=Vector3.right;SetBase(heavy,"waypointWaitTimer",10f);Set(level.Spirit,"nextDamageTime",Time.time);Physics.SyncTransforms();
+            Assert.That(heavy.CanSee(level.Spirit.transform),Is.True,"Heavy encounter must start with a clear view.");
+            var attack=heavy.GetComponent<EnemyContactDamage>();heavy.enabled=attack.enabled=true;int hp=level.Spirit.CurrentHP;
+            float warningDeadline=Time.time+6f;
+            while(Read<float>(attack,"smashAt")<=0f&&Time.time<warningDeadline)yield return null;
+            Assert.That(heavy.IsChasing,Is.True);Assert.That(Read<float>(attack,"smashAt"),Is.GreaterThan(Time.time));Assert.That(level.Spirit.CurrentHP,Is.EqualTo(hp));
+            var wall=GameObject.CreatePrimitive(PrimitiveType.Cube);wall.transform.position=(heavy.transform.position+level.Spirit.transform.position)*.5f;wall.transform.localScale=new Vector3(.3f,3f,2f);Physics.SyncTransforms();
+            yield return null;yield return null;Assert.That(Read<float>(attack,"smashAt"),Is.Zero);
+            yield return new WaitForSeconds(2.3f);Assert.That(level.Spirit.CurrentHP,Is.EqualTo(hp));Object.Destroy(wall);
+        }
+        [UnityTest] public IEnumerator SearchReacquiresImmediatelyAndReturnsAfterLosingSight()
+        {
+            var guard=Host("Ground_Guard_3");Move(guard,Map(17,22));level.Spirit.RestoreAt(guard.transform.position+Vector3.right*2.7f);
+            guard.transform.forward=Vector3.right;SetBase(guard,"waypointWaitTimer",10f);guard.enabled=true;Physics.SyncTransforms();
+            yield return new WaitForSeconds(2.3f);Assert.That(guard.IsChasing,Is.True);
+            level.Spirit.RestoreAt(Map(4,24));yield return null;yield return null;Assert.That(guard.IsSearching,Is.True);
+            level.Spirit.RestoreAt(guard.transform.position+Vector3.right*2.5f);Physics.SyncTransforms();yield return null;yield return null;
+            Assert.That(guard.IsChasing,Is.True,"Search reacquisition must not wait another two seconds.");Assert.That(guard.IsSearching,Is.False);
+            level.Spirit.RestoreAt(Map(4,24));yield return new WaitForSeconds(1.8f);Assert.That(guard.IsSearching,Is.False);Assert.That(guard.IsChasing,Is.False);
+        }
+        [UnityTest] public IEnumerator SharedAttacksCannotReachTheSpiritThroughTheOtherFloor()
+        {
+            level.Spirit.RestoreAt(Map(8,7));Set(level.Spirit,"nextDamageTime",Time.time);int hp=level.Spirit.CurrentHP;
+            foreach(string name in new[]{"Upper_Heavy_7","Upper_Guard_6"})
+            {
+                var host=Host(name);Move(host,Map(8,7,Upper));var attack=host.GetComponent<EnemyContactDamage>();Set(attack,"firstAttackDelay",0f);Set(attack,"smashWindup",.1f);
+                host.OnForcedEject(5f);attack.enabled=host.enabled=true;EventBus.Ejected?.Invoke(host,true);
+                yield return new WaitForSeconds(.5f);Assert.That(level.Spirit.CurrentHP,Is.EqualTo(hp));Assert.That(Read<float>(attack,"smashAt"),Is.Zero);
+                Assert.That(Object.FindObjectsByType<EnemyShot>(FindObjectsSortMode.None).Length,Is.Zero);
+                host.enabled=attack.enabled=false;
+            }
+        }
+        [UnityTest] public IEnumerator SharedDamageUsesSpawnGraceAndOneRecoveryWindowForAllEnemies()
+        {
+            int hp=level.Spirit.CurrentHP;level.Spirit.TakeDamage(1);Assert.That(level.Spirit.CurrentHP,Is.EqualTo(hp));
+            Set(level.Spirit,"nextDamageTime",Time.time);level.Spirit.TakeDamage(1);level.Spirit.TakeDamage(1);
+            Assert.That(level.Spirit.CurrentHP,Is.EqualTo(hp-1),"Simultaneous attacks must not stack damage.");
+            yield return new WaitForSeconds(5.1f);level.Spirit.TakeDamage(1);Assert.That(level.Spirit.CurrentHP,Is.EqualTo(hp-2));
+        }
+        private static T Read<T>(object obj,string field)
+        {for(var t=obj.GetType();t!=null;t=t.BaseType){var f=t.GetField(field,BindingFlags.NonPublic|BindingFlags.Instance|BindingFlags.DeclaredOnly);if(f!=null)return (T)f.GetValue(obj);}throw new System.MissingFieldException(field);}
+        private static void SetBase(object obj,string field,object value)=>typeof(EnemyBase).GetField(field,BindingFlags.NonPublic|BindingFlags.Instance).SetValue(obj,value);
         private static string SightBlocker(EnemyBase watcher,EnemyBase suspect)
         {
             Physics.Linecast(watcher.transform.position+Vector3.up*.25f,suspect.transform.position,out var hit,~0,QueryTriggerInteraction.Ignore);
@@ -203,8 +277,8 @@ namespace Possession.Tests
         private void Collect(string name){var p=GameObject.Find(name).GetComponent<PossessionChargePickup>();level.Spirit.RestoreAt(p.transform.position+Vector3.up*1.05f);Physics.SyncTransforms();Assert.That(p.TryCollect(charge),Is.True,name);}
         private void Approach(EnemyBase host)
         {
-            foreach(var direction in new[]{Vector3.right,Vector3.back,Vector3.left,Vector3.forward})
-            {var p=host.transform.position+direction*1.8f;if(!Physics.CheckCapsule(p+Vector3.up*.4f,p-Vector3.up*.4f,.5f,1,QueryTriggerInteraction.Ignore)){level.Spirit.RestoreAt(p);Physics.SyncTransforms();return;}}
+            foreach(var direction in new[]{-host.transform.forward,Vector3.right,Vector3.back,Vector3.left,Vector3.forward})
+            {var p=host.transform.position+direction*1.8f;if(!Physics.CheckCapsule(p+Vector3.up*.4f,p-Vector3.up*.4f,.5f,1,QueryTriggerInteraction.Ignore)){level.Spirit.RestoreAt(p);Physics.SyncTransforms();if(host.CanBePossessedFrom(level.Spirit.transform))return;}}
             Assert.Fail("No clear approach to "+host.name);
         }
         private IEnumerator FireAt(string name,Vector3 position)

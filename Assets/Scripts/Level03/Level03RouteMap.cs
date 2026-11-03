@@ -33,7 +33,7 @@ namespace Possession
             if(IsOpen||overlay==null||Time.timeScale<=0f||GameManager.Instance.CurrentState!=LevelState.InProgress)return false;
             previousScale=Time.timeScale;inputs.Clear();
             Suspend(level.Possession);Suspend(level.Spirit);
-            foreach(var host in level.Hosts){Suspend(host.GetComponent<EnemyContactDamage>());Suspend(host.GetComponent<Level03EnemyPressure>());}
+            foreach(var host in level.Hosts)Suspend(host.GetComponent<EnemyContactDamage>());
             IsOpen=true;Time.timeScale=0f;overlay.SetActive(true);Refresh();return true;
         }
         public void Close()

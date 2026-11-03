@@ -103,7 +103,8 @@ namespace Possession.Editor
             foreach(var item in styles)Object.DestroyImmediate(item);
             FinalizePatrols(world);
             LevelBuildKit.ApplyConfig(LevelConfigAssets.Load("Level_03"),manager,spirit.gameObject);
-            foreach(var h in world.GetComponentsInChildren<EnemyBase>()){Set(h,"detectionRange",h is HeavyEnemy?2.8f:3.2f);Set(h,"chaseStopDistance",1.8f);Set(h,"aiSpeedMultiplier",.4f);Set(h,"detectionDelay",2f);Set(h,"requireLineOfSight",true);Set(h,"waypointWaitTime",1.5f);}
+            Set(spirit,"damageCooldown",5f);Set(spirit,"initialDamageGrace",12f);
+            foreach(var h in world.GetComponentsInChildren<EnemyBase>()){Set(h,"detectionRange",h is HeavyEnemy?2.8f:3.2f);Set(h,"chaseStopDistance",1.8f);Set(h,"aiSpeedMultiplier",.4f);Set(h,"detectionDelay",2f);Set(h,"requireLineOfSight",true);Set(h,"waypointWaitTime",1.5f);Set(h,"visionAngle",45f);Set(h,"loseSightSearchTime",1.5f);}
             EditorSceneManager.MarkSceneDirty(scene);EditorSceneManager.SaveScene(scene,ScenePath);LevelBuildKit.RegisterScene(ScenePath);AssetDatabase.SaveAssets();
             Debug.Log("Level 3 Alarm Compound built: two floors, three physical stairs, nine hosts, ten charge sources, two alarm circuits.");
         }
@@ -185,10 +186,8 @@ namespace Possession.Editor
             bool heavy=data.kind=="W";string name=(floor==0?"Ground_":"Upper_")+(heavy?"Heavy_":"Guard_")+index;
             var go=Object.Instantiate(heavy?heavyStyle:guardStyle,parent);go.name=name;go.transform.position=Map(data.x,data.y,floor,heavy?1.45f:1.15f);go.SetActive(true);var enemy=go.GetComponent<EnemyBase>();Set(enemy,"moveSpeed",heavy?2.2f:3.25f);Set(enemy,"patrolStartDelay",index*.28f);go.GetComponent<CharacterController>().minMoveDistance=0;
             if(go.GetComponent<HuntedEnemyPressure>()!=null)Object.DestroyImmediate(go.GetComponent<HuntedEnemyPressure>());
-            foreach(var old in go.GetComponents<Level03EnemyPressure>())Object.DestroyImmediate(old);
             foreach(var old in go.GetComponents<Level03AlarmLink>())Object.DestroyImmediate(old);
             foreach(var child in go.GetComponentsInChildren<Transform>(true).Where(t=>t.name=="Linked antenna").ToArray())Object.DestroyImmediate(child.gameObject);
-            go.AddComponent<Level03EnemyPressure>();
             var spawn=new GameObject("SpawnPoint_"+name);spawn.transform.SetParent(parent);spawn.transform.position=go.transform.position;
             // Short local patrols keep each enemy inside its encounter and clear of stair holes.
             Physics.SyncTransforms();
@@ -197,6 +196,7 @@ namespace Possession.Editor
                 if(!Physics.SphereCast(go.transform.position,.7f,direction,out _,1.3f,1,QueryTriggerInteraction.Ignore)) {end=go.transform.position+direction*1.2f;break;}
             var points=new Transform[2];for(int i=0;i<2;i++){var p=new GameObject(name+"_WP"+i);p.transform.SetParent(parent);p.transform.position=i==0?go.transform.position:end;points[i]=p.transform;}Array(enemy,"waypoints",points.Cast<Object>().ToArray());
             var attacks=go.GetComponent<EnemyContactDamage>();Set(attacks,"firstAttackDelay",heavy?2f:3.5f);Set(attacks,"shootInterval",5f);Set(attacks,"smashWindup",2.2f);Set(attacks,"smashCooldown",5f);
+            Set(attacks,"spotReactionTime",1.2f);
             if(data.wing!="")
             {var link=go.AddComponent<Level03AlarmLink>();link.wing=data.wing=="west"?AlarmWing.West:AlarmWing.East;var dot=Cube(go.transform,"Linked antenna",go.transform.position+Vector3.up*1.4f,Vector3.one*.18f,Mat(data.wing+"_Link",data.wing=="west"?new Color(.2f,.6f,1f):new Color(.8f,.4f,1f),true));Object.DestroyImmediate(dot.GetComponent<Collider>());}
         }
