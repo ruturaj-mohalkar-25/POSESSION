@@ -34,7 +34,7 @@ namespace Possession.Tests
         {
             Assert.That(Object.FindObjectsByType<GuardEnemy>(FindObjectsSortMode.None).Length,Is.EqualTo(5));
             Assert.That(Object.FindObjectsByType<HeavyEnemy>(FindObjectsSortMode.None).Length,Is.EqualTo(3));
-            Assert.That(Object.FindObjectsByType<PossessionChargePickup>(FindObjectsSortMode.None).Length,Is.EqualTo(4));
+            Assert.That(Object.FindObjectsByType<PossessionChargePickup>(FindObjectsSortMode.None).Length,Is.EqualTo(8));
             foreach(string room in new[]{"R1","R2","R3","R4","R5","R6","R7","D1","D2","D3"})Assert.That(GameObject.Find(room),Is.Not.Null);
             Assert.That(charge.Count,Is.Zero);Assert.That(pc.CanStartPossession,Is.False);Assert.That(level.CanExit,Is.False);
             Assert.That(Object.FindObjectsByType<HUDManager>(FindObjectsSortMode.None).Length,Is.EqualTo(1));
@@ -77,12 +77,13 @@ namespace Possession.Tests
         }
         [UnityTest] public IEnumerator FullCapacityAndOccupiedBodiesCannotWastePickups()
         {
-            Collect("C1");var optional=Pickup("C4");level.Spirit.RestoreAt(optional.transform.position+Vector3.up*1.05f);
+            Collect("C1");Collect("C2");Collect("C3");Assert.That(charge.Count,Is.EqualTo(3));
+            var optional=Pickup("C4");level.Spirit.RestoreAt(optional.transform.position+Vector3.up*1.05f);
             Assert.That(optional.TryCollect(charge),Is.False);Assert.That(optional.IsReady,Is.True);
             var host=Host("Guard_Courtyard");Approach(host);Invoke(pc,"Possess",host);
             level.Spirit.transform.position=optional.transform.position+Vector3.up*1.05f;
             Assert.That(optional.TryCollect(charge),Is.False);Assert.That(optional.IsReady,Is.True);
-            Assert.That(pc.TryEject(false),Is.True);Assert.That(charge.Count,Is.Zero);
+            Assert.That(pc.TryEject(false),Is.True);Assert.That(charge.Count,Is.EqualTo(2));
             yield return null;
         }
         [UnityTest] public IEnumerator ReformingSourcesPermitRetriesAndTheOptionalShardIsOneUse()
