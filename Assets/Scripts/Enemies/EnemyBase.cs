@@ -19,6 +19,15 @@ namespace Possession
         [SerializeField, Min(0.01f)] protected float waypointArrivalDistance = 0.3f;
         [SerializeField, Min(0f)] protected float chaseStopDistance = 1.5f;
         [SerializeField, Min(0f)] protected float patrolStartDelay;
+        // After losing sight of the Spirit, walk to where it was last seen and look
+        // around for this long before going back to the nearest patrol waypoint.
+        [SerializeField, Min(0f)] protected float loseSightSearchTime = 1.5f;
+
+        [Header("Vision Cone")]
+        // Full angle of the cone in front of the enemy. detectionRange is its length.
+        // The enemy only spots the Spirit inside the cone with a clear line of sight,
+        // and can only be possessed when it cannot see the Spirit (e.g. from behind).
+        [SerializeField, Range(1f, 360f)] protected float visionAngle = 45f;
 
         protected int currentHP;
         protected bool isPossessed;
@@ -30,15 +39,21 @@ namespace Possession
         private float waypointWaitTimer;
         private float verticalSpeed;
         private SpiritController chaseTarget;
+        private Vector3 lastSeenPosition;
+        private float searchTimer;
 
         public bool CanBePossessed => !isPossessed && !isHostile && currentHP > 0;
         public int CurrentHP => currentHP;
         public bool IsChasing => !isPossessed && chaseTarget != null
             && chaseTarget.isActiveAndEnabled;
-        public bool IsIdle => !isPossessed && !IsChasing && waypointWaitTimer > 0f;
+        public bool IsIdle => !isPossessed && !IsChasing && !IsSearching && waypointWaitTimer > 0f;
+        // True while the enemy checks the Spirit's last seen position after losing sight of it.
+        public bool IsSearching => !isPossessed && !isHostile && searchTimer > 0f;
         // True while the enemy is in its post-eject hostile state (chasing or not).
         public bool IsHostile => isHostile;
         public float DetectionRange => detectionRange;
+        public float VisionAngle => visionAngle;
+        public bool IsPossessed => isPossessed;
         public float PatrolStartDelay => patrolStartDelay;
 
         // Lets a readability/feel cue retune this enemy's speed at runtime without
@@ -95,10 +110,31 @@ namespace Possession
 
         protected virtual void HandlePatrol()
         {
-            chaseTarget = DetectSpirit();
-            if (IsChasing)
+            SpiritController seen = DetectSpirit();
+            if (seen != null)
             {
-                MoveTowards(chaseTarget.transform.position, chaseStopDistance);
+                chaseTarget = seen;
+                searchTimer = 0f;
+                lastSeenPosition = seen.transform.position;
+                MoveTowards(lastSeenPosition, chaseStopDistance);
+                return;
+            }
+
+            if (chaseTarget != null)
+            {
+                // Lost sight this frame: search the last seen position first.
+                chaseTarget = null;
+                searchTimer = loseSightSearchTime;
+                if (searchTimer <= 0f)
+                    ResumePatrolAtNearestWaypoint();
+            }
+
+            if (searchTimer > 0f)
+            {
+                searchTimer -= Time.deltaTime;
+                MoveTowards(lastSeenPosition, waypointArrivalDistance);
+                if (searchTimer <= 0f)
+                    ResumePatrolAtNearestWaypoint();
                 return;
             }
 
@@ -155,6 +191,7 @@ namespace Possession
         {
             isPossessed = true;
             chaseTarget = null;
+            searchTimer = 0f;
             waypointWaitTimer = 0f;
             var ability = GetComponent<Ability>();
             if (ability != null) ability.ResetUses();
@@ -164,6 +201,7 @@ namespace Possession
         {
             isPossessed = false;
             chaseTarget = null;
+            searchTimer = 0f;
         }
 
         public virtual void OnForcedEject(float hostileDuration)
@@ -171,8 +209,37 @@ namespace Possession
             isPossessed = false;
             isHostile = true;
             hostileTimer = hostileDuration;
+            searchTimer = 0f;
             // PossessionController calls this before the spirit becomes visible again.
             chaseTarget = FindFirstObjectByType<SpiritController>(FindObjectsInactive.Include);
+        }
+
+        // True when the target is inside the vision cone and nothing solid blocks the view.
+        public bool CanSee(Transform target)
+        {
+            if (target == null) return false;
+            Vector3 toTarget = target.position - transform.position;
+            toTarget.y = 0f;
+            float distance = toTarget.magnitude;
+            if (distance > detectionRange) return false;
+
+            Vector3 forward = transform.forward;
+            forward.y = 0f;
+            if (distance > 0.01f && forward.sqrMagnitude > 0.0001f
+                && Vector3.Angle(forward, toTarget) > visionAngle * 0.5f)
+                return false;
+
+            if (!Physics.Linecast(transform.position, target.position, out RaycastHit hit,
+                    ~0, QueryTriggerInteraction.Ignore))
+                return true;
+            return hit.collider.transform.IsChildOf(target)
+                || hit.collider.transform.IsChildOf(transform);
+        }
+
+        // Possession only works from outside the vision cone, for example from behind.
+        public bool CanBePossessedFrom(Transform spirit)
+        {
+            return CanBePossessed && !CanSee(spirit);
         }
 
         public virtual void TakeDamage(int amount)
@@ -198,6 +265,8 @@ namespace Possession
             {
                 var spirit = hit.GetComponentInParent<SpiritController>();
                 if (spirit == null || !spirit.isActiveAndEnabled || spirit.CurrentHP <= 0)
+                    continue;
+                if (!CanSee(spirit.transform))
                     continue;
 
                 float distance = (spirit.transform.position - transform.position).sqrMagnitude;
@@ -277,7 +346,10 @@ namespace Possession
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(transform.position, detectionRange);
+            Vector3 left = Quaternion.Euler(0f, -visionAngle * 0.5f, 0f) * transform.forward;
+            Vector3 right = Quaternion.Euler(0f, visionAngle * 0.5f, 0f) * transform.forward;
+            Gizmos.DrawLine(transform.position, transform.position + left * detectionRange);
+            Gizmos.DrawLine(transform.position, transform.position + right * detectionRange);
             if (waypoints == null) return;
 
             Gizmos.color = Color.cyan;

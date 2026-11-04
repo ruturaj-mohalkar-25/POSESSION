@@ -67,7 +67,8 @@ namespace Possession
 
             bool asSpirit = spirit != null && spirit.gameObject.activeInHierarchy
                 && (possession == null || possession.CurrentState == PlayerState.Spirit);
-            EnemyReadability green = asSpirit ? PickPossessTarget() : null;
+            EnemyReadability green = asSpirit && (possession == null || possession.CanStartPossession)
+                ? PickPossessTarget() : null;
 
             foreach (var cue in cues)
             {
@@ -96,7 +97,7 @@ namespace Possession
             {
                 if (cue == null) continue;
                 var enemy = cue.GetComponent<EnemyBase>();
-                if (enemy == null || !enemy.isActiveAndEnabled || !enemy.CanBePossessed) continue;
+                if (enemy == null || !enemy.isActiveAndEnabled || !enemy.CanBePossessedFrom(spirit)) continue;
 
                 float dist = Vector3.Distance(spirit.position, enemy.transform.position);
                 if (dist > bestDist || !CanSee(enemy)) continue;
