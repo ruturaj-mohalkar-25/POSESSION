@@ -1,0 +1,25 @@
+{
+    "sourceCommit": "11838205dfba9581799c5245e38f86b4b396b63e",
+    "integrationBase": "3b0ffaa2a87024293085f750aa92f110efaba32e",
+    "collectiblesRevision": "90c36f3e7b8070b3b1cb073012ee17ca1a7526c0",
+    "ejectionRevision": "7364f5dc57c3047a7037f1b988552ba635ff720f",
+    "tutorialRevision": "39c248174210b03a6b5df153e24b0b9858bbfd0d",
+    "startingCharges": 1,
+    "maxCharges": 0,
+    "campaignOrder": [
+        "Level_01",
+        "Level_03",
+        "Level_02"
+    ],
+    "unityVersion": "6000.3.22f1",
+    "builtAtUtc": "2026-11-03T22:32:19.2838360Z",
+    "scenes": [
+        "Assets/Scenes/MainMenu.unity",
+        "Assets/Scenes/Tutorial.unity",
+        "Assets/Scenes/Level_01.unity",
+        "Assets/Scenes/Level_03.unity",
+        "Assets/Scenes/Level_02.unity"
+    ],
+    "compression": "gzip",
+    "decompressionFallback": true
+}
