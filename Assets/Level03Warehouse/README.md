@@ -47,11 +47,15 @@ WASD move, Space jump, E possess/eject, LMB shoot/smash. Collect a green crystal
 
 ## Ejection protection and enemy rooms
 
-Manual ejection, timer expiry and a completed return from a defeated host grant the Spirit **two seconds of damage protection** in this scene. A pale halo shows the remaining grace period. Damage and health/damage events are ignored during that window; ordinary damage resumes afterward. Movement and collision remain enabled.
+Manual ejection, timer expiry and a completed return from a defeated host grant the Spirit **two seconds of damage protection** in this scene. A blue bubble, upright arch and draining ground ring show the remaining grace period. Damage and health/damage events are ignored during that window; ordinary damage resumes afterward. Movement and collision remain enabled.
 
 All eight NPCs are assigned the floor bounds of their room (the right-junction Heavy uses its junction area). Enemies stop pursuing when the Spirit leaves that area, cancel attacks across its boundary and keep autonomous movement inside. The rule applies to patrol detection and post-eject hostility. Possessed bodies can still cross rooms to solve puzzles. If the player leaves a body outside its assigned home, it stops pursuing there and resumes returning to its own patrol once its hostile recovery ends.
 
-The shared Spirit has a passive protection API; this scene's `WarehouseEjectShield` requests it after a real ejection. The shared enemy and attack scripts have optional home-bound checks, enabled only on Warehouse's scene instances. Original scenes and prefabs retain their earlier defaults. These are shared hooks to merge alongside this level, rather than a separate health or enemy implementation.
+The shared `PossessionController` grants protection directly after finding a valid eject location, before any eject callbacks. It no longer depends on a visual component or possession-event subscription. The two-second rule applies to every successful ejection using that controller, including older campaign scenes. `WarehouseEjectShield` only displays the actual protection state.
+
+Ejection prefers the enemy's rear, then rear diagonals, sides and finally its front if needed. Ground checks, capsule clearance and a swept path check prevent spawning inside or through a wall. If the rear is blocked, a safe alternative is chosen.
+
+The shared enemy and attack scripts have optional home-bound checks, enabled only in Warehouse. `WarehouseSceneSafety` also repairs missing Warehouse visuals and room assignments on Play/scene load, covering older open scenes whose in-memory setup predates the saved builder changes. It is idempotent and leaves other scenes' room rules unchanged. These hooks use the shared health and enemy systems, rather than duplicating them.
 
 ## Health dependency
 
@@ -61,14 +65,14 @@ The green cross remains a **placement socket, not a functioning heal**. Current 
 
 Use **Possession → Level Design → Level 3 Warehouse → Build and Open**. The builder copies the latest Level 1 shell and actors, then generates this scene from the authored JSON. Rebuilding replaces edits made only in the generated scene; keep durable layout changes in that JSON. Boundary generation supports the new negative plan coordinates, so the original built rooms do not shift to make room for the extension.
 
-After the shared gameplay work merges, bring integration into this local branch and rebuild to inherit current shared components. Resolve any changed APIs and retest before registering the campaign order. Future merge conflicts cannot be guaranteed absent. The ejection-protection API and optional room-bound checks touch the shared Spirit, EnemyBase and enemy-attack scripts. Existing prefabs, campaign scenes and build settings are unchanged.
+After the shared gameplay work merges, bring integration into this local branch and rebuild to inherit current shared components. Resolve any changed APIs and retest before registering the campaign order. Future merge conflicts cannot be guaranteed absent. The ejection-protection API, rear spawn search and optional room checks touch the shared Spirit, PossessionController, EnemyBase and enemy-attack scripts. Existing prefabs, campaign scenes and build settings are unchanged.
 
 ## Validation
 
-The complete PlayMode regression run passes **190/190 tests**, including the original scenes and the Warehouse checks.
+The complete PlayMode regression suite passes **195/195 tests**, including the original scenes and Warehouse.
 
-**28 Warehouse PlayMode checks pass**: expected shared components/counts; structural edge sealing across the extension; wider-room and doorway clearance; all distinct hits with animated leaves; each original route; recovery entrance sealing and retreat; real Guard shots to all sixteen targets; hostile-shot rejection; shared damage/smash rules; forced-eject persistence; four-target progress at three hits; all four initial/final route combinations; Machine divider bypass prevention; real local-charge retries for Control and Machine; and shared completion, occupied-body acceptance and replay reset.
+**33 Warehouse PlayMode checks pass**: expected shared components/counts; structural edge sealing across the extension; wider-room and doorway clearance; all distinct hits with animated leaves; each original route; recovery entrance sealing and retreat; real Guard shots to all sixteen targets; hostile-shot rejection; shared damage/smash rules; forced-eject persistence; four-target progress at three hits; all four initial/final route combinations; Machine divider bypass prevention; real local-charge retries for Control and Machine; and shared completion, occupied-body acceptance and replay reset.
 
-Additional checks verify manual/forced-eject protection, actual hostile bullets during the shield, damage after expiry, no shield on spawn or an invalid ejection, all host room assignments, chase termination at a doorway, hostile Heavy attack cancellation and player-controlled movement outside home bounds.
+Additional checks verify manual/forced-eject protection, actual hostile bullets during the shield, damage after expiry, no shield on spawn or an invalid ejection, all host room assignments, chase termination at a doorway, hostile Heavy attack cancellation and player-controlled movement outside home bounds, clear rear spawn for both host types, blocked rear fallback without teleporting through geometry, protection without a visual component and recovery of older open-scene setup.
 
 Screenshots inspect the entry, existing wings, recovery, Transfer Lobby, both new final branches and the relocated extraction area. These automated and visual checks do not replace human combat testing. Work stays local; no remote push, PR or deployment is created.

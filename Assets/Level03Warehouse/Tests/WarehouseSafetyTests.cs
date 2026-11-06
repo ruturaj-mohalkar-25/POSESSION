@@ -43,7 +43,7 @@ namespace Possession.Warehouse.Tests
             var host=Host("Sorting_hall_Guard");Possess(host);Set(possession,"possessTimer",.01f);yield return new WaitForSeconds(.06f);
             Assert.That(possession.CurrentState,Is.EqualTo(PlayerState.Spirit));Assert.That(host.IsHostile,Is.True);
             Assert.That(spirit.DamageProtectionRemaining,Is.InRange(1.85f,2f));int hp=spirit.CurrentHP;
-            var projectile=Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Projectile.prefab"),spirit.transform.position+Vector3.left*2f,Quaternion.LookRotation(Vector3.right));
+            var projectile=Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Projectile.prefab"),spirit.transform.position-host.transform.forward*2f,Quaternion.LookRotation(host.transform.forward));
             projectile.AddComponent<EnemyShot>().Init(1,6f);yield return new WaitForSeconds(.25f);
             Assert.That(spirit.CurrentHP,Is.EqualTo(hp));Assert.That(projectile==null,Is.True,"The bullet should be consumed on the protected Spirit.");
         }
@@ -88,6 +88,49 @@ namespace Possession.Warehouse.Tests
             Assert.That(possession.TryEject(false),Is.True);Assert.That(host.CanPursue(spirit.transform),Is.False);
             host.enabled=true;yield return new WaitForSeconds(2f);
             Assert.That(host.IsInsideHome(host.transform.position),Is.True);Assert.That(host.IsChasing,Is.False);
+        }
+        [TestCase("Sorting_hall_Guard")] [TestCase("Machine_Heavy")]
+        public void ManualEjectPrefersBehindTheHostWhenClear(string name)
+        {
+            var host=Host(name);Possess(host);Assert.That(possession.TryEject(false),Is.True);
+            var offset=spirit.transform.position-host.transform.position;offset.y=0;
+            Assert.That(Vector3.Dot(offset.normalized,host.transform.forward),Is.LessThan(-.95f));
+            Assert.That(spirit.IsDamageProtected,Is.True);
+        }
+        [Test] public void RearWallUsesASafeSideWithoutEjectingThroughTheWall()
+        {
+            var host=Host("Sorting_hall_Guard");Move(host,Map(70,65),Vector3.forward);Possess(host);
+            var wall=new GameObject("Rear eject obstacle");wall.transform.SetPositionAndRotation(host.transform.position-host.transform.forward*1.5f,host.transform.rotation);
+            wall.AddComponent<BoxCollider>().size=new Vector3(3f,3f,.25f);Physics.SyncTransforms();
+            Assert.That(possession.TryEject(false),Is.True);
+            var offset=spirit.transform.position-host.transform.position;offset.y=0;
+            Assert.That(Vector3.Dot(offset,-host.transform.forward),Is.LessThan(1f),"Do not teleport past the blocked rear position.");
+            var capsule=spirit.GetComponent<CapsuleCollider>();
+            Assert.That(Physics.ComputePenetration(capsule,spirit.transform.position,spirit.transform.rotation,wall.GetComponent<Collider>(),wall.transform.position,wall.transform.rotation,out _,out _),Is.False);
+            Assert.That(spirit.IsDamageProtected,Is.True);
+        }
+        [UnityTest] public IEnumerator ProtectionDoesNotDependOnTheSceneHavingAVisualComponent()
+        {
+            Object.DestroyImmediate(spirit.GetComponent<WarehouseEjectShield>());
+            var host=Host("Sorting_hall_Guard");Possess(host);bool protectedAtEvent=false;
+            EventBus.Ejected+=(e,forced)=>protectedAtEvent=spirit.IsDamageProtected;
+            Assert.That(possession.TryEject(false),Is.True);Assert.That(protectedAtEvent,Is.True);
+            int hp=spirit.CurrentHP;spirit.TakeDamage(99);Assert.That(spirit.CurrentHP,Is.EqualTo(hp));
+            WarehouseSceneSafety.Install(SceneManager.GetActiveScene());yield return null;
+            Assert.That(spirit.GetComponent<WarehouseEjectShield>().IsVisible,Is.True);
+        }
+        [Test] public void OlderLoadedWarehouseSceneRecoversMissingVisualAndRoomAssignments()
+        {
+            Object.DestroyImmediate(spirit.GetComponent<WarehouseEjectShield>());
+            foreach(var enemy in Object.FindObjectsByType<EnemyBase>(FindObjectsSortMode.None))
+                typeof(EnemyBase).GetField("useHomeBounds",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(enemy,false);
+            WarehouseSceneSafety.Install(SceneManager.GetActiveScene());WarehouseSceneSafety.Install(SceneManager.GetActiveScene());
+            Assert.That(spirit.GetComponents<WarehouseEjectShield>().Length,Is.EqualTo(1));
+            foreach(var enemy in Object.FindObjectsByType<EnemyBase>(FindObjectsSortMode.None))
+            {
+                Assert.That(enemy.HasHomeBounds,Is.True,enemy.name);
+                Assert.That(enemy.IsInsideHome(enemy.transform.position),Is.True,enemy.name);
+            }
         }
         private void Possess(EnemyBase host)
         {

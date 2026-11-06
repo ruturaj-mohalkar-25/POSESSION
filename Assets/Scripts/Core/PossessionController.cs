@@ -31,6 +31,7 @@ namespace Possession
         public PlayerState CurrentState => currentState;
         public float PossessTimer => possessTimer;
         public float PossessDuration => possessDuration;
+        public float EjectProtectionSeconds => 2f;
         public EnemyBase PossessedEnemy => possessedEnemy;
         public bool CanStartPossession => GetComponent<PossessionCharge>() == null
             || GetComponent<PossessionCharge>().HasCharge && ejectCooldownTimer <= 0f;
@@ -153,6 +154,8 @@ namespace Possession
             if (!TryFindEjectionPosition(out Vector3 ejectPos))
                 return;
 
+            spirit.GrantDamageProtection(EjectProtectionSeconds);
+
             if (forced)
                 possessedEnemy.OnForcedEject(hostileTime);
             else
@@ -194,12 +197,15 @@ namespace Possession
             float halfHeight = Mathf.Max(radius, capsule.height * Mathf.Abs(scale.y) * 0.5f);
             Vector3 centerOffset = transform.TransformVector(capsule.center);
 
-            for (int ring = 0; ring < 2; ring++)
+            // Prefer behind, then rear diagonals, sides, and finally the front.
+            // Try both clearances for each direction without crossing solid geometry.
+            float[] angles = { 0f, 45f, -45f, 90f, -90f, 135f, -135f, 180f };
+            foreach (float angle in angles)
             {
-                for (int i = 0; i < 8; i++)
+                for (int ring = 0; ring < 2; ring++)
                 {
-                    Vector3 direction = Quaternion.AngleAxis(i * 45f, Vector3.up)
-                        * possessedEnemy.transform.forward;
+                    Vector3 direction = Quaternion.AngleAxis(angle, Vector3.up)
+                        * -possessedEnemy.transform.forward;
                     direction.y = 0f;
                     direction.Normalize();
                     float bodyExtent = Mathf.Abs(direction.x) * bounds.extents.x
@@ -207,9 +213,19 @@ namespace Possession
                     Vector3 candidate = bounds.center + direction
                         * (bodyExtent + radius + clearance + ring * 0.5f);
                     candidate -= new Vector3(centerOffset.x, 0f, centerOffset.z);
-                    if (TryGroundedPosition(candidate, bounds, centerOffset, radius,
-                        halfHeight, clearance, out position))
-                        return true;
+                    if (!TryGroundedPosition(candidate, bounds, centerOffset, radius,
+                        halfHeight, clearance, out position)) continue;
+                    Vector3 path = position + centerOffset - bounds.center;
+                    bool blocked = false;
+                    foreach (var hit in Physics.SphereCastAll(bounds.center, radius + clearance * .5f,
+                        path.normalized, path.magnitude, ~0, QueryTriggerInteraction.Ignore))
+                    {
+                        if (hit.collider.transform.IsChildOf(transform)
+                            || hit.collider.transform.IsChildOf(possessedEnemy.transform)) continue;
+                        blocked = true;
+                        break;
+                    }
+                    if (!blocked) return true;
                 }
             }
 

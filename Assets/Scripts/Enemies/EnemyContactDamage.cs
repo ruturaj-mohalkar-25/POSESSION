@@ -158,6 +158,11 @@ namespace Possession
 
         private void Shoot()
         {
+            // A Spirit can eject behind a stationary Guard. Aim the muzzle before firing.
+            Vector3 facing = spirit.transform.position - transform.position;
+            facing.y = 0f;
+            if (facing.sqrMagnitude < .01f) return;
+            transform.rotation = Quaternion.LookRotation(facing.normalized);
             Vector3 origin = firePoint != null ? firePoint.position : transform.position + Vector3.up * 0.5f;
             Vector3 dir = spirit.transform.position - origin;
             dir.y = 0f;

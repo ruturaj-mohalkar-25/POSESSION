@@ -35,6 +35,11 @@ namespace Possession
 
         public bool HasHomeBounds => useHomeBounds;
         public Bounds HomeBounds => homeBounds;
+        public void ConfigureHomeBounds(Bounds bounds)
+        {
+            homeBounds = bounds;
+            useHomeBounds = true;
+        }
         public bool IsInsideHome(Vector3 position) => !useHomeBounds
             || position.x >= homeBounds.min.x && position.x <= homeBounds.max.x
             && position.z >= homeBounds.min.z && position.z <= homeBounds.max.z;

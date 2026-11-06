@@ -6,34 +6,48 @@ namespace Possession.Warehouse
     [RequireComponent(typeof(SpiritController), typeof(PossessionController))]
     public sealed class WarehouseEjectShield : MonoBehaviour
     {
-        [SerializeField, Min(0f)] private float protectionSeconds = 2f;
         private SpiritController spirit;
         private PossessionController possession;
-        private EnemyBase lastHost;
-        private LineRenderer ring;
-        private Material material;
-        public float ProtectionSeconds => protectionSeconds;
+        private LineRenderer ring, arc;
+        private Renderer bubble;
+        private Material lineMaterial, bubbleMaterial;
+        public float ProtectionSeconds => possession != null ? possession.EjectProtectionSeconds : 2f;
         public bool IsVisible => ring != null && ring.enabled;
 
         private void Awake()
         {
             spirit = GetComponent<SpiritController>();
             possession = GetComponent<PossessionController>();
-            var visual = new GameObject("Eject protection halo");
+            lineMaterial = new Material(Shader.Find("Sprites/Default"));
+            ring = MakeLine("Eject shield countdown", .12f);
+            arc = MakeLine("Eject shield arch", .085f);
+            var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            sphere.name = "Eject shield bubble";
+            sphere.transform.SetParent(transform, false);
+            sphere.transform.localPosition = Vector3.up * .1f;
+            sphere.transform.localScale = new Vector3(1.75f, 2.35f, 1.75f);
+            var collider = sphere.GetComponent<Collider>();
+            collider.enabled = false;
+            Destroy(collider);
+            bubble = sphere.GetComponent<Renderer>();
+            bubbleMaterial = new Material(Shader.Find("Sprites/Default"));
+            bubbleMaterial.color = new Color(.25f, .8f, 1f, .13f);
+            bubble.sharedMaterial = bubbleMaterial;
+            bubble.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            bubble.receiveShadows = false;
+            bubble.enabled = false;
+        }
+        private LineRenderer MakeLine(string name, float width)
+        {
+            var visual = new GameObject(name);
             visual.transform.SetParent(transform, false);
-            ring = visual.AddComponent<LineRenderer>();
-            ring.useWorldSpace = false;
-            ring.loop = true;
-            ring.positionCount = 48;
-            ring.widthMultiplier = .075f;
-            material = new Material(Shader.Find("Sprites/Default"));
-            ring.sharedMaterial = material;
-            ring.enabled = false;
-            for (int i = 0; i < ring.positionCount; i++)
-            {
-                float angle = i * Mathf.PI * 2f / ring.positionCount;
-                ring.SetPosition(i, new Vector3(Mathf.Cos(angle) * .85f, -.9f, Mathf.Sin(angle) * .85f));
-            }
+            var line = visual.AddComponent<LineRenderer>();
+            line.useWorldSpace = false;
+            line.positionCount = 49;
+            line.widthMultiplier = width;
+            line.sharedMaterial = lineMaterial;
+            line.enabled = false;
+            return line;
         }
         private void OnEnable()
         {
@@ -45,29 +59,34 @@ namespace Possession.Warehouse
             EventBus.Possessed -= OnPossessed;
             EventBus.Ejected -= OnEjected;
             if (ring != null) ring.enabled = false;
+            if (arc != null) arc.enabled = false;
+            if (bubble != null) bubble.enabled = false;
         }
-        private void OnPossessed(EnemyBase host, PlayerState state)
-        {
-            if (possession.PossessedEnemy == host) lastHost = host;
-        }
-        private void OnEjected(EnemyBase host, bool forced)
-        {
-            if (host != lastHost || possession.CurrentState != PlayerState.Spirit) return;
-            lastHost = null;
-            spirit.GrantDamageProtection(protectionSeconds);
-            UpdateVisual();
-        }
+        // Protection is granted atomically by PossessionController, before any eject callbacks.
+        private void OnPossessed(EnemyBase host, PlayerState state) => UpdateVisual();
+        private void OnEjected(EnemyBase host, bool forced) => UpdateVisual();
         private void Update() => UpdateVisual();
         private void UpdateVisual()
         {
             if (ring == null) return;
-            ring.enabled = possession.CurrentState == PlayerState.Spirit && spirit.CurrentHP > 0 && spirit.IsDamageProtected;
-            if (!ring.enabled) return;
-            float remaining = Mathf.Clamp01(spirit.DamageProtectionRemaining / Mathf.Max(.01f, protectionSeconds));
-            var color = new Color(.65f, .95f, 1f, .3f + remaining * .65f);
-            ring.startColor = color;
-            ring.endColor = color;
+            bool visible = possession.CurrentState == PlayerState.Spirit && spirit.CurrentHP > 0 && spirit.IsDamageProtected;
+            ring.enabled = arc.enabled = bubble.enabled = visible;
+            if (!visible) return;
+            float remaining = Mathf.Clamp01(spirit.DamageProtectionRemaining / ProtectionSeconds);
+            var color = new Color(.35f, .9f, 1f, .65f + remaining * .35f);
+            ring.startColor = ring.endColor = arc.startColor = arc.endColor = color;
+            for (int i = 0; i < ring.positionCount; i++)
+            {
+                float angle = i * Mathf.PI * 2f * remaining / (ring.positionCount - 1);
+                ring.SetPosition(i, new Vector3(Mathf.Cos(angle) * .95f, -.9f, Mathf.Sin(angle) * .95f));
+                float arch = i * Mathf.PI / (ring.positionCount - 1);
+                arc.SetPosition(i, new Vector3(Mathf.Cos(arch) * .9f, -.85f + Mathf.Sin(arch) * 2.15f, 0f));
+            }
         }
-        private void OnDestroy() { if (material != null) Destroy(material); }
+        private void OnDestroy()
+        {
+            if (lineMaterial != null) Destroy(lineMaterial);
+            if (bubbleMaterial != null) Destroy(bubbleMaterial);
+        }
     }
 }

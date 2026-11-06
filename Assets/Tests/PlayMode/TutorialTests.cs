@@ -208,13 +208,16 @@ namespace Possession.Tests
             var guide = Object.FindFirstObjectByType<TutorialGuide>(); Begin(guide);
             var pc = guide.Possession;
             Set(pc, "possessDuration", 0.05f);
-            Set(pc, "hostileTime", 2f);
+            Set(pc, "hostileTime", 4f);
             Possess(guide, guide.Guard);
             yield return new WaitForSeconds(0.1f);
             var spirit = pc.GetComponent<SpiritController>();
             spirit.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeAll;
             Assert.That(guide.Guard.IsHostile, Is.True);
             yield return new WaitForSeconds(1.1f);
+            Assert.That(spirit.CurrentHP, Is.EqualTo(spirit.MaxHP), "Ejection grants two seconds to escape.");
+            // The first two shots can land within the two-second shield; wait for the next normal shot.
+            yield return new WaitForSeconds(2.4f);
             Assert.That(spirit.CurrentHP, Is.LessThan(spirit.MaxHP), "The lesson must use the Guard's real attack, not only a warning message.");
         }
 
