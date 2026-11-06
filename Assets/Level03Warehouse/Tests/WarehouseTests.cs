@@ -49,6 +49,24 @@ namespace Possession.Warehouse.Tests
             Assert.That(GameManager.Instance.LevelTimer,Is.InRange(418f,420f));
             Assert.That(level.Possession.PossessDuration,Is.EqualTo(12f));
         }
+        [Test] public void RoomsAndPassagesProvideSpaceToCircleCoverAndPlan()
+        {
+            var room=GameObject.Find("Guard_room_Floor").GetComponent<Collider>().bounds;
+            Assert.That(room.size.x,Is.EqualTo(22.1f).Within(.01f));
+            Assert.That(room.size.z,Is.EqualTo(14.3f).Within(.01f));
+            var sorting=GameObject.Find("Sorting_hall_Floor").GetComponent<Collider>().bounds;
+            Assert.That(sorting.size.x,Is.EqualTo(16.9f).Within(.01f));
+            Assert.That(sorting.size.z,Is.EqualTo(13f).Within(.01f));
+            foreach(var door in Object.FindObjectsByType<Door>(FindObjectsSortMode.None))
+            {
+                var bounds=door.GetComponent<Collider>().bounds;
+                Assert.That(Mathf.Max(bounds.size.x,bounds.size.z),Is.GreaterThanOrEqualTo(6.49f));
+            }
+            // Crates stay compact; enlarging a room must create usable floor space.
+            Assert.That(GameObject.Find("Cover_0").GetComponent<Collider>().bounds.size.x,Is.EqualTo(2.5f).Within(.01f));
+            // A large manoeuvring capsule can traverse the fully solved left route.
+            Open("inspection");Open("exit-passage");Assert.That(Reach(70,88,70,9,1.2f),Is.True);
+        }
         [UnityTest] public IEnumerator DoorsRequireThreeDistinctTargetsAndKeepProgress()
         {
             foreach(var view in Object.FindObjectsByType<WarehouseDoorView>(FindObjectsSortMode.None))
@@ -164,9 +182,9 @@ namespace Possession.Warehouse.Tests
         }
         private static void Open(string key){foreach(var t in GameObject.Find(key+"_Door").GetComponent<WarehouseDoorView>().Targets)t.OnHit();Physics.SyncTransforms();}
         private static BreakableWall Wall(string name)=>GameObject.Find(name).GetComponent<BreakableWall>();
-        private static Vector3 Map(float x,float y)=>new((x-70)*.5f,1.5f,(90-y)*.5f);
+        private static Vector3 Map(float x,float y)=>new((x-70)*.65f,1.5f,(90-y)*.65f);
         // Rasterise actual colliders with a Heavy-sized capsule, not just the paper floor plan.
-        private static bool Reach(int sx,int sy,int tx,int ty)
+        private static bool Reach(int sx,int sy,int tx,int ty,float radius=.68f)
         {
             var visited=new HashSet<Vector2Int>();var queue=new Queue<Vector2Int>();var start=new Vector2Int(sx,sy);queue.Enqueue(start);visited.Add(start);
             var solid=Object.FindObjectsByType<Collider>(FindObjectsSortMode.None).Where(c=>!c.isTrigger&&c.enabled&&c.GetComponentInParent<SpiritController>()==null&&(c.gameObject.layer==0||c.gameObject.layer==7)).ToArray();
@@ -174,8 +192,8 @@ namespace Possession.Warehouse.Tests
             bool Clear(Vector2Int p)
             {
                 if(blocked.TryGetValue(p,out bool value))return value;
-                var at=Map(p.x,p.y);bool floor=Physics.Raycast(at,Vector3.down,3f,1<<0,QueryTriggerInteraction.Ignore);
-                bool free=floor&&!Physics.OverlapCapsule(at+Vector3.up*.3f,at-Vector3.up*.3f,.68f,(1<<0)|(1<<7),QueryTriggerInteraction.Ignore).Any(c=>solid.Contains(c));
+                var at=Map(p.x,p.y);at.y=Mathf.Max(at.y,radius+.5f);bool floor=Physics.Raycast(at,Vector3.down,3f,1<<0,QueryTriggerInteraction.Ignore);
+                bool free=floor&&!Physics.OverlapCapsule(at+Vector3.up*.3f,at-Vector3.up*.3f,radius,(1<<0)|(1<<7),QueryTriggerInteraction.Ignore).Any(c=>solid.Contains(c));
                 blocked[p]=free;return free;
             }
             var offsets=new[]{Vector2Int.up,Vector2Int.down,Vector2Int.left,Vector2Int.right};

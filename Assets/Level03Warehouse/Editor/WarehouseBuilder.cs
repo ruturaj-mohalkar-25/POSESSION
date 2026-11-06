@@ -33,7 +33,8 @@ namespace Possession.Editor
         private static Material floorMat,wallMat,coverMat,steelMat,chargeMat,glowMat;
         private static GameObject targetTemplate,wallTemplate,guardTemplate,heavyTemplate;
         private static readonly Color[] Palette={new(.2f,.8f,1f),new(1f,.7f,.2f),new(1f,.35f,.6f),new(.65f,.4f,1f)};
-        public static Vector3 Map(float x,float y,float height=1.15f)=>new((x-70f)*.5f,height,(90f-y)*.5f);
+        private static float Unit => data != null ? data.unitSize : .65f;
+        public static Vector3 Map(float x,float y,float height=1.15f)=>new((x-70f)*Unit,height,(90f-y)*Unit);
 
         [MenuItem("Possession/Level Design/Level 3 Warehouse/Build and Open")]
         public static void Build()
@@ -73,12 +74,13 @@ namespace Possession.Editor
             var world=new GameObject("Warehouse_Layout").transform;
             var floors=new GameObject("Floors").transform;floors.SetParent(world);
             foreach(var area in data.rooms.Concat(data.halls))
-                Cube(floors,string.IsNullOrEmpty(area.name)?"Hall_Floor":area.name.Replace(' ','_')+"_Floor",Map(area.x+area.width/2,area.y+area.depth/2,0),new Vector3(area.width*.5f,.2f,area.depth*.5f),floorMat);
+                Cube(floors,string.IsNullOrEmpty(area.name)?"Hall_Floor":area.name.Replace(' ','_')+"_Floor",Map(area.x+area.width/2,area.y+area.depth/2,0),new Vector3(area.width*Unit,.2f,area.depth*Unit),floorMat);
             BoundaryWalls(world);
             foreach(var p in data.partitions)Wall(world,p.x1,p.y1,p.x2,p.y2);
             for(int i=0;i<data.covers.Length;i++)
             {
                 var r=data.covers[i];float height=i==data.covers.Length-1?1f:2.2f;
+                // Keep cover footprints at their original physical size as rooms grow.
                 var cube=Cube(world,"Cover_"+i,Map(r.x+r.width/2,r.y+r.depth/2,height/2+.1f),new Vector3(r.width*.5f,height,r.depth*.5f),coverMat);
                 cube.AddComponent<VisibilityOccluder>();
             }
@@ -145,7 +147,7 @@ namespace Possession.Editor
         }
         private static Door BuildDoor(Transform parent,Gate g,Color color)
         {
-            float width=Vector2.Distance(new Vector2(g.x1,g.y1),new Vector2(g.x2,g.y2))*.5f;
+            float width=Vector2.Distance(new Vector2(g.x1,g.y1),new Vector2(g.x2,g.y2))*Unit;
             var node=new GameObject(g.key+"_Door");node.transform.SetParent(parent);node.transform.position=Map((g.x1+g.x2)/2,(g.y1+g.y2)/2,3.1f);
             node.transform.rotation=Quaternion.Euler(0,g.x1==g.x2?90f:0f,0);
             node.layer=7;node.AddComponent<BoxCollider>().size=new Vector3(width,6f,.55f);
@@ -177,7 +179,7 @@ namespace Possession.Editor
         {
             var obj=Object.Instantiate(wallTemplate,parent);obj.name=s.name.Replace(' ','_');obj.SetActive(true);
             obj.transform.position=Map((s.x1+s.x2)/2,(s.y1+s.y2)/2,3.1f);obj.transform.rotation=Quaternion.Euler(0,s.x1==s.x2?90f:0f,0);
-            float width=Vector2.Distance(new Vector2(s.x1,s.y1),new Vector2(s.x2,s.y2))*.5f;obj.transform.localScale=new Vector3(width,6,.5f);
+            float width=Vector2.Distance(new Vector2(s.x1,s.y1),new Vector2(s.x2,s.y2))*Unit;obj.transform.localScale=new Vector3(width,6,.5f);
             if(s.transparent)
             {
                 foreach(var child in obj.transform.Cast<Transform>().ToArray())Object.DestroyImmediate(child.gameObject);
