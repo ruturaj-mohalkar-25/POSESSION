@@ -45,6 +45,14 @@ Seven-minute level clock, twelve seconds per possession; tuning remains in `Data
 
 WASD move, Space jump, E possess/eject, LMB shoot/smash. Collect a green crystal before possessing, and approach outside the enemy vision cone. Sources reform after eight seconds. **R** or Retry resets the whole preview, including defeated hosts, targets, walls and sources. The shared result screen's next button replays this local scene. Charge regeneration does not replace a defeated required host; use Retry in that case.
 
+## Ejection protection and enemy rooms
+
+Manual ejection, timer expiry and a completed return from a defeated host grant the Spirit **two seconds of damage protection** in this scene. A pale halo shows the remaining grace period. Damage and health/damage events are ignored during that window; ordinary damage resumes afterward. Movement and collision remain enabled.
+
+All eight NPCs are assigned the floor bounds of their room (the right-junction Heavy uses its junction area). Enemies stop pursuing when the Spirit leaves that area, cancel attacks across its boundary and keep autonomous movement inside. The rule applies to patrol detection and post-eject hostility. Possessed bodies can still cross rooms to solve puzzles. If the player leaves a body outside its assigned home, it stops pursuing there and resumes returning to its own patrol once its hostile recovery ends.
+
+The shared Spirit has a passive protection API; this scene's `WarehouseEjectShield` requests it after a real ejection. The shared enemy and attack scripts have optional home-bound checks, enabled only on Warehouse's scene instances. Original scenes and prefabs retain their earlier defaults. These are shared hooks to merge alongside this level, rather than a separate health or enemy implementation.
+
 ## Health dependency
 
 The green cross remains a **placement socket, not a functioning heal**. Current integration has no shared healing API. Bind the team's incoming component here after merge. Intended rule: once per run, restore 30% of maximum Spirit/player HP, capped at maximum, persistent after ejecting, collectible in either form, not consumed at full HP. Do not introduce a second local HP pool or implement healing through negative damage.
@@ -53,10 +61,14 @@ The green cross remains a **placement socket, not a functioning heal**. Current 
 
 Use **Possession → Level Design → Level 3 Warehouse → Build and Open**. The builder copies the latest Level 1 shell and actors, then generates this scene from the authored JSON. Rebuilding replaces edits made only in the generated scene; keep durable layout changes in that JSON. Boundary generation supports the new negative plan coordinates, so the original built rooms do not shift to make room for the extension.
 
-After the shared gameplay work merges, bring integration into this local branch and rebuild to inherit current shared components. Resolve any changed APIs and retest before registering the campaign order. Future merge conflicts cannot be guaranteed absent. No existing shared script, prefab, campaign scene or build setting is changed by this folder.
+After the shared gameplay work merges, bring integration into this local branch and rebuild to inherit current shared components. Resolve any changed APIs and retest before registering the campaign order. Future merge conflicts cannot be guaranteed absent. The ejection-protection API and optional room-bound checks touch the shared Spirit, EnemyBase and enemy-attack scripts. Existing prefabs, campaign scenes and build settings are unchanged.
 
 ## Validation
 
-**21 Warehouse PlayMode checks pass**: expected shared components/counts; structural edge sealing across the extension; wider-room and doorway clearance; all distinct hits with animated leaves; each original route; recovery entrance sealing and retreat; real Guard shots to all sixteen targets; hostile-shot rejection; shared damage/smash rules; forced-eject persistence; four-target progress at three hits; all four initial/final route combinations; Machine divider bypass prevention; real local-charge retries for Control and Machine; and shared completion, occupied-body acceptance and replay reset.
+The complete PlayMode regression run passes **190/190 tests**, including the original scenes and the Warehouse checks.
+
+**28 Warehouse PlayMode checks pass**: expected shared components/counts; structural edge sealing across the extension; wider-room and doorway clearance; all distinct hits with animated leaves; each original route; recovery entrance sealing and retreat; real Guard shots to all sixteen targets; hostile-shot rejection; shared damage/smash rules; forced-eject persistence; four-target progress at three hits; all four initial/final route combinations; Machine divider bypass prevention; real local-charge retries for Control and Machine; and shared completion, occupied-body acceptance and replay reset.
+
+Additional checks verify manual/forced-eject protection, actual hostile bullets during the shield, damage after expiry, no shield on spawn or an invalid ejection, all host room assignments, chase termination at a doorway, hostile Heavy attack cancellation and player-controlled movement outside home bounds.
 
 Screenshots inspect the entry, existing wings, recovery, Transfer Lobby, both new final branches and the relocated extraction area. These automated and visual checks do not replace human combat testing. Work stays local; no remote push, PR or deployment is created.

@@ -63,6 +63,7 @@ namespace Possession.Editor
             }
             spirit.transform.position=Map(data.start.x,data.start.y);
             if(spirit.GetComponent<PossessionCharge>()==null)spirit.gameObject.AddComponent<PossessionCharge>();
+            if(spirit.GetComponent<WarehouseEjectShield>()==null)spirit.gameObject.AddComponent<WarehouseEjectShield>();
             Set(manager,"levelTime",data.levelSeconds);
             Set(spirit.GetComponent<PossessionController>(),"possessDuration",data.possessionSeconds);
             var cam=Camera.main;var follow=cam.GetComponent<CameraFollow>();Set(follow,"target",spirit.transform);
@@ -202,7 +203,13 @@ namespace Possession.Editor
         {
             bool heavy=a.kind!="Guard";var obj=Object.Instantiate(heavy?heavyTemplate:guardTemplate,parent);obj.name=a.name;
             obj.transform.position=Map(a.x,a.y,heavy?1.45f:1.15f);obj.transform.rotation=Quaternion.identity;obj.SetActive(true);
-            var enemy=obj.GetComponent<EnemyBase>();var controller=obj.GetComponent<CharacterController>();controller.minMoveDistance=0;
+            var enemy=obj.GetComponent<EnemyBase>();
+            var room=data.rooms.FirstOrDefault(r=>a.x>=r.x&&a.x<=r.x+r.width&&a.y>=r.y&&a.y<=r.y+r.depth);
+            if(room==null && a.name=="Right_junction_Heavy")room=new Area{x=98,y=41,width=23,depth=12};
+            if(room==null)throw new InvalidOperationException("No home room for "+a.name);
+            Set(enemy,"useHomeBounds",true);
+            Set(enemy,"homeBounds",new Bounds(Map(room.x+room.width/2,room.y+room.depth/2,3),new Vector3(room.width*Unit,10f,room.depth*Unit)));
+            var controller=obj.GetComponent<CharacterController>();controller.minMoveDistance=0;
             var route=new GameObject(a.name+"_Patrol").transform;route.SetParent(parent);
             float distance=heavy||a.name=="Guard_room_Guard"?2f:3f;var points=new Transform[2];
             for(int i=0;i<2;i++){points[i]=new GameObject("Waypoint_"+i).transform;points[i].SetParent(route);points[i].position=Map(a.x+(i==0?-distance:distance),a.y,obj.transform.position.y);}
@@ -258,7 +265,7 @@ namespace Possession.Editor
         private static void Set(Object target,string field,object value)
         {
             var settings=new SerializedObject(target);var p=settings.FindProperty(field);if(p==null)throw new MissingFieldException(target.GetType().Name,field);
-            if(value is float f)p.floatValue=f;else if(value is bool b)p.boolValue=b;else if(value is Color c)p.colorValue=c;else p.objectReferenceValue=value as Object;
+            if(value is float f)p.floatValue=f;else if(value is bool b)p.boolValue=b;else if(value is Color c)p.colorValue=c;else if(value is Bounds bounds)p.boundsValue=bounds;else p.objectReferenceValue=value as Object;
             settings.ApplyModifiedPropertiesWithoutUndo();
         }
         private static void Array(Object target,string field,Object[] values)

@@ -29,6 +29,18 @@ namespace Possession
         // and can only be possessed when it cannot see the Spirit (e.g. from behind).
         [SerializeField, Range(1f, 360f)] protected float visionAngle = 45f;
 
+        [Header("Room containment (optional)")]
+        [SerializeField] private bool useHomeBounds;
+        [SerializeField] private Bounds homeBounds;
+
+        public bool HasHomeBounds => useHomeBounds;
+        public Bounds HomeBounds => homeBounds;
+        public bool IsInsideHome(Vector3 position) => !useHomeBounds
+            || position.x >= homeBounds.min.x && position.x <= homeBounds.max.x
+            && position.z >= homeBounds.min.z && position.z <= homeBounds.max.z;
+        public bool CanPursue(Transform target) => target != null
+            && (!useHomeBounds || IsInsideHome(transform.position) && IsInsideHome(target.position));
+
         protected int currentHP;
         protected bool isPossessed;
         protected bool isHostile;
@@ -45,7 +57,7 @@ namespace Possession
         public bool CanBePossessed => !isPossessed && !isHostile && currentHP > 0;
         public int CurrentHP => currentHP;
         public bool IsChasing => !isPossessed && chaseTarget != null
-            && chaseTarget.isActiveAndEnabled;
+            && chaseTarget.isActiveAndEnabled && CanPursue(chaseTarget.transform);
         public bool IsIdle => !isPossessed && !IsChasing && !IsSearching && waypointWaitTimer > 0f;
         // True while the enemy checks the Spirit's last seen position after losing sight of it.
         public bool IsSearching => !isPossessed && !isHostile && searchTimer > 0f;
@@ -81,6 +93,13 @@ namespace Possession
             if (Time.timeScale <= 0f || (GameManager.Instance != null
                 && GameManager.Instance.CurrentState != LevelState.InProgress))
                 return;
+
+            if (!isPossessed && chaseTarget != null && !CanPursue(chaseTarget.transform))
+            {
+                chaseTarget = null;
+                searchTimer = 0f;
+                ResumePatrolAtNearestWaypoint();
+            }
 
             if (isPossessed)
             {
@@ -217,7 +236,7 @@ namespace Possession
         // True when the target is inside the vision cone and nothing solid blocks the view.
         public bool CanSee(Transform target)
         {
-            if (target == null) return false;
+            if (target == null || !CanPursue(target)) return false;
             Vector3 toTarget = target.position - transform.position;
             toTarget.y = 0f;
             float distance = toTarget.magnitude;
@@ -330,6 +349,15 @@ namespace Possession
 
         private void Move(Vector3 displacement)
         {
+            // Only autonomous movement is contained. A possessed body may cross a doorway.
+            if (!isPossessed && useHomeBounds && IsInsideHome(transform.position))
+            {
+                float inset = controller.radius * Mathf.Max(Mathf.Abs(transform.lossyScale.x), Mathf.Abs(transform.lossyScale.z)) + .05f;
+                Vector3 next = transform.position + displacement;
+                next.x = Mathf.Clamp(next.x, homeBounds.min.x + inset, homeBounds.max.x - inset);
+                next.z = Mathf.Clamp(next.z, homeBounds.min.z + inset, homeBounds.max.z - inset);
+                displacement = next - transform.position;
+            }
             if (displacement.sqrMagnitude <= 0f) return;
             transform.rotation = Quaternion.LookRotation(displacement);
             controller.Move(displacement);

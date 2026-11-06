@@ -118,6 +118,11 @@ namespace Possession
             }
 
             if (!FindSpirit()) return;
+            if (!enemy.CanPursue(spirit.transform))
+            {
+                CancelWindup();
+                return;
+            }
 
             // Spirit is hidden while possessing another enemy
             if (spiritCollider != null && !spiritCollider.enabled) return;
