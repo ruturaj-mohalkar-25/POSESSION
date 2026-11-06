@@ -32,7 +32,7 @@ namespace Possession.Editor
         private static Layout data;
         private static Material floorMat,wallMat,coverMat,steelMat,chargeMat,glowMat;
         private static GameObject targetTemplate,wallTemplate,guardTemplate,heavyTemplate;
-        private static readonly Color[] Palette={new(.2f,.8f,1f),new(1f,.7f,.2f),new(1f,.35f,.6f),new(.65f,.4f,1f)};
+        private static readonly Color[] Palette={new(.2f,.8f,1f),new(1f,.7f,.2f),new(1f,.35f,.6f),new(.65f,.4f,1f),new(1f,.85f,.35f)};
         private static float Unit => data != null ? data.unitSize : .65f;
         public static Vector3 Map(float x,float y,float height=1.15f)=>new((x-70f)*Unit,height,(90f-y)*Unit);
 
@@ -94,6 +94,7 @@ namespace Possession.Editor
             var level=BuildExit(world,data.exit);
             Set(level,"spirit",spirit);Set(level,"inspection",doors["inspection"]);Set(level,"exitPassage",doors["exit-passage"]);
             Set(level,"cargoEntry",doors["cargo-entry"]);Set(level,"cargo",doors["cargo"]);Set(level,"loadingWall",walls["Loading wall"]);
+            Set(level,"extraction",doors["extraction"]);Set(level,"machineDivider",walls["Machine divider"]);Set(level,"machineExit",walls["Machine exit wall"]);
             var settings=new SerializedObject(hud);var objective=settings.FindProperty("objectiveText").objectReferenceValue;
             settings.FindProperty("objectives").arraySize=0;settings.ApplyModifiedPropertiesWithoutUndo();Set(level,"objective",objective);
             var label=settings.FindProperty("nextButtonLabel").objectReferenceValue as Text;Set(level,"completionLabel",label);
@@ -109,7 +110,7 @@ namespace Possession.Editor
                     {UnityEventTools.RemovePersistentListener(button.onClick,i);UnityEventTools.AddPersistentListener(button.onClick,level.RestartPreview);}
             foreach(var template in templates)Object.DestroyImmediate(template);
             EditorSceneManager.MarkSceneDirty(scene);EditorSceneManager.SaveScene(scene);AssetDatabase.SaveAssets();
-            Debug.Log("Warehouse Level 3 local preview built: 4 Guards, 2 Heavies, 4 three-target doors, 3 cracked walls and 9 charge sources. Shared files/build list untouched.");
+            Debug.Log("Warehouse Level 3 local preview built: 5 Guards, 3 Heavies, 5 target doors, 5 cracked walls and 13 charge sources. Shared files/build list untouched.");
         }
         [MenuItem("Possession/Level Design/Level 3 Warehouse/Open Local Scene")]
         public static void Open(){if(!EditorApplication.isPlayingOrWillChangePlaymode)EditorSceneManager.OpenScene(ScenePath);}
@@ -118,24 +119,28 @@ namespace Possession.Editor
         {
             bool Inside(int x,int y)=>data.rooms.Concat(data.halls).Any(r=>x+.5f>=r.x&&x+.5f<r.x+r.width&&y+.5f>=r.y&&y+.5f<r.y+r.depth);
             // Merge collinear unit edges, retaining all open room/hall connections from the plan.
-            for(int y=0;y<=100;y++)
+            int minX=Mathf.FloorToInt(data.rooms.Concat(data.halls).Min(r=>r.x));
+            int maxX=Mathf.CeilToInt(data.rooms.Concat(data.halls).Max(r=>r.x+r.width));
+            int minY=Mathf.FloorToInt(data.rooms.Concat(data.halls).Min(r=>r.y));
+            int maxY=Mathf.CeilToInt(data.rooms.Concat(data.halls).Max(r=>r.y+r.depth));
+            for(int y=minY;y<=maxY;y++)
             {
-                int start=-1;
-                for(int x=0;x<=140;x++)
+                int? start=null;
+                for(int x=minX;x<=maxX;x++)
                 {
-                    bool edge=x<140&&Inside(x,y-1)!=Inside(x,y);
-                    if(edge&&start<0)start=x;
-                    if(!edge&&start>=0){Wall(parent,start,y,x,y);start=-1;}
+                    bool edge=x<maxX&&Inside(x,y-1)!=Inside(x,y);
+                    if(edge&&!start.HasValue)start=x;
+                    if(!edge&&start.HasValue){Wall(parent,start.Value,y,x,y);start=null;}
                 }
             }
-            for(int x=0;x<=140;x++)
+            for(int x=minX;x<=maxX;x++)
             {
-                int start=-1;
-                for(int y=0;y<=100;y++)
+                int? start=null;
+                for(int y=minY;y<=maxY;y++)
                 {
-                    bool edge=y<100&&Inside(x-1,y)!=Inside(x,y);
-                    if(edge&&start<0)start=y;
-                    if(!edge&&start>=0){Wall(parent,x,start,x,y);start=-1;}
+                    bool edge=y<maxY&&Inside(x-1,y)!=Inside(x,y);
+                    if(edge&&!start.HasValue)start=y;
+                    if(!edge&&start.HasValue){Wall(parent,x,start.Value,x,y);start=null;}
                 }
             }
         }
@@ -171,7 +176,7 @@ namespace Possession.Editor
             LocalCube(node.transform,"Door jamb right",new Vector3(width/2+.12f,0,0),new Vector3(.24f,6f,.65f),steelMat);
             LocalCube(node.transform,"Door header",new Vector3(0,2.85f,0),new Vector3(width+.5f,.3f,.65f),steelMat);
             var lamps=new List<Object>();
-            for(int i=0;i<3;i++)lamps.Add(LocalCube(node.transform,"Target lamp "+(i+1),new Vector3((i-1)*width*.25f,2.55f,-.4f),new Vector3(.25f,.25f,.15f),groupMat).GetComponent<Renderer>());
+            for(int i=0;i<targets.Count;i++)lamps.Add(LocalCube(node.transform,"Target lamp "+(i+1),new Vector3(((i+.5f)/targets.Count-.5f)*width*.75f,2.55f,-.4f),new Vector3(.25f,.25f,.15f),groupMat).GetComponent<Renderer>());
             Array(view,"lamps",lamps.ToArray());
             return door;
         }
@@ -199,7 +204,7 @@ namespace Possession.Editor
             obj.transform.position=Map(a.x,a.y,heavy?1.45f:1.15f);obj.transform.rotation=Quaternion.identity;obj.SetActive(true);
             var enemy=obj.GetComponent<EnemyBase>();var controller=obj.GetComponent<CharacterController>();controller.minMoveDistance=0;
             var route=new GameObject(a.name+"_Patrol").transform;route.SetParent(parent);
-            float distance=heavy?2f:3f;var points=new Transform[2];
+            float distance=heavy||a.name=="Guard_room_Guard"?2f:3f;var points=new Transform[2];
             for(int i=0;i<2;i++){points[i]=new GameObject("Waypoint_"+i).transform;points[i].SetParent(route);points[i].position=Map(a.x+(i==0?-distance:distance),a.y,obj.transform.position.y);}
             Array(enemy,"waypoints",points.Cast<Object>().ToArray());Set(enemy,"patrolStartDelay",index*.25f);
         }

@@ -8,8 +8,8 @@ namespace Possession.Warehouse
     public sealed class WarehouseLevel : MonoBehaviour
     {
         [SerializeField] private SpiritController spirit;
-        [SerializeField] private Door inspection, exitPassage, cargoEntry, cargo;
-        [SerializeField] private BreakableWall loadingWall;
+        [SerializeField] private Door inspection, exitPassage, cargoEntry, cargo, extraction;
+        [SerializeField] private BreakableWall loadingWall, machineDivider, machineExit;
         [SerializeField] private Text objective, completionLabel;
         [SerializeField] private Renderer[] exitLights;
         private bool completed;
@@ -17,13 +17,16 @@ namespace Possession.Warehouse
         public PossessionController Possession => spirit.GetComponent<PossessionController>();
         public bool LeftReady => inspection.IsOpen && exitPassage.IsOpen;
         public bool RightReady => cargoEntry.IsOpen && cargo.IsOpen && loadingWall.CurrentHP <= 0;
-        public bool CanExtract => LeftReady || RightReady;
+        public bool CanReachTransfer => LeftReady || RightReady;
+        public bool ControlReady => extraction.IsOpen;
+        public bool MachineReady => machineDivider.CurrentHP <= 0 && machineExit.CurrentHP <= 0;
+        public bool CanExtract => CanReachTransfer && (ControlReady || MachineReady);
         private void OnEnable() => EventBus.LevelCompleted += OnCompleted;
         private void OnDisable() => EventBus.LevelCompleted -= OnCompleted;
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.R)) RestartPreview();
-            if (objective != null) objective.text = CanExtract ? "ROUTE OPEN  •  REACH THE EXIT AS SPIRIT" : "OPEN A WING  •  EACH DOOR NEEDS 3 TARGETS";
+            if (objective != null) objective.text = CanExtract ? "EXIT OPEN  •  REACH EXTRACTION" : CanReachTransfer ? "CHOOSE A FINAL WING  •  4 TARGETS OR 2 WALLS" : "OPEN A WING  •  EACH DOOR NEEDS 3 TARGETS";
             if (exitLights != null) foreach (var light in exitLights) if (light != null)
                 light.material.color = CanExtract ? new Color(.2f,1f,.65f) : new Color(1f,.65f,.18f);
         }
@@ -31,8 +34,14 @@ namespace Possession.Warehouse
         public bool TryFinish(Collider other)
         {
             if (completed || !CanExtract || other == null || spirit.CurrentHP <= 0
-                || Possession.CurrentState != PlayerState.Spirit || other.GetComponentInParent<SpiritController>() != spirit
                 || GameManager.Instance.CurrentState != LevelState.InProgress) return false;
+            bool isSpirit = Possession.CurrentState == PlayerState.Spirit
+                && other.GetComponentInParent<SpiritController>() == spirit;
+            var host = Possession.PossessedEnemy;
+            bool isHost = Possession.CurrentState != PlayerState.Spirit && host != null
+                && host.gameObject.activeInHierarchy && host.CurrentHP > 0
+                && other.GetComponentInParent<EnemyBase>() == host;
+            if (!isSpirit && !isHost) return false;
             var exit = GetComponent<Collider>();
             if (exit == null || !exit.bounds.Intersects(other.bounds)) return false;
             completed = true;EventBus.LevelCompleted?.Invoke();return true;

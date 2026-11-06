@@ -35,12 +35,12 @@ namespace Possession.Warehouse.Tests
         }
         [Test] public void PreviewUsesSharedActorsPuzzlesHUDAndThePlannedCounts()
         {
-            Assert.That(Object.FindObjectsByType<GuardEnemy>(FindObjectsSortMode.None).Length,Is.EqualTo(4));
-            Assert.That(Object.FindObjectsByType<HeavyEnemy>(FindObjectsSortMode.None).Length,Is.EqualTo(2));
-            Assert.That(Object.FindObjectsByType<Target>(FindObjectsSortMode.None).Length,Is.EqualTo(12));
-            Assert.That(Object.FindObjectsByType<Door>(FindObjectsSortMode.None).Length,Is.EqualTo(4));
-            Assert.That(Object.FindObjectsByType<BreakableWall>(FindObjectsSortMode.None).Length,Is.EqualTo(3));
-            Assert.That(Object.FindObjectsByType<PossessionChargePickup>(FindObjectsSortMode.None).Length,Is.EqualTo(9));
+            Assert.That(Object.FindObjectsByType<GuardEnemy>(FindObjectsSortMode.None).Length,Is.EqualTo(5));
+            Assert.That(Object.FindObjectsByType<HeavyEnemy>(FindObjectsSortMode.None).Length,Is.EqualTo(3));
+            Assert.That(Object.FindObjectsByType<Target>(FindObjectsSortMode.None).Length,Is.EqualTo(16));
+            Assert.That(Object.FindObjectsByType<Door>(FindObjectsSortMode.None).Length,Is.EqualTo(5));
+            Assert.That(Object.FindObjectsByType<BreakableWall>(FindObjectsSortMode.None).Length,Is.EqualTo(5));
+            Assert.That(Object.FindObjectsByType<PossessionChargePickup>(FindObjectsSortMode.None).Length,Is.EqualTo(13));
             Assert.That(Object.FindObjectsByType<HUDManager>(FindObjectsSortMode.None).Length,Is.EqualTo(1));
             var socket=Object.FindFirstObjectByType<WarehouseHealthSocket>();Assert.That(socket,Is.Not.Null);
             Assert.That(socket.IsGameplayBound,Is.False,"Health must wait for the team's shared healing API.");
@@ -67,14 +67,19 @@ namespace Possession.Warehouse.Tests
             // A large manoeuvring capsule can traverse the fully solved left route.
             Open("inspection");Open("exit-passage");Assert.That(Reach(70,88,70,9,1.2f),Is.True);
         }
-        [UnityTest] public IEnumerator DoorsRequireThreeDistinctTargetsAndKeepProgress()
+        [UnityTest] public IEnumerator DoorsRequireAllDistinctTargetsAndKeepProgress()
         {
             foreach(var view in Object.FindObjectsByType<WarehouseDoorView>(FindObjectsSortMode.None))
             {
                 var door=view.GetComponent<Door>();int events=0;System.Action<Target> hit=t=>events++;
                 EventBus.TargetHit+=hit;Assert.That(door.IsOpen,Is.False);
                 view.Targets[2].OnHit();view.Targets[2].OnHit();Assert.That(events,Is.EqualTo(1));Assert.That(door.IsOpen,Is.False);
-                view.Targets[0].OnHit();Assert.That(door.IsOpen,Is.False);view.Targets[1].OnHit();Assert.That(door.IsOpen,Is.True);
+                foreach(var target in view.Targets.Where(t=>t!=view.Targets[2]))
+                {
+                    Assert.That(door.IsOpen,Is.False);target.OnHit();
+                    Assert.That(door.IsOpen,Is.EqualTo(view.Targets.All(t=>t.IsHit)));
+                }
+                Assert.That(door.IsOpen,Is.True);
                 Assert.That(door.GetComponent<Collider>().isTrigger,Is.True);EventBus.TargetHit-=hit;
             }
             yield return new WaitForSeconds(.5f);
@@ -170,7 +175,7 @@ namespace Possession.Warehouse.Tests
         {
             level.Spirit.RestoreAt(level.transform.position);Physics.SyncTransforms();
             Assert.That(level.TryFinish(level.Spirit.GetComponent<Collider>()),Is.False);
-            Open("inspection");Open("exit-passage");
+            Open("inspection");Open("exit-passage");Open("extraction");
             var guard=Object.FindFirstObjectByType<GuardEnemy>();Move(guard,level.transform.position,Vector3.forward);
             Assert.That(level.TryFinish(guard.GetComponent<Collider>()),Is.False);
             int wins=0;EventBus.LevelCompleted+=()=>wins++;Assert.That(level.TryFinish(level.Spirit.GetComponent<Collider>()),Is.True);
@@ -178,7 +183,113 @@ namespace Possession.Warehouse.Tests
             Assert.That(GameManager.Instance.CurrentState,Is.EqualTo(LevelState.Complete));
             level.RestartPreview();yield return null;yield return null;Bind();
             Assert.That(level.CanExtract,Is.False);Assert.That(GameManager.Instance.CurrentState,Is.EqualTo(LevelState.InProgress));
-            Assert.That(Object.FindObjectsByType<EnemyBase>(FindObjectsSortMode.None).Length,Is.EqualTo(6));
+            Assert.That(Object.FindObjectsByType<EnemyBase>(FindObjectsSortMode.None).Length,Is.EqualTo(8));
+        }
+        [Test] public void FormerExitIsOnlyATransferLobbyAndFourTargetDoorStaysClosedAtThree()
+        {
+            var view=GameObject.Find("extraction_Door").GetComponent<WarehouseDoorView>();
+            Assert.That(view.Targets.Length,Is.EqualTo(4));Assert.That(view.transform.Find("Target lamp 4"),Is.Not.Null);
+            Open("inspection");Open("exit-passage");Assert.That(level.CanReachTransfer,Is.True);Assert.That(level.CanExtract,Is.False);
+            level.Spirit.RestoreAt(Map(70,9));Physics.SyncTransforms();
+            Assert.That(level.GetComponent<Collider>().bounds.Intersects(level.Spirit.GetComponent<Collider>().bounds),Is.False);
+            Assert.That(Object.FindObjectsByType<WarehouseLevel>(FindObjectsSortMode.None).Length,Is.EqualTo(1));
+            for(int i=0;i<3;i++)view.Targets[i].OnHit();view.Targets[0].OnHit();
+            Assert.That(view.GetComponent<Door>().IsOpen,Is.False);view.Targets[3].OnHit();Assert.That(level.ControlReady,Is.True);
+            Assert.That(Reach(70,9,70,-62),Is.True);Assert.That(level.MachineReady,Is.False);
+            Assert.That(GameManager.Instance.CurrentState,Is.EqualTo(LevelState.InProgress));
+        }
+        [TestCase(false,false)] [TestCase(false,true)] [TestCase(true,false)] [TestCase(true,true)]
+        public void EitherInitialWingCanUseEitherFinalBranchWithoutSolvingTheOther(bool rightInitial,bool machineFinal)
+        {
+            if(rightInitial){Open("cargo-entry");Open("cargo");Wall("Loading_wall").TakeDamage(2);}
+            else {Open("inspection");Open("exit-passage");}
+            Assert.That(Reach(70,88,70,-62),Is.False);Assert.That(level.CanExtract,Is.False);
+            if(machineFinal){Wall("Machine_divider").TakeDamage(2);Wall("Machine_exit_wall").TakeDamage(2);}
+            else Open("extraction");
+            Physics.SyncTransforms();Assert.That(level.CanExtract,Is.True);Assert.That(Reach(70,88,70,-62),Is.True);
+            Assert.That(level.ControlReady,Is.EqualTo(!machineFinal));Assert.That(level.MachineReady,Is.EqualTo(machineFinal));
+        }
+        [Test] public void MachineNeedsBothWallsAndCannotBypassTheDividerThroughTheExitOpening()
+        {
+            Wall("Machine_exit_wall").TakeDamage(2);Physics.SyncTransforms();
+            Assert.That(level.MachineReady,Is.False);Assert.That(Reach(106,-36,70,-62),Is.False);
+            Wall("Machine_divider").TakeDamage(2);Physics.SyncTransforms();Assert.That(Reach(106,-36,70,-62),Is.True);
+            Assert.That(level.CanExtract,Is.False,"A final solution cannot bypass the initial wing requirement.");
+        }
+        [UnityTest] public IEnumerator OccupiedGuardCanWinAtNewExitButAnUnoccupiedNPCStillCannot()
+        {
+            Open("inspection");Open("exit-passage");Open("extraction");
+            var host=GameObject.Find("Control_Guard").GetComponent<GuardEnemy>();
+            Assert.That(level.Spirit.GetComponent<PossessionCharge>().TryCollect(),Is.True);
+            level.Spirit.RestoreAt(host.transform.position-Vector3.forward*1.8f);host.transform.rotation=Quaternion.identity;Physics.SyncTransforms();
+            Invoke(level.Possession,"Possess",host);Assert.That(level.Possession.PossessedEnemy,Is.SameAs(host));
+            Move(host,level.transform.position,Vector3.forward);Assert.That(level.TryFinish(host.GetComponent<Collider>()),Is.True);
+            Assert.That(GameManager.Instance.CurrentState,Is.EqualTo(LevelState.Complete));yield return null;
+        }
+        [UnityTest] public IEnumerator FourTargetControlDoorUsesASecondRealChargeWithoutResettingEarlierHits()
+        {
+            var host=GameObject.Find("Control_Guard").GetComponent<GuardEnemy>();
+            var source=GameObject.Find("Charge_Source_11").GetComponent<PossessionChargePickup>();Set(source,"cooldown",.05f);
+            Collect(source);Approach(host);Invoke(level.Possession,"Possess",host);
+            Assert.That(level.Possession.PossessedEnemy,Is.SameAs(host));
+            var view=GameObject.Find("extraction_Door").GetComponent<WarehouseDoorView>();
+            yield return Fire(host,view.Targets[0],Map(24,-49),Vector3.left);
+            yield return Fire(host,view.Targets[1],Map(44,-50),Vector3.right);
+            yield return Fire(host,view.Targets[2],Map(24,-35),Vector3.left);
+            Assert.That(host.GetComponent<ShootAbility>().UsesLeft,Is.Zero);
+            Assert.That(view.GetComponent<Door>().IsOpen,Is.False);Assert.That(level.Possession.TryEject(false),Is.True);
+            yield return new WaitForSeconds(.6f);Collect(source);Approach(host);Invoke(level.Possession,"Possess",host);
+            Assert.That(level.Possession.PossessedEnemy,Is.SameAs(host));
+            yield return Fire(host,view.Targets[3],Map(44,-34),Vector3.right);
+            Assert.That(view.GetComponent<Door>().IsOpen,Is.True);
+            Assert.That(level.Spirit.GetComponent<PossessionCharge>().SuccessfulPossessions,Is.EqualTo(2));
+        }
+        [UnityTest] public IEnumerator MachineUsesTheLocalHeavyAndFreshChargeForEachSharedSmash()
+        {
+            var host=GameObject.Find("Machine_Heavy").GetComponent<HeavyEnemy>();
+            var source=GameObject.Find("Charge_Source_13").GetComponent<PossessionChargePickup>();Set(source,"cooldown",.05f);
+            Collect(source);Approach(host);Invoke(level.Possession,"Possess",host);Assert.That(level.Possession.PossessedEnemy,Is.SameAs(host));
+            var divider=Wall("Machine_divider");var exit=Wall("Machine_exit_wall");
+            Move(host,Map(106,-39.5f),Vector3.forward);host.GetComponent<SmashAbility>().TryExecute();
+            Assert.That(divider.CurrentHP,Is.LessThanOrEqualTo(0));Assert.That(exit.CurrentHP,Is.GreaterThan(0));
+            Assert.That(host.GetComponent<SmashAbility>().UsesLeft,Is.Zero);Assert.That(level.Possession.TryEject(false),Is.True);
+            yield return new WaitForSeconds(.6f);Collect(source);Approach(host);Invoke(level.Possession,"Possess",host);
+            Assert.That(level.Possession.PossessedEnemy,Is.SameAs(host));
+            Move(host,Map(92.5f,-47),Vector3.left);host.GetComponent<SmashAbility>().TryExecute();
+            Assert.That(exit.CurrentHP,Is.LessThanOrEqualTo(0));Assert.That(level.MachineReady,Is.True);
+            Assert.That(level.Spirit.GetComponent<PossessionCharge>().SuccessfulPossessions,Is.EqualTo(2));
+        }
+        private void Collect(PossessionChargePickup source)
+        {
+            level.Spirit.RestoreAt(source.transform.position+Vector3.up*1.05f);Physics.SyncTransforms();
+            Assert.That(source.TryCollect(level.Spirit.GetComponent<PossessionCharge>()),Is.True,"Placed source unavailable: "+source.name);
+        }
+        private void Approach(EnemyBase host)
+        {
+            level.Spirit.RestoreAt(host.transform.position-host.transform.forward*1.8f);Physics.SyncTransforms();
+            Assert.That(host.CanBePossessedFrom(level.Spirit.transform),Is.True);
+        }
+        private static IEnumerator Fire(GuardEnemy host,Target target,Vector3 at,Vector3 forward)
+        {
+            Move(host,at,forward);yield return new WaitForSeconds(.55f);
+            var cam=Camera.main;var saved=cam.transform.position;var ray=cam.ScreenPointToRay(Input.mousePosition);
+            Assert.That(new Plane(Vector3.up,0).Raycast(ray,out float distance),Is.True);
+            var delta=target.transform.position-ray.GetPoint(distance);delta.y=0;cam.transform.position+=delta;
+            host.GetComponent<ShootAbility>().TryExecute();cam.transform.position=saved;
+            float deadline=Time.time+1;while(!target.IsHit&&Time.time<deadline)yield return null;
+            Assert.That(target.IsHit,Is.True,"Shared Guard shot missed "+target.name);
+        }
+        [Test] public void ExpandedRoomsHaveSolidOutsideEdgesIncludingNegativePlanCoordinates()
+        {
+            foreach(var edge in new[]{new Vector4(18,-15,1,0),new Vector4(50,-15,1,0),
+                new Vector4(18,-36,1,0),new Vector4(122,-36,1,0),new Vector4(90,-36,1,0),
+                new Vector4(58,-62,1,0),new Vector4(82,-62,1,0),new Vector4(70,-70,0,1)})
+            {
+                var at=Map(edge.x,edge.y);var offset=new Vector3(edge.z,0,-edge.w)*.7f;
+                Assert.That(Physics.Linecast(at-offset,at+offset,out var hit,1<<0,QueryTriggerInteraction.Ignore),Is.True,
+                    "Missing structural outer wall at "+edge);
+                Assert.That(hit.collider.name,Is.EqualTo("BoundaryWall"));
+            }
         }
         private static void Open(string key){foreach(var t in GameObject.Find(key+"_Door").GetComponent<WarehouseDoorView>().Targets)t.OnHit();Physics.SyncTransforms();}
         private static BreakableWall Wall(string name)=>GameObject.Find(name).GetComponent<BreakableWall>();
@@ -200,7 +311,7 @@ namespace Possession.Warehouse.Tests
             while(queue.Count>0)
             {
                 var p=queue.Dequeue();if((p-new Vector2Int(tx,ty)).sqrMagnitude<=1)return true;
-                foreach(var delta in offsets){var next=p+delta;if(next.x<0||next.x>140||next.y<0||next.y>100||visited.Contains(next)||!Clear(next))continue;visited.Add(next);queue.Enqueue(next);}
+                foreach(var delta in offsets){var next=p+delta;if(next.x<0||next.x>140||next.y< -75||next.y>100||visited.Contains(next)||!Clear(next))continue;visited.Add(next);queue.Enqueue(next);}
             }
             return false;
         }
