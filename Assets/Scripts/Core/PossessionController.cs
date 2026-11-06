@@ -13,9 +13,9 @@ namespace Possession
     public class PossessionController : MonoBehaviour
     {
         [Header("Possession Settings")]
-        [SerializeField] private float possessRange = 7f;
+        [SerializeField] private float possessRange = 5f;
         [SerializeField] private float possessDuration = 10f;
-        [SerializeField] private float ejectCooldown = 0.5f;
+        [SerializeField] private float ejectCooldown = 2f;
         [SerializeField] private float hostileTime = 5f;
         [SerializeField] private LayerMask enemyLayer;
 
@@ -25,18 +25,32 @@ namespace Possession
         private float ejectCooldownTimer;
         private SpiritController spirit;
         private Vector3 lastSpiritPosition;
+        private GameObject shieldBubble;
+        private Renderer shieldRenderer;
 
         public PlayerState CurrentState => currentState;
         public float PossessTimer => possessTimer;
         public float PossessDuration => possessDuration;
         public EnemyBase PossessedEnemy => possessedEnemy;
-        // Levels without a charge component retain their normal possession rules.
         public bool CanStartPossession => GetComponent<PossessionCharge>() == null
             || GetComponent<PossessionCharge>().HasCharge && ejectCooldownTimer <= 0f;
+
+        public bool IsEjectShielded => ejectCooldownTimer > 0f;
 
         private void Awake()
         {
             spirit = GetComponent<SpiritController>();
+            shieldBubble = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            shieldBubble.name = "EjectShield";
+            shieldBubble.layer = 2;
+            shieldBubble.transform.SetParent(transform, false);
+            shieldBubble.transform.localScale = Vector3.one * 1.8f;
+            var col = shieldBubble.GetComponent<Collider>();
+            if (col != null) { col.enabled = false; Destroy(col); }
+            shieldRenderer = shieldBubble.GetComponent<Renderer>();
+            shieldRenderer.material = new Material(Shader.Find("Sprites/Default"));
+            shieldRenderer.material.color = new Color(0.3f, 0.85f, 1f, 0.25f);
+            shieldBubble.SetActive(false);
         }
 
         private void Update()
@@ -45,6 +59,7 @@ namespace Possession
                 return;
 
             ejectCooldownTimer -= Time.deltaTime;
+            UpdateShield();
 
             if (currentState == PlayerState.Spirit)
             {
@@ -144,6 +159,10 @@ namespace Possession
                 possessedEnemy.OnEjected();
 
             spirit.RestoreAt(ejectPos);
+            Vector3 awayFromSpirit = possessedEnemy.transform.position - ejectPos;
+            awayFromSpirit.y = 0f;
+            if (awayFromSpirit.sqrMagnitude > 0.01f)
+                possessedEnemy.transform.rotation = Quaternion.LookRotation(awayFromSpirit.normalized);
             ejectCooldownTimer = ejectCooldown;
 
             var ejectedEnemy = possessedEnemy;
@@ -226,6 +245,26 @@ namespace Possession
                 if (!hit.transform.IsChildOf(transform)) return false;
             }
             return true;
+        }
+
+        private void UpdateShield()
+        {
+            if (shieldBubble == null) return;
+            bool active = ejectCooldownTimer > 0f && currentState == PlayerState.Spirit;
+            shieldBubble.SetActive(active);
+            if (active && shieldRenderer != null)
+            {
+                float pulse = 0.15f + 0.15f * Mathf.Sin(Time.time * 6f);
+                var c = shieldRenderer.material.color;
+                c.a = pulse;
+                shieldRenderer.material.color = c;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (shieldRenderer != null)
+                Destroy(shieldRenderer.sharedMaterial);
         }
     }
 }

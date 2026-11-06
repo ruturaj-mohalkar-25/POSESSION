@@ -6,7 +6,7 @@ namespace Possession
     public sealed class PossessionChargePickup : MonoBehaviour
     {
         [SerializeField] private bool reforms = true;
-        [SerializeField, Min(0f)] private float cooldown = 8f;
+        [SerializeField, Min(0f)] private float cooldown = 23f;
         [SerializeField] private Renderer shard;
         private float readyAt;
         private bool consumed;

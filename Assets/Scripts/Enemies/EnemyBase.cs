@@ -12,7 +12,7 @@ namespace Possession
         [SerializeField] protected Transform[] waypoints;
 
         [Header("Shared AI")]
-        [SerializeField, Min(0f)] protected float detectionRange = 10f;
+        [SerializeField, Min(0f)] protected float detectionRange = 5f;
         [SerializeField] protected LayerMask spiritLayer = ~0;
         [FormerlySerializedAs("waypointIdleTime")]
         [SerializeField, Min(0f)] protected float waypointWaitTime = 0.75f;

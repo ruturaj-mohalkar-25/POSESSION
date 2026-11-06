@@ -158,7 +158,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Possession.Runtime::Possession.SpiritController
   moveSpeed: 6
   jumpForce: 8
-  maxHP: 3
+  maxHP: 5
 --- !u!114 &6902978013017217372
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -171,9 +171,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b5cb51eb8026e4b51bf6f0655d8c934e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.PossessionController
-  possessRange: 7
+  possessRange: 5
   possessDuration: 10
-  ejectCooldown: 0.5
+  ejectCooldown: 2
   hostileTime: 5
   enemyLayer:
     serializedVersion: 2

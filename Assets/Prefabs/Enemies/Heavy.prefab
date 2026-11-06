@@ -133,7 +133,7 @@ MonoBehaviour:
   moveSpeed: 1.8
   maxHP: 5
   waypoints: []
-  detectionRange: 10
+  detectionRange: 5
   spiritLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -141,6 +141,8 @@ MonoBehaviour:
   waypointArrivalDistance: 0.3
   chaseStopDistance: 1.5
   patrolStartDelay: 0
+  loseSightSearchTime: 1.5
+  visionAngle: 45
 --- !u!114 &6693207823745644827
 MonoBehaviour:
   m_ObjectHideFlags: 0

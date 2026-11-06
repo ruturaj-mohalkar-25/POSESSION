@@ -28,11 +28,12 @@ namespace Possession
         {
             if (director == null || state == null) return;
             checkpoint.interactable=director.CheckpointReached;
+            var charge = director.Charge;
             state.text = director.CanExit ? "Route clear · Reach the exit in any form"
                 : director.Possession.CurrentState != PlayerState.Spirit ? "Body borrowed · E to eject · R to restart"
-                : director.Charge.HasCharge ? "POSSESSION READY · E near a body"
+                : charge.HasCharge ? "CHARGES " + charge.Count + "/" + charge.MaxCharges + " · E near a body"
                 : "Find an energy shard to possess a body";
-            state.color=director.Charge.HasCharge || director.CanExit ? new Color(0.45f,1f,0.7f) : Color.white;
+            state.color = charge.HasCharge || director.CanExit ? new Color(0.45f, 1f, 0.7f) : Color.white;
         }
         private static RectTransform Panel(Transform parent,string name,Vector2 anchor,Vector2 pos,Vector2 size)
         {
