@@ -32,7 +32,7 @@ namespace Possession.Editor
         private static Material floorMat,wallMat,coverMat,steelMat,chargeMat,glowMat;
         private static GameObject targetTemplate,wallTemplate,guardTemplate,heavyTemplate;
         private static readonly Color[] Palette={new(.2f,.8f,1f),new(1f,.7f,.2f),new(1f,.35f,.6f),new(.65f,.4f,1f),new(1f,.85f,.35f)};
-        private static float Unit => data != null ? data.unitSize : .8f;
+        private static float Unit => data != null ? data.unitSize : .65f;
         public static Vector3 Map(float x,float y,float height=1.15f)=>new((x-70f)*Unit,height,(90f-y)*Unit);
 
         [MenuItem("Possession/Level Design/Level 3 Warehouse/Build and Open")]
