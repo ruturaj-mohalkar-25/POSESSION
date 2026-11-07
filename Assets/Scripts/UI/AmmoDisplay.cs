@@ -9,9 +9,11 @@ namespace Possession
     {
         [SerializeField] private RectTransform pipRow;
         [SerializeField] private Sprite pipSprite;
-        [SerializeField] private float pipSize = 22f;
-        [SerializeField] private float pipSpacing = 8f;
-        [SerializeField] private Vector2 cursorOffset = new Vector2(28f, -28f);
+        [SerializeField] private Sprite bulletSprite;
+        [SerializeField] private Sprite hammerSprite;
+        [SerializeField] private float pipSize = 56f;
+        [SerializeField] private float pipSpacing = 2f;
+        [SerializeField] private Vector2 cursorOffset = new Vector2(32f, -32f);
         [SerializeField] private Color fullColor = new Color(1f, 0.85f, 0.3f);
         [SerializeField] private Color spentColor = new Color(1f, 1f, 1f, 0.2f);
 
@@ -30,6 +32,33 @@ namespace Possession
                 pips[i].color = i < left ? fullColor : spentColor;
             }
             FollowCursor();
+        }
+
+        public void UseBulletSprite()
+        {
+            pipSprite = bulletSprite != null ? bulletSprite : pipSprite;
+            fullColor = new Color(1f, 0.85f, 0.3f);
+            ResizePips(48f);
+        }
+
+        public void UseHammerSprite()
+        {
+            pipSprite = hammerSprite != null ? hammerSprite : pipSprite;
+            fullColor = Color.white;
+            ResizePips(60f);
+        }
+
+        private void ResizePips(float size)
+        {
+            pipSize = size;
+            for (int i = 0; i < pips.Count; i++)
+            {
+                pips[i].sprite = pipSprite;
+                pips[i].color = fullColor;
+                var rect = (RectTransform)pips[i].transform;
+                rect.sizeDelta = new Vector2(size, size);
+                rect.anchoredPosition = new Vector2(i * (size + pipSpacing), 0f);
+            }
         }
 
         public void Hide()

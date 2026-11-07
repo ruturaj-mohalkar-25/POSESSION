@@ -253,6 +253,14 @@ namespace Possession.Editor
             var ammoSo = new SerializedObject(ammo);
             ammoSo.FindProperty("pipRow").objectReferenceValue = pips;
             ammoSo.FindProperty("pipSprite").objectReferenceValue = KnobSprite();
+            ammoSo.FindProperty("bulletSprite").objectReferenceValue =
+                AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Sprites/BulletPip.png");
+            ammoSo.FindProperty("hammerSprite").objectReferenceValue =
+                AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Sprites/HammerPip.png");
+            ammoSo.FindProperty("pipSize").floatValue = 56f;
+            ammoSo.FindProperty("pipSpacing").floatValue = 2f;
+            ammoSo.FindProperty("cursorOffset").vector2Value = new Vector2(32f, -32f);
+            ammoSo.FindProperty("fullColor").colorValue = new Color(1f, 0.85f, 0.3f);
             ammoSo.ApplyModifiedPropertiesWithoutUndo();
             so.FindProperty("ammoDisplay").objectReferenceValue = ammo;
             ammoRow.gameObject.SetActive(false);

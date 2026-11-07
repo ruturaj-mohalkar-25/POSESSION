@@ -244,6 +244,12 @@ namespace Possession
             SetControls(form);
             if (possessPrompt != null) possessPrompt.SetActive(false);
 
+            if (ammoDisplay != null)
+            {
+                if (state == PlayerState.Possessed_Heavy) ammoDisplay.UseHammerSprite();
+                else ammoDisplay.UseBulletSprite();
+            }
+
             // The ability reports its uses before Possessed is raised, so read them directly
             var ability = enemy != null ? enemy.GetComponent<Ability>() : null;
             if (ability != null && ability.MaxUses > 0) OnAmmoUpdated(ability.UsesLeft, ability.MaxUses);
