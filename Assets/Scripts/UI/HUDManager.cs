@@ -19,10 +19,9 @@ namespace Possession
         [SerializeField] private Text levelTimerText;
 
         [Header("Possession Timer")]
-        [SerializeField] private GameObject possessTimerGroup; // bar + text, hidden as Spirit
-        [SerializeField] private Text possessTimerText;
-        [SerializeField] private Image possessTimerFill; // pivot X = 0, green -> yellow -> red as time runs out
-        [SerializeField] private float possessWarningTime = 5f;
+        [SerializeField] private GameObject possessTimerGroup; // circular timer, hidden as Spirit
+        [SerializeField] private Text possessTimerText; // legacy scene reference; hidden by the circular timer
+        [SerializeField] private Image possessTimerFill; // legacy scene reference; hidden by the circular timer
 
         [Header("State")]
         [SerializeField] private Text currentFormText;
@@ -69,6 +68,23 @@ namespace Possession
         private ResultsView activeResults;
         private int stars;
         private AnalyticsData? analytics;
+        private PossessionTimerGraphic possessTimerRing;
+
+        private void Awake()
+        {
+            if (possessTimerGroup == null) return;
+            // Keep the serialized group so scene and tutorial references still point to the real timer.
+            foreach (Transform child in possessTimerGroup.transform)
+                child.gameObject.SetActive(false);
+            var rect = possessTimerGroup.GetComponent<RectTransform>();
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(52f, 52f);
+            possessTimerRing = possessTimerGroup.GetComponent<PossessionTimerGraphic>();
+            if (possessTimerRing == null)
+                possessTimerRing = possessTimerGroup.AddComponent<PossessionTimerGraphic>();
+            possessTimerRing.raycastTarget = false;
+            possessTimerRing.SetProgress(1f, PossessTimerColor(1f));
+        }
 
         private void OnEnable()
         {
@@ -107,6 +123,7 @@ namespace Possession
             EventBus.LevelCompletedWithStats -= OnLevelStats;
             EventBus.AnalyticsReady -= OnAnalyticsReady;
             EventBus.GameComplete -= OnGameComplete;
+            SetPossessTimerVisible(false);
         }
 
         private void Start()
@@ -195,22 +212,10 @@ namespace Possession
 
         private void UpdatePossessTimer(float current, float max)
         {
-            SetPossessTimerVisible(true);
-
             float pct = max > 0f ? Mathf.Clamp01(current / max) : 0f;
-            bool warning = current <= possessWarningTime;
-
-            if (possessTimerText != null)
-            {
-                possessTimerText.text = $"POSSESSED {Mathf.CeilToInt(Mathf.Max(current, 0f))}s";
-                possessTimerText.color = warning ? healthLow : Color.white;
-            }
-
-            if (possessTimerFill != null)
-            {
-                possessTimerFill.rectTransform.localScale = new Vector3(pct, 1f, 1f);
-                possessTimerFill.color = PossessTimerColor(pct);
-            }
+            if (possessTimerRing != null)
+                possessTimerRing.SetProgress(pct, PossessTimerColor(pct));
+            SetPossessTimerVisible(pct > 0f && !levelEnded);
         }
 
         // Full = green, half = yellow/orange, almost out = red, blending smoothly in between
@@ -233,6 +238,9 @@ namespace Possession
 
         private void OnPossessed(EnemyBase enemy, PlayerState state)
         {
+            if (possessTimerRing != null)
+                possessTimerRing.SetProgress(1f, PossessTimerColor(1f));
+            SetPossessTimerVisible(enemy != null && !levelEnded);
             string form = state switch
             {
                 PlayerState.Possessed_Guard => "Guard",

@@ -5,16 +5,17 @@ namespace Possession
 {
     // Cues that sit on the possessed body instead of the screen corners:
     // the body turns white (possession colour) and its name tag hides,
-    // the possession timer floats above it, a short ability hint shows under it,
+    // the circular possession timer and a short ability hint sit below it,
     // and a possessed Guard draws an aim line toward the cursor.
+    [DefaultExecutionOrder(100)] // Position cues after CameraFollow has moved the camera.
     public class PossessionCues : MonoBehaviour
     {
         [Header("Possessed body")]
         [SerializeField] private Material possessedMaterial; // white, like the Spirit; hats and tools keep their colours
 
-        [Header("Timer above the body")]
-        [SerializeField] private RectTransform timerGroup; // HUDManager still drives its fill and text
-        [SerializeField] private float timerHeight = 2.4f;
+        [Header("Timer below the body")]
+        [SerializeField] private RectTransform timerGroup; // HUDManager drives the circular countdown
+        [SerializeField] private float timerDrop = 40f;
 
         [Header("Ability hint")]
         [SerializeField] private Text hintText;
@@ -137,14 +138,17 @@ namespace Possession
             if (cam == null) cam = Camera.main;
             if (cam == null) return;
 
-            // Overlay canvas works in screen pixels
+            Vector3 feet = possessed.transform.position;
+            if (bodyRenderer != null) feet.y = bodyRenderer.bounds.min.y;
+
+            // Keep the circle upright and equally readable for Guard and Heavy.
             if (timerGroup != null)
-                PlaceAt(timerGroup, possessed.transform.position + Vector3.up * timerHeight, 0f);
+                PlaceAt(timerGroup, feet, -timerDrop);
 
             if (hintText != null && hintText.gameObject.activeSelf)
             {
                 hintTimer -= Time.unscaledDeltaTime;
-                PlaceAt(hintText.rectTransform, possessed.transform.position, -hintDrop);
+                PlaceAt(hintText.rectTransform, feet, -Mathf.Max(hintDrop, timerDrop + 52f));
                 var c = hintText.color;
                 c.a = Mathf.Clamp01(hintTimer / hintFadeTime);
                 hintText.color = c;
@@ -159,7 +163,23 @@ namespace Possession
             Vector3 screen = cam.WorldToScreenPoint(world);
             if (screen.z <= 0f) return;
             float scale = canvas != null ? canvas.scaleFactor : 1f;
-            rect.position = new Vector3(screen.x, screen.y + screenOffsetY * scale, 0f);
+            Vector2 point = new Vector2(screen.x, screen.y + screenOffsetY * scale);
+            if (canvas != null && canvas.renderMode == RenderMode.ScreenSpaceCamera)
+            {
+                // Use canvas coordinates: its world plane follows the camera later in the frame.
+                var root = canvas.transform as RectTransform;
+                Rect pixels = canvas.pixelRect;
+                Vector2 normalized = new Vector2((point.x - pixels.x) / pixels.width,
+                    (point.y - pixels.y) / pixels.height);
+                rect.position = root.TransformPoint(root.rect.min + Vector2.Scale(normalized, root.rect.size));
+            }
+            else if (canvas != null && canvas.renderMode == RenderMode.WorldSpace)
+            {
+                if (RectTransformUtility.ScreenPointToWorldPointInRectangle(
+                    canvas.transform as RectTransform, point, canvas.worldCamera, out Vector3 position))
+                    rect.position = position;
+            }
+            else rect.position = new Vector3(point.x, point.y, 0f);
         }
 
         // Same aim as ShootAbility: the point on the ground under the cursor, flattened
