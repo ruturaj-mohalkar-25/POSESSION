@@ -37,13 +37,13 @@ The new Exit is a checkered deck and illuminated arch. It requires **one initial
 
 ## Space and tuning
 
-The coordinate scale remains 0.65 metres. Main existing wing rooms are 22.1 × 14.3 m and Sorting is 16.9 × 13 m. New challenge rooms are 20.8 × 13 m. Main passages and final door openings remain 6.5–7.8 m wide. The Records baffles each leave a 7.8 m gap. Crates, characters, attack ranges and camera settings retain their physical size so the larger rooms provide usable movement space. The small Guard Room patrol is kept clear of its new partition.
+The coordinate scale is now 0.8 metres, up from 0.65 (23% more width/depth and approximately 51% more floor area). Guard/Cargo rooms are 27.2 × 17.6 m; Inspection/Loading are 27.2 × 19.2 m; Sorting is 20.8 × 16 m. New challenge rooms are 25.6 × 16 m. Main passages and matching final door openings are 8–9.6 m wide. The middle Recovery passage is 28.8 × 9.6 m; the Service lobby is 13.6 × 9.6 m. The Records baffles each leave a 9.6 m gap. Crates, characters, attack ranges and camera settings retain their physical size so the larger rooms provide usable movement space. The small Guard Room patrol is kept clear of its new partition.
 
 Seven-minute level clock, twelve seconds per possession; tuning remains in `Data/warehouse-layout.json`. Combat, movement, vision, health, abilities, charge rules and ejection use the merged integration systems and copied Level 1 actor settings. Human playtesting is still needed to judge final pacing and combat difficulty.
 
 ## Controls and retries
 
-WASD move, Space jump, E possess/eject, LMB shoot/smash. Collect a green crystal before possessing, and approach outside the enemy vision cone. Sources reform after eight seconds. **R** or Retry resets the whole preview, including defeated hosts, targets, walls and sources. The shared result screen's next button replays this local scene. Charge regeneration does not replace a defeated required host; use Retry in that case.
+WASD move, Space jump, E possess/eject, LMB shoot/smash. Use a carried charge to possess and collect green crystals to recharge; approach outside the enemy vision cone. Integration now supplies five Spirit HP, one starting possession charge, capacity for three charges, retained spare charges after ejecting and a two-second ejection cooldown. Sources reform after eight seconds. **R** or Retry resets the whole preview, including defeated hosts, targets, walls and sources. The shared result screen's next button replays this local scene. Charge regeneration does not replace a defeated required host; use Retry in that case.
 
 ## Ejection protection and enemy rooms
 
@@ -55,7 +55,7 @@ The shared `PossessionController` grants protection directly after finding a val
 
 Ejection prefers the enemy's rear, then rear diagonals, sides and finally its front if needed. Ground checks, capsule clearance and a swept path check prevent spawning inside or through a wall. If the rear is blocked, a safe alternative is chosen.
 
-The shared enemy and attack scripts have optional home-bound checks, enabled only in Warehouse. `WarehouseSceneSafety` also repairs missing Warehouse visuals and room assignments on Play/scene load, covering older open scenes whose in-memory setup predates the saved builder changes. It is idempotent and leaves other scenes' room rules unchanged. These hooks use the shared health and enemy systems, rather than duplicating them.
+Integration's shared shield bubble is retained; Warehouse adds its countdown ring and arch without rendering a second bubble. The shared enemy and attack scripts have optional home-bound checks, enabled only in Warehouse. `WarehouseSceneSafety` also repairs missing Warehouse visuals and room assignments on Play/scene load, covering older open scenes whose in-memory setup predates the saved builder changes. It is idempotent and leaves other scenes' room rules unchanged. These hooks use the shared health and enemy systems, rather than duplicating them.
 
 ## Health dependency
 
@@ -65,13 +65,13 @@ The green cross remains a **placement socket, not a functioning heal**. Current 
 
 Use **Possession → Level Design → Level 3 Warehouse → Build and Open**. The builder copies the latest Level 1 shell and actors, then generates this scene from the authored JSON. Rebuilding replaces edits made only in the generated scene; keep durable layout changes in that JSON. Boundary generation supports the new negative plan coordinates, so the original built rooms do not shift to make room for the extension.
 
-After the shared gameplay work merges, bring integration into this local branch and rebuild to inherit current shared components. Resolve any changed APIs and retest before registering the campaign order. Future merge conflicts cannot be guaranteed absent. The ejection-protection API, rear spawn search and optional room checks touch the shared Spirit, PossessionController, EnemyBase and enemy-attack scripts. Existing prefabs, campaign scenes and build settings are unchanged.
+After the shared gameplay work merges, bring integration into this local branch and rebuild to inherit current shared components. Resolve any changed APIs and retest before registering the campaign order. Future merge conflicts cannot be guaranteed absent. The ejection-protection API, rear spawn search and optional room checks touch the shared Spirit, PossessionController, EnemyBase and enemy-attack scripts. Shared prefabs, campaign scenes and build settings come from integration; Warehouse adds no campaign registration changes.
 
 ## Validation
 
-The complete PlayMode regression suite passes **195/195 tests**, including the original scenes and Warehouse.
+After syncing integration `78dd0f5` (PR #62), the project compiles and **34/34 Warehouse PlayMode checks pass**. The full campaign suite has not been rerun for this sync.
 
-**33 Warehouse PlayMode checks pass**: expected shared components/counts; structural edge sealing across the extension; wider-room and doorway clearance; all distinct hits with animated leaves; each original route; recovery entrance sealing and retreat; real Guard shots to all sixteen targets; hostile-shot rejection; shared damage/smash rules; forced-eject persistence; four-target progress at three hits; all four initial/final route combinations; Machine divider bypass prevention; real local-charge retries for Control and Machine; and shared completion, occupied-body acceptance and replay reset.
+**34 Warehouse PlayMode checks pass**: expected shared components/counts; structural edge sealing across the extension; wider-room and doorway clearance; unobstructed 2.8-metre turning areas in middle rooms; all distinct hits with animated leaves; each original route; recovery entrance sealing and retreat; real Guard shots to all sixteen targets; hostile-shot rejection; shared damage/smash rules; forced-eject persistence; four-target progress at three hits; all four initial/final route combinations; Machine divider bypass prevention; real local-charge retries for Control and Machine; and shared completion, occupied-body acceptance and replay reset.
 
 Additional checks verify manual/forced-eject protection, actual hostile bullets during the shield, damage after expiry, no shield on spawn or an invalid ejection, all host room assignments, chase termination at a doorway, hostile Heavy attack cancellation and player-controlled movement outside home bounds, clear rear spawn for both host types, blocked rear fallback without teleporting through geometry, protection without a visual component and recovery of older open-scene setup.
 

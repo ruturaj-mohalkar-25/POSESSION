@@ -140,7 +140,7 @@ namespace Possession.Warehouse.Tests
             Assert.That(possession.PossessedEnemy,Is.SameAs(host));
         }
         private static EnemyBase Host(string name)=>GameObject.Find(name).GetComponent<EnemyBase>();
-        private static Vector3 Map(float x,float y)=>new((x-70)*.65f,1.15f,(90-y)*.65f);
+        private static Vector3 Map(float x,float y)=>new((x-70)*.8f,1.15f,(90-y)*.8f);
         private static void Move(EnemyBase host,Vector3 at,Vector3 forward)
         {
             var cc=host.GetComponent<CharacterController>();cc.enabled=false;at.y=host.transform.position.y;host.transform.SetPositionAndRotation(at,Quaternion.LookRotation(forward));cc.enabled=true;Physics.SyncTransforms();

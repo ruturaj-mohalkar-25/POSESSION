@@ -52,20 +52,36 @@ namespace Possession.Warehouse.Tests
         [Test] public void RoomsAndPassagesProvideSpaceToCircleCoverAndPlan()
         {
             var room=GameObject.Find("Guard_room_Floor").GetComponent<Collider>().bounds;
-            Assert.That(room.size.x,Is.EqualTo(22.1f).Within(.01f));
-            Assert.That(room.size.z,Is.EqualTo(14.3f).Within(.01f));
+            Assert.That(room.size.x,Is.EqualTo(27.2f).Within(.01f));
+            Assert.That(room.size.z,Is.EqualTo(17.6f).Within(.01f));
             var sorting=GameObject.Find("Sorting_hall_Floor").GetComponent<Collider>().bounds;
-            Assert.That(sorting.size.x,Is.EqualTo(16.9f).Within(.01f));
-            Assert.That(sorting.size.z,Is.EqualTo(13f).Within(.01f));
+            Assert.That(sorting.size.x,Is.EqualTo(20.8f).Within(.01f));
+            Assert.That(sorting.size.z,Is.EqualTo(16f).Within(.01f));
             foreach(var door in Object.FindObjectsByType<Door>(FindObjectsSortMode.None))
             {
                 var bounds=door.GetComponent<Collider>().bounds;
-                Assert.That(Mathf.Max(bounds.size.x,bounds.size.z),Is.GreaterThanOrEqualTo(6.49f));
+                Assert.That(Mathf.Max(bounds.size.x,bounds.size.z),Is.GreaterThanOrEqualTo(7.99f));
             }
             // Crates stay compact; enlarging a room must create usable floor space.
             Assert.That(GameObject.Find("Cover_0").GetComponent<Collider>().bounds.size.x,Is.EqualTo(2.5f).Within(.01f));
             // A large manoeuvring capsule can traverse the fully solved left route.
             Open("inspection");Open("exit-passage");Assert.That(Reach(70,88,70,9,1.2f),Is.True);
+        }
+        [Test] public void MiddleRoomsHaveWideUnobstructedTurningAndPlanningAreas()
+        {
+            var recovery=GameObject.Find("Recovery_passage_Floor").GetComponent<Collider>().bounds;
+            Assert.That(recovery.size.x,Is.EqualTo(28.8f).Within(.01f));
+            Assert.That(recovery.size.z,Is.EqualTo(9.6f).Within(.01f));
+            foreach(var point in new[]{new Vector2(60,48),new Vector2(70,49),new Vector2(80,48),
+                new Vector2(70,63),new Vector2(70,29),new Vector2(70,8)})
+            {
+                var at=Map(point.x,point.y);at.y=2f;
+                Assert.That(Physics.Raycast(at,Vector3.down,3f,1<<0,QueryTriggerInteraction.Ignore),Is.True);
+                var obstacles=Physics.OverlapCapsule(at+Vector3.up*.3f,at-Vector3.up*.3f,1.4f,
+                    (1<<0)|(1<<7),QueryTriggerInteraction.Ignore)
+                    .Where(c=>c.GetComponentInParent<SpiritController>()==null).ToArray();
+                Assert.That(obstacles,Is.Empty,"Middle turning space obstructed at "+point);
+            }
         }
         [UnityTest] public IEnumerator DoorsRequireAllDistinctTargetsAndKeepProgress()
         {
@@ -293,7 +309,7 @@ namespace Possession.Warehouse.Tests
         }
         private static void Open(string key){foreach(var t in GameObject.Find(key+"_Door").GetComponent<WarehouseDoorView>().Targets)t.OnHit();Physics.SyncTransforms();}
         private static BreakableWall Wall(string name)=>GameObject.Find(name).GetComponent<BreakableWall>();
-        private static Vector3 Map(float x,float y)=>new((x-70)*.65f,1.5f,(90-y)*.65f);
+        private static Vector3 Map(float x,float y)=>new((x-70)*.8f,1.5f,(90-y)*.8f);
         // Rasterise actual colliders with a Heavy-sized capsule, not just the paper floor plan.
         private static bool Reach(int sx,int sy,int tx,int ty,float radius=.68f)
         {
