@@ -292,16 +292,16 @@ namespace Possession
 
         private void ApplyCompactLayout()
         {
-            PlaceTopLeft(healthText != null ? healthText.rectTransform : null,
-                new Vector2(24f, -18f), new Vector2(280f, 36f));
-            if (healthText != null) healthText.fontSize = 26;
+            PlaceBottomCentre(healthText != null ? healthText.rectTransform : null,
+                new Vector2(-100f, 108f), new Vector2(300f, 36f), new Vector2(1f, 0f));
+            if (healthText != null) { healthText.fontSize = 28; healthText.alignment = TextAnchor.MiddleLeft; }
 
             RectTransform healthBar = healthFill != null ? healthFill.rectTransform.parent as RectTransform : null;
-            PlaceTopLeft(healthBar, new Vector2(24f, -58f), new Vector2(280f, 18f));
+            PlaceBottomCentre(healthBar, new Vector2(-100f, 84f), new Vector2(300f, 20f), new Vector2(1f, 0f));
 
-            PlaceTopLeft(levelTimerText != null ? levelTimerText.rectTransform : null,
-                new Vector2(24f, -84f), new Vector2(280f, 36f));
-            if (levelTimerText != null) levelTimerText.fontSize = 28;
+            PlaceBottomCentre(levelTimerText != null ? levelTimerText.rectTransform : null,
+                new Vector2(100f, 84f), new Vector2(300f, 56f), new Vector2(0f, 0f));
+            if (levelTimerText != null) { levelTimerText.fontSize = 28; levelTimerText.alignment = TextAnchor.MiddleRight; }
 
             if (objectiveText != null)
             {
@@ -338,6 +338,15 @@ namespace Possession
         {
             if (rect == null) return;
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+        }
+
+        private static void PlaceBottomCentre(RectTransform rect, Vector2 position, Vector2 size, Vector2 pivot)
+        {
+            if (rect == null) return;
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = pivot;
             rect.anchoredPosition = position;
             rect.sizeDelta = size;
         }
