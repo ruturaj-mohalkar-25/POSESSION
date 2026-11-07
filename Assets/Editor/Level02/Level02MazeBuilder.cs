@@ -60,7 +60,7 @@ namespace Possession.Editor
             foreach(var old in manager.GetComponents<Level02Director>()) Object.DestroyImmediate(old);
             if(spirit.GetComponent<PossessionCharge>()==null) spirit.gameObject.AddComponent<PossessionCharge>();
             var chargeSo=new SerializedObject(spirit.GetComponent<PossessionCharge>());
-            chargeSo.FindProperty("startingCharges").intValue=0;
+            chargeSo.FindProperty("startingCharges").intValue=1;
             chargeSo.ApplyModifiedPropertiesWithoutUndo();
             spirit.transform.position=Map(3,14);
             LevelBuildKit.BuildLighting();
