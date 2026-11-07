@@ -67,8 +67,8 @@ namespace Possession.Editor
             camera.backgroundColor=new Color(.08f,.08f,.1f);
             camera.fieldOfView=40f;
             camera.transform.rotation=Quaternion.Euler(55,0,0);
-            camera.transform.position=spirit.transform.position+new Vector3(0,25,-10);
-            Set(camera.GetComponent<CameraFollow>(),"offset",new Vector3(0,25,-10));
+            camera.transform.position=spirit.transform.position+new Vector3(0,15,-11);
+            Set(camera.GetComponent<CameraFollow>(),"offset",new Vector3(0,15,-11));
             Set(camera.GetComponent<CameraFollow>(),"target",spirit.transform);
             var world=new GameObject("Level02_ChargeMaze").transform;
             var floor=Material("CourtyardStone",new Color(.33f,.42f,.36f));
