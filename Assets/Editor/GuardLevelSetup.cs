@@ -124,6 +124,8 @@ namespace Possession.Editor
             float halfHeight = controller.height * Mathf.Abs(instance.transform.lossyScale.y) * 0.5f;
             spawn.y = LevelBuildKit.FloorThickness * 0.5f + halfHeight
                 - controller.center.y * instance.transform.lossyScale.y + 0.05f;
+            first = CampaignLayoutScale.FromOriginal(scene, first);
+            second = CampaignLayoutScale.FromOriginal(scene, second);
             first.y = second.y = spawn.y;
 
             Undo.RecordObject(instance.transform, "Position P1 Guard");

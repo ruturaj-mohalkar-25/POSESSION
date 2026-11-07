@@ -41,6 +41,7 @@ namespace Possession.Editor
                 .Concat(CampaignLevels.ScenePaths))
             {
                 var scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+                CampaignSpaceSetup.Apply(scene);
                 EditorSceneManager.MarkSceneDirty(scene);
                 EditorSceneManager.SaveScene(scene);
             }

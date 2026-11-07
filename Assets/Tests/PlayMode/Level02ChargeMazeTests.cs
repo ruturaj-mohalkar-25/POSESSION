@@ -53,8 +53,10 @@ namespace Possession.Tests
         }
         [Test] public void WallBlockedPossessionDoesNotSpendTheCharge()
         {
-            Collect("C1");level.Spirit.RestoreAt(Map(14.3f,11));
-            var host=Host("Guard_Courtyard");Move(host,Map(16,11),Vector3.forward);Physics.SyncTransforms();
+            Collect("C1");level.Spirit.RestoreAt(Map(14.5f,11));
+            var host=Host("Guard_Courtyard");Move(host,Map(15.7f,11),Vector3.forward);Physics.SyncTransforms();
+            float range=(float)typeof(PossessionController).GetField("possessRange",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(pc);
+            Assert.That(Vector3.Distance(host.transform.position,level.Spirit.transform.position),Is.LessThan(range),"This must test the wall rather than an out-of-range attempt.");
             Invoke(pc,"Possess",host);Assert.That(pc.CurrentState,Is.EqualTo(PlayerState.Spirit));Assert.That(charge.HasCharge,Is.True);
         }
         [Test] public void GuardVisionBlocksChargedPossessionWithoutSpendingTheShard()
@@ -216,7 +218,8 @@ namespace Possession.Tests
         {body.transform.rotation=Quaternion.LookRotation(forward);Physics.SyncTransforms();body.GetComponent<SmashAbility>().TryExecute();Assert.That(wall.CurrentHP,Is.LessThanOrEqualTo(0));}
         private static void Move(EnemyBase body,Vector3 at,Vector3 forward)
         {var cc=body.GetComponent<CharacterController>();cc.enabled=false;at.y=body.transform.position.y;body.transform.SetPositionAndRotation(at,Quaternion.LookRotation(forward));cc.enabled=true;Physics.SyncTransforms();}
-        private static Vector3 Map(float x,float y)=>new((x-17f)*1.6f,1.15f,(12f-y)*1.6f);
+        private static Vector3 Map(float x,float y)=>CampaignLayoutScale.FromOriginal(
+            SceneManager.GetSceneByName("Level_02"),new Vector3((x-17f)*1.6f,1.15f,(12f-y)*1.6f));
         private static EnemyBase Host(string name)=>GameObject.Find(name).GetComponent<EnemyBase>();
         private static PossessionChargePickup Pickup(string name)=>GameObject.Find(name).GetComponent<PossessionChargePickup>();
         private static void Invoke(object obj,string method,params object[] args)=>obj.GetType().GetMethod(method,BindingFlags.NonPublic|BindingFlags.Instance).Invoke(obj,args);
