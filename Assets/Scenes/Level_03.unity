@@ -5602,7 +5602,6 @@ MonoBehaviour:
   gameOverPanel: {fileID: 555359825}
   gameCompletePanel: {fileID: 994877699}
   nextButtonLabel: {fileID: 799896535}
-  firstLevelScene: Level_01
 --- !u!114 &655810774
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14146,10 +14145,6 @@ MonoBehaviour:
   - 60
   - 90
   - 135
-  levelOrder:
-  - Level_01
-  - Level_03
-  - Level_02
 --- !u!4 &1694059597
 Transform:
   m_ObjectHideFlags: 0

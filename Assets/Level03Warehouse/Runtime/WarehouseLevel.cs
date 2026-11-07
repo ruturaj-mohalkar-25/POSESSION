@@ -10,7 +10,7 @@ namespace Possession.Warehouse
         [SerializeField] private SpiritController spirit;
         [SerializeField] private Door inspection, exitPassage, cargoEntry, cargo, extraction;
         [SerializeField] private BreakableWall loadingWall, machineDivider, machineExit;
-        [SerializeField] private Text objective, completionLabel;
+        [SerializeField] private Text objective;
         [SerializeField] private Renderer[] exitLights;
         private bool completed;
         public SpiritController Spirit => spirit;
@@ -21,8 +21,6 @@ namespace Possession.Warehouse
         public bool ControlReady => extraction.IsOpen;
         public bool MachineReady => machineDivider.CurrentHP <= 0 && machineExit.CurrentHP <= 0;
         public bool CanExtract => CanReachTransfer && (ControlReady || MachineReady);
-        private void OnEnable() => EventBus.LevelCompleted += OnCompleted;
-        private void OnDisable() => EventBus.LevelCompleted -= OnCompleted;
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.R)) RestartPreview();
@@ -30,7 +28,6 @@ namespace Possession.Warehouse
             if (exitLights != null) foreach (var light in exitLights) if (light != null)
                 light.material.color = CanExtract ? new Color(.2f,1f,.65f) : new Color(1f,.65f,.18f);
         }
-        private void OnCompleted() { if (completionLabel != null) completionLabel.text = "REPLAY"; }
         public bool TryFinish(Collider other)
         {
             if (completed || !CanExtract || other == null || spirit.CurrentHP <= 0

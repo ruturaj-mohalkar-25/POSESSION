@@ -1,8 +1,8 @@
-# Warehouse — local Level 3 preview
+# Warehouse — campaign Level 3
 
-Use Unity **6000.3.22f1**. Open `Assets/Level03Warehouse/Level_03_Warehouse.unity` and press Play. If the level was already open when its saved scene changed, stop Play Mode and reopen it; accept Reload if Unity asks. The scene is intentionally absent from the campaign build list while shared gameplay updates are pending.
+Use Unity **6000.3.22f1**. Open `Assets/Scenes/MainMenu.unity`, press Play, then select a level. For direct Warehouse testing, open `Assets/Level03Warehouse/Level_03_Warehouse.unity`. If a level was already open when its saved scene changed, stop Play Mode and reopen it; accept Reload if Unity asks.
 
-## Campaign plan
+## Campaign order
 
 | New slot | Source |
 | --- | --- |
@@ -10,7 +10,7 @@ Use Unity **6000.3.22f1**. Open `Assets/Level03Warehouse/Level_03_Warehouse.unit
 | Level 2 | Current displayed Level 3, Hunted maze (legacy `Assets/Scenes/Level_02.unity`) |
 | Level 3 | This Warehouse design |
 
-The current campaign scenes, menu and build settings are unchanged. Apply the campaign order after the team's shared changes merge.
+This order is active in the menu, tutorial exit, Next Level and Play Again. `CampaignLevels` is the shared source of stage order. Scene asset names and GUIDs stay stable so existing builders and references continue working. The old `Assets/Scenes/Level_01.unity` is retained as an internal authoring/test fixture, outside the three-stage menu and progression. Build Settings place MainMenu and Tutorial before the three campaign scenes, with the fixture afterward.
 
 ## Expanded layout
 
@@ -43,7 +43,7 @@ Seven-minute level clock, twelve seconds per possession; tuning remains in `Data
 
 ## Controls and retries
 
-WASD move, Space jump, E possess/eject, LMB shoot/smash. Use a carried charge to possess and collect green crystals to recharge; approach outside the enemy vision cone. Integration now supplies five Spirit HP, one starting possession charge, capacity for three charges, retained spare charges after ejecting and a two-second ejection cooldown. Sources reform after eight seconds. **R** or Retry resets the whole preview, including defeated hosts, targets, walls and sources. The shared result screen's next button replays this local scene. Charge regeneration does not replace a defeated required host; use Retry in that case.
+WASD move, Space jump, E possess/eject, LMB shoot/smash. Use a carried charge to possess and collect green crystals to recharge; approach outside the enemy vision cone. Integration now supplies five Spirit HP, one starting possession charge, capacity for three charges, retained spare charges after ejecting and a two-second ejection cooldown. Sources reform after eight seconds. **R** or Retry resets the whole preview, including defeated hosts, targets, walls and sources. The shared result screen shows **Finish** after Warehouse; it opens the game-complete screen. **Play Again** starts the promoted Level 1. Earlier stages use **Next Level** to advance in campaign order. Charge regeneration does not replace a defeated required host; use Retry in that case.
 
 ## Ejection protection and enemy rooms
 
@@ -65,14 +65,10 @@ The green cross remains a **placement socket, not a functioning heal**. Current 
 
 Use **Possession → Level Design → Level 3 Warehouse → Build and Open**. The builder copies the latest Level 1 shell and actors, then generates this scene from the authored JSON. Rebuilding replaces edits made only in the generated scene; keep durable layout changes in that JSON. Boundary generation supports the new negative plan coordinates, so the original built rooms do not shift to make room for the extension.
 
-After the shared gameplay work merges, bring integration into this local branch and rebuild to inherit current shared components. Resolve any changed APIs and retest before registering the campaign order. Future merge conflicts cannot be guaranteed absent. The ejection-protection API, rear spawn search and optional room checks touch the shared Spirit, PossessionController, EnemyBase and enemy-attack scripts. Shared prefabs, campaign scenes and build settings come from integration; Warehouse adds no campaign registration changes.
+Use **Possession → Level Design → Build Three-Level Campaign** to rebuild Warehouse and synchronize campaign registration. The existing Full Build All Levels workflow also includes this setup. After future shared gameplay merges, rebuild and retest against those components. Future merge conflicts cannot be guaranteed absent. The ejection-protection API, rear spawn search and optional room checks touch the shared Spirit, PossessionController, EnemyBase and enemy-attack scripts. Shared prefabs and gameplay come from integration; this change updates campaign routing and build registration without renaming existing scenes or changing either promoted level's layout.
 
 ## Validation
 
-After syncing integration `78dd0f5` (PR #62), the project compiles and **34/34 Warehouse PlayMode checks pass**. The full campaign suite has not been rerun for this sync.
+Campaign checks cover all three menu destinations, Next Level progression through the promoted stages, the final Warehouse Finish screen, Play Again returning to Level 1, tutorial entry into Level 1 and build-list registration. Warehouse checks cover authored geometry and room/door clearance; distinct target hits and actual Guard shots; all route combinations; shared abilities, charges, completion and retry; rear ejection, two-second protection and room-limited pursuit.
 
-**34 Warehouse PlayMode checks pass**: expected shared components/counts; structural edge sealing across the extension; wider-room and doorway clearance; unobstructed 2.8-metre turning areas in middle rooms; all distinct hits with animated leaves; each original route; recovery entrance sealing and retreat; real Guard shots to all sixteen targets; hostile-shot rejection; shared damage/smash rules; forced-eject persistence; four-target progress at three hits; all four initial/final route combinations; Machine divider bypass prevention; real local-charge retries for Control and Machine; and shared completion, occupied-body acceptance and replay reset.
-
-Additional checks verify manual/forced-eject protection, actual hostile bullets during the shield, damage after expiry, no shield on spawn or an invalid ejection, all host room assignments, chase termination at a doorway, hostile Heavy attack cancellation and player-controlled movement outside home bounds, clear rear spawn for both host types, blocked rear fallback without teleporting through geometry, protection without a visual component and recovery of older open-scene setup.
-
-Screenshots inspect the entry, existing wings, recovery, Transfer Lobby, both new final branches and the relocated extraction area. These automated and visual checks do not replace human combat testing. Work stays local; no remote push, PR or deployment is created.
+**38/38 campaign and Warehouse checks pass.** The full PlayMode suite reports **182/200 passing**, with exactly the same 18 failures as the pre-reorder baseline (`3dfca4b`: 178/196 passing). No additional failing tests were introduced. Existing failures concern shared detection/possession ranges, legacy level fixtures and tutorial timing; these remain outside this campaign reorder. The Hunted player's obsolete missing charge-component reference was removed while its valid shared charge component and starting-charge configuration were retained. Human playtesting is still required to judge pacing and combat difficulty. Work stays local; no remote push, PR or deployment is created.

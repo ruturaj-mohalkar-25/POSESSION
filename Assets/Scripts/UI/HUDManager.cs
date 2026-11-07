@@ -54,7 +54,7 @@ namespace Possession
         [SerializeField] private GameObject gameOverPanel;
         [SerializeField] private GameObject gameCompletePanel; // after Next Level on the last level
         [SerializeField] private Text nextButtonLabel;
-        [SerializeField] private string firstLevelScene = "Level_01";
+        private string firstLevelScene => CampaignLevels.FirstScene;
 
         private float healthPct = 1f;
         private EnemyBase[] enemies;

@@ -245,13 +245,13 @@ namespace Possession.Tests
             Assert.That(Time.timeScale, Is.EqualTo(1f));
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("MainMenu"));
             int tutorial = SceneUtility.GetBuildIndexByScenePath(TutorialScene.Path);
-            int level1 = SceneUtility.GetBuildIndexByScenePath("Assets/Scenes/Level_01.unity");
-            int level3 = SceneUtility.GetBuildIndexByScenePath("Assets/Scenes/Level_03.unity");
+            int level1 = SceneUtility.GetBuildIndexByScenePath(CampaignLevels.ScenePaths[0]);
+            int level2 = SceneUtility.GetBuildIndexByScenePath(CampaignLevels.ScenePaths[1]);
+            int level3 = SceneUtility.GetBuildIndexByScenePath(CampaignLevels.ScenePaths[2]);
             Assert.That(tutorial, Is.EqualTo(1));
             Assert.That(level1, Is.EqualTo(2));
-            // The test runner adds its own temporary scene after authored levels.
-            Assert.That(level3, Is.EqualTo(level1 + 2));
-            Assert.That(tutorial, Is.LessThan(level1));
+            Assert.That(level2, Is.EqualTo(level1 + 1));
+            Assert.That(level3, Is.EqualTo(level2 + 1));
         }
 
         private static IEnumerator Load(string name)

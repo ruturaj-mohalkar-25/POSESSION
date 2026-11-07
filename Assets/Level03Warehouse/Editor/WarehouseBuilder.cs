@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
-using UnityEditor.Events;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -98,20 +97,10 @@ namespace Possession.Editor
             Set(level,"extraction",doors["extraction"]);Set(level,"machineDivider",walls["Machine divider"]);Set(level,"machineExit",walls["Machine exit wall"]);
             var settings=new SerializedObject(hud);var objective=settings.FindProperty("objectiveText").objectReferenceValue;
             settings.FindProperty("objectives").arraySize=0;settings.ApplyModifiedPropertiesWithoutUndo();Set(level,"objective",objective);
-            var label=settings.FindProperty("nextButtonLabel").objectReferenceValue as Text;Set(level,"completionLabel",label);
-            if(label!=null)
-            {
-                var button=label.GetComponentInParent<Button>();
-                if(button!=null){while(button.onClick.GetPersistentEventCount()>0)UnityEventTools.RemovePersistentListener(button.onClick,0);UnityEventTools.AddPersistentListener(button.onClick,level.RestartPreview);}
-            }
-            // The preview has no build index; retain the shared panels but replay this scene.
-            foreach(var button in Object.FindObjectsByType<Button>(FindObjectsInactive.Include,FindObjectsSortMode.None))
-                for(int i=button.onClick.GetPersistentEventCount()-1;i>=0;i--)
-                    if(button.onClick.GetPersistentMethodName(i)=="OnRestartButton")
-                    {UnityEventTools.RemovePersistentListener(button.onClick,i);UnityEventTools.AddPersistentListener(button.onClick,level.RestartPreview);}
+            // Shared HUD callbacks now route the third campaign level to Finish / Play Again.
             foreach(var template in templates)Object.DestroyImmediate(template);
             EditorSceneManager.MarkSceneDirty(scene);EditorSceneManager.SaveScene(scene);AssetDatabase.SaveAssets();
-            Debug.Log("Warehouse Level 3 local preview built: 5 Guards, 3 Heavies, 5 target doors, 5 cracked walls and 13 charge sources. Shared files/build list untouched.");
+            Debug.Log("Warehouse campaign Level 3 built: 5 Guards, 3 Heavies, 5 target doors, 5 cracked walls and 13 charge sources.");
         }
         [MenuItem("Possession/Level Design/Level 3 Warehouse/Open Local Scene")]
         public static void Open(){if(!EditorApplication.isPlayingOrWillChangePlaymode)EditorSceneManager.OpenScene(ScenePath);}

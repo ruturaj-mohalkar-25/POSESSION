@@ -3,7 +3,7 @@ using UnityEngine.SceneManagement;
 
 namespace Possession
 {
-    // Scene order comes from the build list: index 0 is MainMenu, levels follow.
+    // CampaignLevels owns the displayed order; loads reset pause and shared events.
     public static class LevelFlow
     {
         public static bool IsInBuild(string sceneName) => Application.CanStreamedLevelBeLoaded(sceneName);
