@@ -74,7 +74,7 @@ namespace Possession.Editor
 
             var spawns = new GameObject("SpawnPoints").transform;
             spawns.SetParent(layout);
-            LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Heavy_03", 0f, 10f, 1.3f);
+            LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Heavy_03", 0f, 7f, 1.3f);
             LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Guard_02", -8f, 30f);
             LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Heavy_01", 8f, 34f, 1.3f);
             LevelBuildKit.SpawnPoint(spawns, "SpawnPoint_Guard_03", 8f, 18f);
