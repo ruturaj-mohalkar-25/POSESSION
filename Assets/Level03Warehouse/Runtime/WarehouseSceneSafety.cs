@@ -25,7 +25,10 @@ namespace Possession.Warehouse
             Physics.SyncTransforms();
             var roots = scene.GetRootGameObjects();
             foreach (var spirit in roots.SelectMany(r => r.GetComponentsInChildren<SpiritController>(true)))
+            {
+                if (spirit.GetComponent<PossessionCharge>() == null) spirit.gameObject.AddComponent<PossessionCharge>();
                 if (spirit.GetComponent<WarehouseEjectShield>() == null) spirit.gameObject.AddComponent<WarehouseEjectShield>();
+            }
             var floors = roots.SelectMany(r => r.GetComponentsInChildren<BoxCollider>(true))
                 .Where(c => c.name.EndsWith("_Floor") && c.name != "Hall_Floor").ToArray();
             foreach (var enemy in roots.SelectMany(r => r.GetComponentsInChildren<EnemyBase>(true)))

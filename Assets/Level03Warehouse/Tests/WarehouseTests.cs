@@ -48,6 +48,9 @@ namespace Possession.Warehouse.Tests
             Assert.That(Camera.main.GetComponent<CameraFollow>(),Is.Not.Null);
             Assert.That(GameManager.Instance.LevelTimer,Is.InRange(418f,420f));
             Assert.That(level.Possession.PossessDuration,Is.EqualTo(12f));
+            Assert.That(level.Spirit.MaxHP,Is.EqualTo(5),"Use integration's shared Spirit health.");
+            var charges=level.Spirit.GetComponent<PossessionCharge>();
+            Assert.That(charges.Count,Is.EqualTo(1));Assert.That(charges.MaxCharges,Is.EqualTo(3));
         }
         [Test] public void RoomsAndPassagesProvideSpaceToCircleCoverAndPlan()
         {
@@ -254,7 +257,7 @@ namespace Possession.Warehouse.Tests
             yield return Fire(host,view.Targets[2],Map(24,-35),Vector3.left);
             Assert.That(host.GetComponent<ShootAbility>().UsesLeft,Is.Zero);
             Assert.That(view.GetComponent<Door>().IsOpen,Is.False);Assert.That(level.Possession.TryEject(false),Is.True);
-            yield return new WaitForSeconds(.6f);Collect(source);Approach(host);Invoke(level.Possession,"Possess",host);
+            yield return new WaitForSeconds(level.Possession.EjectProtectionSeconds+.05f);Collect(source);Approach(host);Invoke(level.Possession,"Possess",host);
             Assert.That(level.Possession.PossessedEnemy,Is.SameAs(host));
             yield return Fire(host,view.Targets[3],Map(44,-34),Vector3.right);
             Assert.That(view.GetComponent<Door>().IsOpen,Is.True);
@@ -269,7 +272,7 @@ namespace Possession.Warehouse.Tests
             Move(host,Map(106,-39.5f),Vector3.forward);host.GetComponent<SmashAbility>().TryExecute();
             Assert.That(divider.CurrentHP,Is.LessThanOrEqualTo(0));Assert.That(exit.CurrentHP,Is.GreaterThan(0));
             Assert.That(host.GetComponent<SmashAbility>().UsesLeft,Is.Zero);Assert.That(level.Possession.TryEject(false),Is.True);
-            yield return new WaitForSeconds(.6f);Collect(source);Approach(host);Invoke(level.Possession,"Possess",host);
+            yield return new WaitForSeconds(level.Possession.EjectProtectionSeconds+.05f);Collect(source);Approach(host);Invoke(level.Possession,"Possess",host);
             Assert.That(level.Possession.PossessedEnemy,Is.SameAs(host));
             Move(host,Map(92.5f,-47),Vector3.left);host.GetComponent<SmashAbility>().TryExecute();
             Assert.That(exit.CurrentHP,Is.LessThanOrEqualTo(0));Assert.That(level.MachineReady,Is.True);

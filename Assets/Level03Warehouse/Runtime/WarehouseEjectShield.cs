@@ -70,7 +70,9 @@ namespace Possession.Warehouse
         {
             if (ring == null) return;
             bool visible = possession.CurrentState == PlayerState.Spirit && spirit.CurrentHP > 0 && spirit.IsDamageProtected;
-            ring.enabled = arc.enabled = bubble.enabled = visible;
+            ring.enabled = arc.enabled = visible;
+            // Use integration's shared bubble while its cooldown shield is active.
+            bubble.enabled = visible && !possession.IsEjectShielded;
             if (!visible) return;
             float remaining = Mathf.Clamp01(spirit.DamageProtectionRemaining / ProtectionSeconds);
             var color = new Color(.35f, .9f, 1f, .65f + remaining * .35f);

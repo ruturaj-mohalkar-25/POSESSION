@@ -100,11 +100,12 @@ namespace Possession.Warehouse.Tests
         [Test] public void RearWallUsesASafeSideWithoutEjectingThroughTheWall()
         {
             var host=Host("Sorting_hall_Guard");Move(host,Map(70,65),Vector3.forward);Possess(host);
+            var originalForward=host.transform.forward;
             var wall=new GameObject("Rear eject obstacle");wall.transform.SetPositionAndRotation(host.transform.position-host.transform.forward*1.5f,host.transform.rotation);
             wall.AddComponent<BoxCollider>().size=new Vector3(3f,3f,.25f);Physics.SyncTransforms();
             Assert.That(possession.TryEject(false),Is.True);
             var offset=spirit.transform.position-host.transform.position;offset.y=0;
-            Assert.That(Vector3.Dot(offset,-host.transform.forward),Is.LessThan(1f),"Do not teleport past the blocked rear position.");
+            Assert.That(Vector3.Dot(offset,-originalForward),Is.LessThan(1f),"Do not teleport past the blocked rear position.");
             var capsule=spirit.GetComponent<CapsuleCollider>();
             Assert.That(Physics.ComputePenetration(capsule,spirit.transform.position,spirit.transform.rotation,wall.GetComponent<Collider>(),wall.transform.position,wall.transform.rotation,out _,out _),Is.False);
             Assert.That(spirit.IsDamageProtected,Is.True);
