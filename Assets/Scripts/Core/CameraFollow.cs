@@ -5,7 +5,7 @@ namespace Possession
     public class CameraFollow : MonoBehaviour
     {
         [SerializeField] private Transform target;
-        [SerializeField] private Vector3 offset = new Vector3(0, 25f, -13f);
+        [SerializeField] private Vector3 offset = new Vector3(0, 15f, -11f);
         [SerializeField] private float smoothSpeed = 5f;
 
         private Transform spiritTransform;
