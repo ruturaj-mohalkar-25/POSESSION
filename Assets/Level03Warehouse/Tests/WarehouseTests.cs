@@ -55,32 +55,32 @@ namespace Possession.Warehouse.Tests
         [Test] public void RoomsAndPassagesProvideSpaceToCircleCoverAndPlan()
         {
             var room=GameObject.Find("Guard_room_Floor").GetComponent<Collider>().bounds;
-            Assert.That(room.size.x,Is.EqualTo(17f).Within(.01f));
-            Assert.That(room.size.z,Is.EqualTo(11f).Within(.01f));
+            Assert.That(room.size.x,Is.EqualTo(22.1f).Within(.01f));
+            Assert.That(room.size.z,Is.EqualTo(14.3f).Within(.01f));
             var sorting=GameObject.Find("Sorting_hall_Floor").GetComponent<Collider>().bounds;
-            Assert.That(sorting.size.x,Is.EqualTo(13f).Within(.01f));
-            Assert.That(sorting.size.z,Is.EqualTo(8f).Within(.01f));
+            Assert.That(sorting.size.x,Is.EqualTo(16.9f).Within(.01f));
+            Assert.That(sorting.size.z,Is.EqualTo(13f).Within(.01f));
             foreach(var door in Object.FindObjectsByType<Door>(FindObjectsSortMode.None))
             {
                 var bounds=door.GetComponent<Collider>().bounds;
-                Assert.That(Mathf.Max(bounds.size.x,bounds.size.z),Is.GreaterThanOrEqualTo(3.49f));
+                Assert.That(Mathf.Max(bounds.size.x,bounds.size.z),Is.GreaterThanOrEqualTo(6.49f));
             }
             // Crates stay compact; enlarging a room must create usable floor space.
             Assert.That(GameObject.Find("Cover_0").GetComponent<Collider>().bounds.size.x,Is.EqualTo(2.5f).Within(.01f));
             // A large manoeuvring capsule can traverse the fully solved left route.
             Open("inspection");Open("exit-passage");Assert.That(Reach(70,88,70,9,.85f),Is.True);
         }
-        [Test] public void OriginalExitAndCompactFootprintContainNoExtensionRoomsOrPuzzles()
+        [Test] public void OriginalExitAndWiderFootprintContainNoExtensionRoomsOrPuzzles()
         {
             Assert.That(level.transform.position.x,Is.EqualTo(0f).Within(.01f));
-            Assert.That(level.transform.position.z,Is.EqualTo(40.5f).Within(.01f));
+            Assert.That(level.transform.position.z,Is.EqualTo(52.65f).Within(.01f));
             Assert.That(GameObject.Find("Exit_Floor"),Is.Not.Null);
             foreach(string removed in new[]{"Transfer_lobby_Floor","Records_Floor","Control_Floor","Workshop_Floor","Machine_Floor",
                 "extraction_Door","Machine_divider","Machine_exit_wall","Control_Guard","Machine_Heavy"})
                 Assert.That(GameObject.Find(removed),Is.Null,removed+" belongs to the removed extension.");
             Assert.That(Object.FindObjectsByType<WarehouseLevel>(FindObjectsSortMode.None).Length,Is.EqualTo(1));
             foreach(var floor in GameObject.Find("Floors").GetComponentsInChildren<Collider>())
-                Assert.That(floor.bounds.max.z,Is.LessThanOrEqualTo(44.01f),"No extra floor may extend past the original north boundary.");
+                Assert.That(floor.bounds.max.z,Is.LessThanOrEqualTo(57.21f),"No extra floor may extend past the original north boundary.");
         }
         [UnityTest] public IEnumerator DoorsRequireAllDistinctTargetsAndKeepProgress()
         {
@@ -222,7 +222,7 @@ namespace Possession.Warehouse.Tests
         }
         private static void Open(string key){foreach(var t in GameObject.Find(key+"_Door").GetComponent<WarehouseDoorView>().Targets)t.OnHit();Physics.SyncTransforms();}
         private static BreakableWall Wall(string name)=>GameObject.Find(name).GetComponent<BreakableWall>();
-        private static Vector3 Map(float x,float y)=>new((x-70)*.5f,1.5f,(90-y)*.5f);
+        private static Vector3 Map(float x,float y)=>new((x-70)*.65f,1.5f,(90-y)*.65f);
         // Rasterise actual colliders with a Heavy-sized capsule, not just the paper floor plan.
         private static bool Reach(int sx,int sy,int tx,int ty,float radius=.85f)
         {

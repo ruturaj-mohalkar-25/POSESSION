@@ -16,7 +16,7 @@ Visual meshes and physical character capsules grow together. Characters are plac
 
 Guard projectiles now dispatch raycast hits on the Spirit through the same damage path as trigger hits, applying damage once per bullet. This repairs bullets being removed by their raycast before the Spirit receives damage. Eject protection absorbs the hit normally. Heavy attacks check line of sight both when beginning and resolving their windup, so the increased reach does not hit through solid walls.
 
-The merged camera offset `(0, 15, -11)`, bottom-centre health/timer layout, bullet/hammer sprites and Hunted's one starting charge are synchronized in the saved campaign scenes. The entry Heavy in displayed Level 1 starts at the scaled version of the newly merged z=7 marker, facing its patrol away from the Spirit. Enlarged Level 1/2 rooms are retained. Warehouse is restored to its original iteration 1 ten-room plan at scale 0.5, without the final extension; current character/combat settings remain applied.
+The merged camera offset `(0, 15, -11)`, bottom-centre health/timer layout, bullet/hammer sprites and Hunted's one starting charge are synchronized in the saved campaign scenes. The entry Heavy in displayed Level 1 starts at the scaled version of the newly merged z=7 marker, facing its patrol away from the Spirit. Enlarged Level 1/2 rooms are retained. Warehouse keeps the original ten-room route at scale 0.65 with the wider rooms/passages, without the final extension; current character/combat settings remain applied.
 
 ## Reapply after authoring
 
@@ -28,7 +28,7 @@ Before the iteration 1 layout restoration, **52/52 focused checks passed**, incl
 
 The full suite from that tuning pass reported **189/214 passing, 25 failing**. Unmodified merged integration `1ada259` reports **136/162 passing, 26 failing**. No additional test cases fail; the wider level's former right-corridor check passes. Remaining integration failures cover old HUD/range/charge assumptions, legacy puzzle fixtures and tutorial behavior. Full results and screenshots are retained in local QA artifacts; tests were not hidden or skipped.
 
-After restoring iteration 1, **45/45 targeted PlayMode checks pass** across Warehouse, campaign order, expanded Level 1/2 and combat tuning. Both original wings independently reach the original exit with the larger bodies; the extension objects are absent. Finish → Game Complete → Play Again was visually checked. The full suite was not rerun for this Warehouse-only layout change.
+The original ten-room route retains the wider 0.65 layout and widened passages; only the extension and its objectives are removed. **45/45 targeted PlayMode checks pass** across Warehouse, campaign order, expanded Level 1/2 and combat tuning. Both original wings independently reach the original exit with larger bodies; extra rooms and puzzles are absent. The rebuilt entry and overhead layout were visually checked. Native final campaign flow remains covered by the automated checks. The full suite was not rerun for this Warehouse-only spacing correction.
 
 ## Test locally
 
