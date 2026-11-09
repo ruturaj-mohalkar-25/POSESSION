@@ -89,7 +89,7 @@ namespace Possession.Tests
                 Create("Patrol WP", new Vector3(-20f, 1f, 0f)).transform });
             SetBase(guard, "loseSightSearchTime", 0.6f);
             Set(attack, "spotReactionTime", 5f);
-            var spirit = CreateSpirit(new Vector3(6f, 1f, 0f));
+            var spirit = CreateSpirit(new Vector3(4f, 1f, 0f));
 
             yield return new WaitForSeconds(0.3f);
             Assert.That(guard.IsChasing, Is.True);
@@ -118,7 +118,7 @@ namespace Possession.Tests
         public IEnumerator SpottingAgainDuringSearchResumesChase()
         {
             SetBase(guard, "loseSightSearchTime", 2f);
-            var spirit = CreateSpirit(new Vector3(6f, 1f, 0f));
+            var spirit = CreateSpirit(new Vector3(4f, 1f, 0f));
             yield return new WaitForSeconds(0.2f);
 
             spirit.transform.position = new Vector3(60f, 1f, 0f);

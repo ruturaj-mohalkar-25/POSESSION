@@ -99,7 +99,7 @@ namespace Possession.Tests
             Collect("C1");var host=Host("Guard_Courtyard");Approach(host);Set(pc,"possessDuration",0.05f);Invoke(pc,"Possess",host);
             yield return new WaitForSeconds(.1f);Assert.That(pc.CurrentState,Is.EqualTo(PlayerState.Spirit));Assert.That(charge.Count,Is.Zero);
             Assert.That(host.IsHostile,Is.True);
-            yield return new WaitForSeconds(.55f);Collect("C2");var heavy=Host("Heavy_North");Approach(heavy);Set(pc,"possessDuration",10f);Invoke(pc,"Possess",heavy);
+            Collect("C2");yield return WaitForPossessionReady();var heavy=Host("Heavy_North");Approach(heavy);Set(pc,"possessDuration",10f);Invoke(pc,"Possess",heavy);
             Assert.That(pc.PossessedEnemy,Is.SameAs(heavy));heavy.TakeDamage(999);
             yield return new WaitForSeconds(.1f);
             Assert.That(pc.CurrentState,Is.EqualTo(PlayerState.Spirit));Assert.That(charge.Count,Is.Zero);Assert.That(level.Spirit.enabled,Is.True);
@@ -133,7 +133,7 @@ namespace Possession.Tests
             yield return Shoot(guard,GameObject.Find("TN").GetComponent<Target>());
             yield return Walk(guard,Map(15,3),Map(20.3f,3));
             Assert.That(pc.TryEject(false),Is.True);Assert.That(charge.HasCharge,Is.False);
-            Collect("C2");yield return new WaitForSeconds(.55f);var heavy=Host("Heavy_North");Approach(heavy);Invoke(pc,"Possess",heavy);
+            Collect("C2");yield return WaitForPossessionReady();var heavy=Host("Heavy_North");Approach(heavy);Invoke(pc,"Possess",heavy);
             yield return Walk(heavy,Map(26,5.5f),Map(26,6));Smash(heavy,GameObject.Find("BN").GetComponent<BreakableWall>(),Vector3.back);
             Assert.That(level.NorthReady,Is.True);Assert.That(level.SouthReady,Is.False);
             Assert.That(charge.SuccessfulPossessions,Is.EqualTo(2));
@@ -145,7 +145,7 @@ namespace Possession.Tests
             Collect("C1");var heavy=Host("Heavy_Courtyard");Approach(heavy);Invoke(pc,"Possess",heavy);
             yield return Walk(heavy,Map(12,16));Smash(heavy,GameObject.Find("BS").GetComponent<BreakableWall>(),Vector3.back);
             yield return Walk(heavy,Map(12,19.5f));Assert.That(pc.TryEject(false),Is.True);
-            Collect("C3");yield return new WaitForSeconds(.55f);var guard=Host("Guard_South");Approach(guard);Invoke(pc,"Possess",guard);
+            Collect("C3");yield return WaitForPossessionReady();var guard=Host("Guard_South");Approach(guard);Invoke(pc,"Possess",guard);
             yield return Walk(guard,Map(13.3f,21));yield return Shoot(guard,GameObject.Find("TS").GetComponent<Target>());
             yield return Walk(guard,Map(16.5f,21),Map(20.3f,21));
             Assert.That(level.SouthReady,Is.True);Assert.That(level.NorthReady,Is.False);Assert.That(charge.SuccessfulPossessions,Is.EqualTo(2));
@@ -169,6 +169,15 @@ namespace Possession.Tests
             GameObject.Find("TN").GetComponent<Target>().OnHit();GameObject.Find("BN").GetComponent<BreakableWall>().TakeDamage(2);
             Assert.That(exit.TryFinish(Host("Heavy_Exit").GetComponent<Collider>()),Is.False);
         }
+        private IEnumerator WaitForPossessionReady()
+        {
+            float deadline = Time.realtimeSinceStartup + 3f;
+            while (!pc.CanStartPossession && Time.realtimeSinceStartup < deadline)
+                yield return null;
+            Assert.That(pc.CanStartPossession, Is.True,
+                "The real ejection cooldown must expire before the next charged possession.");
+        }
+
         private void Collect(string name)
         {
             var p=Pickup(name);level.Spirit.RestoreAt(p.transform.position+Vector3.up*1.05f);Physics.SyncTransforms();

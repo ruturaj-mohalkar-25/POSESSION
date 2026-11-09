@@ -105,14 +105,14 @@ namespace Possession.Tests
             foreach (GuardEnemy levelGuard in guards)
             {
                 Assert.That(levelGuard.CurrentHP, Is.EqualTo(3));
-                Assert.That(levelGuard.DetectionRange, Is.EqualTo(5.5f).Within(0.01f));
+                Assert.That(levelGuard.DetectionRange, Is.EqualTo(5f).Within(0.01f));
                 Assert.That(Read<float>(levelGuard, "moveSpeed"), Is.EqualTo(3f).Within(0.01f));
                 Assert.That(Read<float>(levelGuard, "waypointWaitTime"), Is.EqualTo(0.75f).Within(0.01f));
             }
         }
 
         [UnityTest]
-        public IEnumerator Level03HasTwoTightTwelveMetreGuardPatrols()
+        public IEnumerator Level03HasTwoTightFiveMetreGuardPatrols()
         {
             yield return SceneManager.LoadSceneAsync("Level_03", LoadSceneMode.Additive);
             levelScene = SceneManager.GetSceneByName("Level_03");
@@ -123,7 +123,7 @@ namespace Possession.Tests
             foreach (GuardEnemy levelGuard in guards)
             {
                 Assert.That(levelGuard.CurrentHP, Is.EqualTo(3));
-                Assert.That(levelGuard.DetectionRange, Is.EqualTo(12f).Within(0.01f));
+                Assert.That(levelGuard.DetectionRange, Is.EqualTo(5f).Within(0.01f));
                 Assert.That(Read<float>(levelGuard, "moveSpeed"), Is.EqualTo(3.25f).Within(0.01f));
                 Assert.That(Read<float>(levelGuard, "waypointWaitTime"), Is.EqualTo(0.5f).Within(0.01f));
                 Assert.That(Read<float>(levelGuard, "chaseStopDistance"), Is.EqualTo(1.25f).Within(0.01f));

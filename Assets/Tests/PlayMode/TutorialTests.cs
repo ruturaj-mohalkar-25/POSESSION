@@ -149,14 +149,16 @@ namespace Possession.Tests
             var guide = Object.FindFirstObjectByType<TutorialGuide>(); Begin(guide);
             guide.Progress.Move(TutorialMovement.All);
             var pc = guide.Possession;
-            Set(pc, "possessDuration", 0.1f);
-            Set(pc, "hostileTime", 0.2f);
-            Possess(guide, guide.Guard);
+            yield return TutorialTestSupport.Possess(guide, guide.Guard);
+            Set(pc, "possessTimer", 0.1f);
             yield return new WaitForSeconds(0.15f);
             Assert.That(pc.CurrentState, Is.EqualTo(PlayerState.Spirit));
             Assert.That(guide.Guard.IsHostile, Is.True);
+            Assert.That(pc.IsEjectShielded, Is.True);
             Assert.That(guide.Progress.Lesson, Is.EqualTo(TutorialLesson.EscapeHostile));
-            yield return new WaitForSeconds(0.25f);
+            yield return TutorialTestSupport.WaitFor(() => !guide.Guard.IsHostile, 6f,
+                "The Guard must return to patrol after its real hostility duration.");
+            yield return null;
             Assert.That(guide.Guard.IsHostile, Is.False);
             Assert.That(guide.Progress.SurvivedHostility, Is.True);
         }
@@ -174,14 +176,18 @@ namespace Possession.Tests
             Assert.That(trigger.enabled, Is.True);
             Assert.That(exit.IsReady, Is.False);
             guide.Progress.Move(TutorialMovement.All);
-            Possess(guide, guide.Guard);
+            yield return TutorialTestSupport.Possess(guide, guide.Guard);
             target.OnHit();
             Assert.That(guide.Progress.HitTarget, Is.True);
             Invoke(pc, "Eject", false);
-            Possess(guide, guide.Guard);
-            Set(pc, "possessTimer", 0.01f); Set(pc, "hostileTime", 0.05f);
+            yield return TutorialTestSupport.Possess(guide, guide.Guard);
+            Set(pc, "possessTimer", 0.01f);
             yield return new WaitForSeconds(0.12f);
-            Possess(guide, guide.Heavy);
+            Assert.That(guide.Guard.IsHostile, Is.True);
+            yield return TutorialTestSupport.WaitFor(() => !guide.Guard.IsHostile, 6f,
+                "The forced-ejection lesson must finish before continuing to the Heavy.");
+            yield return null;
+            yield return TutorialTestSupport.Possess(guide, guide.Heavy);
             wall.TakeDamage(2);
             yield return null;
             Assert.That(guide.Progress.BrokeWall, Is.True);
@@ -207,14 +213,28 @@ namespace Possession.Tests
             yield return Load(TutorialScene.Name);
             var guide = Object.FindFirstObjectByType<TutorialGuide>(); Begin(guide);
             var pc = guide.Possession;
-            Set(pc, "possessDuration", 0.05f);
-            Set(pc, "hostileTime", 2f);
-            Possess(guide, guide.Guard);
+            float guardSpeed = guide.Guard.MoveSpeed;
+            yield return TutorialTestSupport.Possess(guide, guide.Guard);
+            // Ejection turns the host away; let its real chase turn it back before firing.
+            guide.Guard.MoveSpeed = guardSpeed;
+            Set(pc, "possessTimer", 0.05f);
             yield return new WaitForSeconds(0.1f);
             var spirit = pc.GetComponent<SpiritController>();
+            Vector3 escape = spirit.transform.position - guide.Guard.transform.position;
+            escape.y = 0f;
+            Vector3 firingPosition = guide.Guard.transform.position + escape.normalized * 2.5f;
+            firingPosition.y = spirit.transform.position.y;
+            spirit.RestoreAt(firingPosition);
             spirit.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeAll;
+            Physics.SyncTransforms();
             Assert.That(guide.Guard.IsHostile, Is.True);
-            yield return new WaitForSeconds(1.1f);
+            Assert.That(pc.IsEjectShielded, Is.True);
+            int protectedHP = spirit.CurrentHP;
+            yield return new WaitForSeconds(1.5f);
+            Assert.That(spirit.CurrentHP, Is.EqualTo(protectedHP), "The new ejection shield must block early attacks.");
+            yield return TutorialTestSupport.WaitFor(() => spirit.CurrentHP < protectedHP, 3f,
+                "The Guard's real attack must damage the Spirit after the shield expires.");
+            Assert.That(pc.IsEjectShielded, Is.False);
             Assert.That(spirit.CurrentHP, Is.LessThan(spirit.MaxHP), "The lesson must use the Guard's real attack, not only a warning message.");
         }
 
@@ -260,8 +280,6 @@ namespace Possession.Tests
         private static void Begin(TutorialGuide guide) { guide.BeginPractice(); Dismiss(guide); }
         private static void Dismiss(TutorialGuide guide)
         { for (int i = 0; i < 5 && guide.IsCoaching; i++) guide.ContinueCoaching(); }
-        private static void Possess(TutorialGuide guide, EnemyBase body)
-        { Invoke(guide.Possession, "Possess", body); Dismiss(guide); }
         private static void Set(object item, string name, object value) => item.GetType()
             .GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).SetValue(item, value);
         private static void Invoke(object item, string name, params object[] args) => item.GetType()
