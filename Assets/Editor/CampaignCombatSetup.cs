@@ -55,6 +55,7 @@ namespace Possession.Editor
                 var so = new SerializedObject(enemy);
                 so.FindProperty("detectionRange").floatValue = heavy ? HeavyDetection : GuardDetection;
                 so.FindProperty("visionAngle").floatValue = ConeAngle;
+                so.FindProperty("moveSpeed").floatValue = heavy ? 4f : 5f;
                 var points = so.FindProperty("waypoints");
                 for (int i = 0; i < points.arraySize; i++)
                     if (points.GetArrayElementAtIndex(i).objectReferenceValue is Transform point)

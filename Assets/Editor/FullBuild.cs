@@ -70,6 +70,10 @@ namespace Possession.Editor
             TutorialBuilder.Build();
 
             WarehouseCampaignSetup.Build();
+
+            Debug.Log("Step 11: Tuning campaign character speeds and combat...");
+            CampaignCombatSetup.TuneLevels();
+
             UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/Scenes/MainMenu.unity");
             Debug.Log("=== Full Build All Levels: complete ===");
         }
