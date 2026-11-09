@@ -70,6 +70,20 @@ namespace Possession
         private AnalyticsData? analytics;
         private PossessionTimerGraphic possessTimerRing;
 
+        internal PossessionController PlayerPossession
+        {
+            get
+            {
+                if (spirit == null)
+                    foreach (var root in gameObject.scene.GetRootGameObjects())
+                    {
+                        var player = root.GetComponentInChildren<SpiritController>(true);
+                        if (player != null) { spirit = player.transform; break; }
+                    }
+                return spirit != null ? spirit.GetComponent<PossessionController>() : null;
+            }
+        }
+
         private void Awake()
         {
             if (possessTimerGroup == null) return;
@@ -104,6 +118,14 @@ namespace Possession
             EventBus.LevelCompletedWithStats += OnLevelStats;
             EventBus.AnalyticsReady += OnAnalyticsReady;
             EventBus.GameComplete += OnGameComplete;
+            if (GameManager.Instance != null && GameManager.Instance.CurrentState != LevelState.InProgress)
+                levelEnded = true;
+            var possession = PlayerPossession;
+            if (!levelEnded && possession != null && possession.PossessedEnemy != null)
+            {
+                OnPossessed(possession.PossessedEnemy, possession.CurrentState);
+                UpdatePossessTimer(possession.PossessTimer, possession.PossessDuration);
+            }
         }
 
         private void OnDisable()
@@ -124,6 +146,7 @@ namespace Possession
             EventBus.AnalyticsReady -= OnAnalyticsReady;
             EventBus.GameComplete -= OnGameComplete;
             SetPossessTimerVisible(false);
+            if (ammoDisplay != null) ammoDisplay.Hide();
         }
 
         private void Start()
@@ -139,7 +162,8 @@ namespace Possession
             SetObjectiveStep(0);
 
             // Show full health immediately instead of waiting for the first hit
-            var spiritController = FindFirstObjectByType<SpiritController>();
+            var possession = PlayerPossession;
+            var spiritController = possession != null ? possession.GetComponent<SpiritController>() : null;
             if (spiritController != null)
             {
                 spirit = spiritController.transform;

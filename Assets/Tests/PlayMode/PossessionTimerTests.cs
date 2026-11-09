@@ -217,18 +217,119 @@ namespace Possession.Tests
         }
 
         [UnityTest]
-        public IEnumerator AbilityHintStaysBelowCircleInsteadOfCoveringIt()
+        public IEnumerator PausedHudReenableRestoresTimerWithoutAnotherEvent()
+        {
+            Possess();
+            Set(possession, "possessTimer", 2f);
+            EventBus.PossessTimerUpdated?.Invoke(2f, possession.PossessDuration);
+            Time.timeScale = 0f;
+            hud.enabled = false;
+            Assert.That(group.gameObject.activeSelf, Is.False);
+            hud.enabled = true;
+            yield return null;
+            Assert.That(group.gameObject.activeInHierarchy, Is.True);
+            Assert.That(ring.Fraction, Is.EqualTo(2f / possession.PossessDuration).Within(0.001f));
+        }
+
+        [UnityTest]
+        public IEnumerator HudDisabledAcrossLevelEndDoesNotResurrectTimerOrAmmo()
+        {
+            foreach (System.Action end in new System.Action[] { () => EventBus.LevelCompleted?.Invoke(),
+                () => EventBus.LevelFailed?.Invoke(), () => EventBus.SpiritDied?.Invoke() })
+            {
+                yield return SceneManager.UnloadSceneAsync(level);
+                EventBus.Clear();
+                yield return Load("Level_01");
+                Possess();
+                hud.enabled = false;
+                end();
+                Assert.That(GameManager.Instance.CurrentState, Is.Not.EqualTo(LevelState.InProgress));
+                hud.enabled = true;
+                EventBus.PossessTimerUpdated?.Invoke(possession.PossessTimer, possession.PossessDuration);
+                yield return null;
+                Assert.That(group.gameObject.activeSelf, Is.False);
+                Assert.That(Read<AmmoDisplay>(hud, "ammoDisplay").gameObject.activeSelf, Is.False);
+                Time.timeScale = 1f;
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator CueDisableRestoresIdentityAndReenableUsesCurrentPossession()
+        {
+            var cues = FindAll<PossessionCues>().First();
+            Renderer body = enemy.GetComponent<Renderer>();
+            Material normal = body.sharedMaterial;
+            Possess();
+            yield return null;
+            cues.enabled = false;
+            Assert.That(body.sharedMaterial, Is.SameAs(normal));
+            Assert.That(Read<Text>(cues, "hintText").gameObject.activeSelf, Is.False);
+            Assert.That(Read<LineRenderer>(cues, "aimLine").enabled, Is.False);
+            cues.enabled = true;
+            yield return null;
+            Assert.That(body.sharedMaterial.color, Is.EqualTo(Color.white));
+            Assert.That(cues.GetComponentsInChildren<LineRenderer>(), Has.Length.EqualTo(1));
+            cues.enabled = false;
+            Assert.That(possession.TryEject(false), Is.True);
+            cues.enabled = true;
+            yield return null;
+            Assert.That(body.sharedMaterial, Is.SameAs(normal));
+            Assert.That(Read<Text>(cues, "hintText").gameObject.activeSelf, Is.False);
+            Assert.That(Read<LineRenderer>(cues, "aimLine").enabled, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator OffscreenHostHidesCuesWithoutRevivingAnExpiredTimer()
         {
             Possess();
             yield return null;
-            Canvas.ForceUpdateCanvases();
-            Text hint = Read<Text>(FindAll<PossessionCues>().First(), "hintText");
-            Assert.That(hint.gameObject.activeInHierarchy, Is.True);
-            Vector3[] corners = new Vector3[4];
-            hint.rectTransform.GetWorldCorners(corners);
-            Vector3[] circle = new Vector3[4];
-            group.GetWorldCorners(circle);
-            Assert.That(corners[1].y, Is.LessThan(circle[0].y));
+            Camera camera = Camera.main;
+            Quaternion rotation = camera.transform.rotation;
+            camera.transform.rotation = Quaternion.AngleAxis(180f, Vector3.up) * rotation;
+            yield return null;
+            Assert.That(group.gameObject.activeSelf, Is.True);
+            Assert.That(group.GetComponent<CanvasGroup>().alpha, Is.Zero);
+            camera.transform.rotation = rotation;
+            yield return null;
+            Assert.That(group.GetComponent<CanvasGroup>().alpha, Is.EqualTo(1f));
+            EventBus.PossessTimerUpdated?.Invoke(0f, possession.PossessDuration);
+            yield return null;
+            Assert.That(group.gameObject.activeSelf, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator DestroyingCuesReleasesAimLineAndItsMaterial()
+        {
+            var cues = FindAll<PossessionCues>().First();
+            var line = Read<LineRenderer>(cues, "aimLine");
+            Material material = line.sharedMaterial;
+            Material normal = enemy.GetComponent<Renderer>().sharedMaterial;
+            Possess();
+            Object.Destroy(cues);
+            yield return null;
+            yield return null;
+            Assert.That(line == null, Is.True);
+            Assert.That(material == null, Is.True);
+            Assert.That(enemy.GetComponent<Renderer>().sharedMaterial, Is.SameAs(normal));
+        }
+
+        [UnityTest]
+        public IEnumerator AbilityHintStaysBelowCircleInsteadOfCoveringIt()
+        {
+            Possess();
+            foreach (float scale in new[] { 1f, 1.32f })
+            {
+                group.localScale = Vector3.one * scale;
+                yield return null;
+                Canvas.ForceUpdateCanvases();
+                Text hint = Read<Text>(FindAll<PossessionCues>().First(), "hintText");
+                Assert.That(hint.gameObject.activeInHierarchy, Is.True);
+                Vector3[] corners = new Vector3[4];
+                hint.rectTransform.GetWorldCorners(corners);
+                Vector3[] circle = new Vector3[4];
+                group.GetWorldCorners(circle);
+                Assert.That(corners[1].y, Is.LessThan(circle[0].y), "The tutorial zoom must preserve the gap.");
+            }
         }
 
         private IEnumerator Load(string name)

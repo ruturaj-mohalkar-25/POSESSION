@@ -39,11 +39,18 @@ namespace Possession
         private Renderer bodyRenderer;
         private Material bodyMaterial;
         private GameObject hiddenLabel;
+        private CanvasGroup timerVisibility;
+        private Material aimMaterial;
 
         private void Awake()
         {
             canvas = GetComponentInParent<Canvas>();
             aimLine = CreateAimLine();
+            if (timerGroup != null)
+            {
+                timerVisibility = timerGroup.GetComponent<CanvasGroup>();
+                if (timerVisibility == null) timerVisibility = timerGroup.gameObject.AddComponent<CanvasGroup>();
+            }
         }
 
         private void OnEnable()
@@ -53,6 +60,12 @@ namespace Possession
             EventBus.LevelCompleted += Clear;
             EventBus.LevelFailed += Clear;
             EventBus.SpiritDied += Clear;
+            EventBus.GameComplete += Clear;
+            var hud = GetComponent<HUDManager>();
+            var possession = hud != null ? hud.PlayerPossession : null;
+            if (possession != null && possession.PossessedEnemy != null
+                && (GameManager.Instance == null || GameManager.Instance.CurrentState == LevelState.InProgress))
+                OnPossessed(possession.PossessedEnemy, possession.CurrentState);
         }
 
         private void OnDisable()
@@ -62,6 +75,14 @@ namespace Possession
             EventBus.LevelCompleted -= Clear;
             EventBus.LevelFailed -= Clear;
             EventBus.SpiritDied -= Clear;
+            EventBus.GameComplete -= Clear;
+            Clear();
+        }
+
+        private void OnDestroy()
+        {
+            if (aimLine != null) Destroy(aimLine.gameObject);
+            if (aimMaterial != null) Destroy(aimMaterial);
         }
 
         private void Start()
@@ -73,6 +94,7 @@ namespace Possession
         {
             Clear();
             possessed = enemy;
+            if (timerVisibility != null) timerVisibility.alpha = enemy != null ? 1f : 0f;
             shoot = enemy != null ? enemy.GetComponent<ShootAbility>() : null;
             if (enemy != null)
             {
@@ -126,6 +148,7 @@ namespace Possession
             hintTimer = 0f;
             if (hintText != null) hintText.gameObject.SetActive(false);
             if (aimLine != null) aimLine.enabled = false;
+            if (timerVisibility != null) timerVisibility.alpha = 0f;
         }
 
         private void LateUpdate()
@@ -133,6 +156,8 @@ namespace Possession
             if (possessed == null || !possessed.isActiveAndEnabled)
             {
                 if (aimLine != null) aimLine.enabled = false;
+                if (timerVisibility != null) timerVisibility.alpha = 0f;
+                if (hintText != null) { var tint = hintText.color; tint.a = 0f; hintText.color = tint; }
                 return;
             }
             if (cam == null) cam = Camera.main;
@@ -140,6 +165,10 @@ namespace Possession
 
             Vector3 feet = possessed.transform.position;
             if (bodyRenderer != null) feet.y = bodyRenderer.bounds.min.y;
+            Vector3 viewport = cam.WorldToViewportPoint(feet);
+            bool visible = viewport.z > 0f && viewport.x >= 0f && viewport.x <= 1f
+                && viewport.y >= 0f && viewport.y <= 1f;
+            if (timerVisibility != null) timerVisibility.alpha = visible ? 1f : 0f;
 
             // Keep the circle upright and equally readable for Guard and Heavy.
             if (timerGroup != null)
@@ -148,14 +177,19 @@ namespace Possession
             if (hintText != null && hintText.gameObject.activeSelf)
             {
                 hintTimer -= Time.unscaledDeltaTime;
-                PlaceAt(hintText.rectTransform, feet, -Mathf.Max(hintDrop, timerDrop + 52f));
+                float drop = hintDrop;
+                if (timerGroup != null)
+                    drop = Mathf.Max(drop, timerDrop + timerGroup.rect.height * Mathf.Abs(timerGroup.localScale.y) * 0.5f
+                        + hintText.rectTransform.rect.height * Mathf.Abs(hintText.rectTransform.localScale.y) * 0.5f + 8f);
+                PlaceAt(hintText.rectTransform, feet, -drop);
                 var c = hintText.color;
-                c.a = Mathf.Clamp01(hintTimer / hintFadeTime);
+                c.a = visible ? Mathf.Clamp01(hintTimer / hintFadeTime) : 0f;
                 hintText.color = c;
                 if (hintTimer <= 0f) hintText.gameObject.SetActive(false);
             }
 
             UpdateAimLine();
+            if (!visible && aimLine != null) aimLine.enabled = false;
         }
 
         private void PlaceAt(RectTransform rect, Vector3 world, float screenOffsetY)
@@ -212,13 +246,15 @@ namespace Possession
         private LineRenderer CreateAimLine()
         {
             var go = new GameObject("AimLine");
+            go.transform.SetParent(transform, false);
             var line = go.AddComponent<LineRenderer>();
             line.positionCount = 2;
             line.useWorldSpace = true;
             line.startWidth = aimStartWidth;
             line.endWidth = aimEndWidth;
             line.numCapVertices = 4; // rounded ends read as a beam rather than a hairline
-            line.material = new Material(Shader.Find("Sprites/Default"));
+            aimMaterial = new Material(Shader.Find("Sprites/Default"));
+            line.sharedMaterial = aimMaterial;
             line.startColor = aimColor;
             line.endColor = new Color(aimColor.r, aimColor.g, aimColor.b, aimColor.a * 0.25f);
             line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;

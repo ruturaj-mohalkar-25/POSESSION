@@ -6,16 +6,16 @@ This replacement Level 2 uses seven main rooms, three short dead ends, and two i
 
 Use Unity 6000.3.22f1 and open `Assets/Scenes/Level_02.unity`, then press Play. The scene is also available through the existing campaign menu. To regenerate the authored scene, stop Play Mode and select **Possession → Level 2 → Build Hunted Charge Maze**. The regular Level 2 builder delegates to this builder too.
 
-Move with WASD, press E to possess/eject, and use LMB for the host ability. Start with 3 HP, 240 seconds, and no possession charge. The existing possession timer remains 10 seconds.
+Move with WASD, press E to possess/eject, and use LMB for the host ability. Start with 3 HP, 240 seconds, and one possession charge. The existing possession timer remains 10 seconds.
 
-Enter the courtyard to enable **C · Retry Courtyard**. C reloads the attempt at the courtyard entrance, before its shard; it restores all enemies, sources, gates, and walls and starts the Spirit empty. R restarts from the original entrance. Both actions are also buttons; Menu returns to the shared main menu.
+Enter the courtyard to enable **C · Retry Courtyard**. C reloads the attempt at the courtyard entrance, before its shard; it restores all enemies, sources, gates, and walls and restores the Spirit’s starting charge. R restarts from the original entrance. Both actions are also buttons; Menu returns to the shared main menu.
 
 ## Charge rules
 
-- Only a living, free Spirit can collect a green shard. Capacity is one charge.
+- Only a living, free Spirit can collect a green shard. Capacity is three charges.
 - E spends the charge only on a successful possession of a valid, living host within range and line of sight, outside its vision cone. Approach from behind or the side. Failed input, cooldown, front-facing approaches, and blocked targets do not spend it.
 - Movement, shooting, and smashing cost nothing more while in the body.
-- Manual ejection, expiry, and host defeat return an empty Spirit. Collect again before taking another body.
+- Manual ejection, expiry, and host defeat preserve any unspent charges. Collect again when empty before taking another body.
 - C1 in the courtyard, C2 in the north transfer room, and C3 in the south transfer room reform eight seconds after collection. C4 in the archive dead end is a one-use bonus per attempt. Full or occupied players cannot waste a source.
 - Open gates and broken walls stay changed during the attempt. Either completed route enables the exit, which accepts the actual player in any form without another charge.
 
@@ -26,7 +26,7 @@ Enter the courtyard to enable **C · Retry Courtyard**. C reloads the attempt at
 | North | Courtyard C1 → Guard → shoot TN → gate GN opens → north transfer C2 → Heavy → smash BN → exit |
 | South | Courtyard C1 → Heavy → smash BS → south transfer C3 → Guard → shoot TS → gate GS opens → exit |
 
-Each route needs at least two successful possessions and a recharge between hosts. The other route is optional. There is no transfer-room shortcut between the routes. Dead ends provide cover, misleading footprints, an optional bonus, and a sunlit hiding alcove; entering a dead end does not itself consume a charge.
+Each route needs at least two successful possessions. Spare carried charges or a transfer-room pickup fund the second host. The other route is optional. There is no transfer-room shortcut between the routes. Dead ends provide cover, misleading footprints, an optional bonus, and a sunlit hiding alcove; entering a dead end does not itself consume a charge.
 
 Five Guards and three Heavies use the shared patrol, chase, possession, ability, damage, and visual systems. Normal pursuing enemies can damage the free Spirit in this level after a 1.2-second uninterrupted windup. They wait 3.2 seconds between their own hits and share a three-second contact-damage grace period across the level, so nearby ordinary enemies cannot stack immediate hits. Retreating or breaking line of sight cancels the windup. Forced-eject hostility remains active, with a two-second initial delay, three-second shot/smash cooldowns, and a 1.1-second Heavy windup. Enemy bullets cannot solve target puzzles.
 

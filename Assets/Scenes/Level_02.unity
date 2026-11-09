@@ -465,7 +465,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.CameraFollow
   target: {fileID: 181652304}
-  offset: {x: 0, y: 25, z: -10}
+  offset: {x: 0, y: 15, z: -11}
   smoothSpeed: 5
 --- !u!81 &28453598
 AudioListener:

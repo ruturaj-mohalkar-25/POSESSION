@@ -75,9 +75,13 @@ namespace Possession.Tests
             var healthText = Read<Text>(hud, "healthText");
             var healthFill = Read<Image>(hud, "healthFill");
             var timerText = Read<Text>(hud, "levelTimerText");
-            AssertTopLeftCompact(healthText.rectTransform, 320f);
-            AssertTopLeftCompact(healthFill.rectTransform.parent as RectTransform, 320f);
-            AssertTopLeftCompact(timerText.rectTransform, 320f);
+            AssertBottomCentreCompact(healthText.rectTransform, 320f);
+            AssertBottomCentreCompact(healthFill.rectTransform.parent as RectTransform, 320f);
+            AssertBottomCentreCompact(timerText.rectTransform, 320f);
+            Assert.That(healthText.rectTransform.anchoredPosition.x, Is.LessThan(0f));
+            Assert.That(timerText.rectTransform.anchoredPosition.x, Is.GreaterThan(0f));
+            Assert.That(healthText.rectTransform.pivot.x, Is.EqualTo(1f));
+            Assert.That(timerText.rectTransform.pivot.x, Is.EqualTo(0f));
 
             var objective = Read<Text>(hud, "objectiveText");
             var objectiveBar = objective.transform.parent.GetComponent<Image>();
@@ -124,11 +128,12 @@ namespace Possession.Tests
             return null;
         }
 
-        private static void AssertTopLeftCompact(RectTransform rect, float maxWidth)
+        private static void AssertBottomCentreCompact(RectTransform rect, float maxWidth)
         {
             Assert.That(rect, Is.Not.Null);
-            Assert.That(rect.anchorMin, Is.EqualTo(new Vector2(0f, 1f)));
-            Assert.That(rect.anchorMax, Is.EqualTo(new Vector2(0f, 1f)));
+            Assert.That(rect.anchorMin, Is.EqualTo(new Vector2(0.5f, 0f)));
+            Assert.That(rect.anchorMax, Is.EqualTo(new Vector2(0.5f, 0f)));
+            Assert.That(rect.anchoredPosition.y, Is.GreaterThanOrEqualTo(84f));
             Assert.That(rect.sizeDelta.x, Is.LessThanOrEqualTo(maxWidth));
         }
 

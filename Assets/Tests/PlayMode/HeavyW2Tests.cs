@@ -96,6 +96,8 @@ namespace Possession.Tests
                     Assert.That(marker, Is.Not.Null, "Missing spawn marker for " + heavy.name);
                     Assert.That(heavy.transform.position.x, Is.EqualTo(marker.transform.position.x).Within(.1f));
                     Assert.That(heavy.transform.position.z, Is.EqualTo(marker.transform.position.z).Within(.1f));
+                    if (name == "Level_03" && heavy.name == "Heavy_03")
+                        Assert.That(marker.transform.position.z, Is.EqualTo(7f), "The entry Heavy starts at its beta spawn.");
                     Assert.That(Physics.SphereCast(points[0].position, .65f,
                         (points[1].position - points[0].position).normalized, out _,
                         Vector3.Distance(points[0].position, points[1].position), 1 << 0,

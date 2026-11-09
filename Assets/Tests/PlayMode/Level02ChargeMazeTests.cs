@@ -13,10 +13,11 @@ namespace Possession.Tests
         private Level02Director level;
         private PossessionController pc;
         private PossessionCharge charge;
+        private int savedStartingCharges;
         [UnitySetUp] public IEnumerator Setup()
         {
             Time.timeScale=1f;EventBus.Clear();yield return SceneManager.LoadSceneAsync("Level_02");yield return null;
-            Bind();Freeze();
+            Bind();savedStartingCharges=charge.Count;charge.Clear();Freeze();
         }
         private void Bind(){level=Object.FindFirstObjectByType<Level02Director>();pc=level.Possession;charge=level.Charge;}
         private static void Freeze()
@@ -36,6 +37,7 @@ namespace Possession.Tests
             Assert.That(Object.FindObjectsByType<HeavyEnemy>(FindObjectsSortMode.None).Length,Is.EqualTo(3));
             Assert.That(Object.FindObjectsByType<PossessionChargePickup>(FindObjectsSortMode.None).Length,Is.EqualTo(8));
             foreach(string room in new[]{"R1","R2","R3","R4","R5","R6","R7","D1","D2","D3"})Assert.That(GameObject.Find(room),Is.Not.Null);
+            Assert.That(savedStartingCharges,Is.EqualTo(1),"The beta scene must provide its intended starting charge.");
             Assert.That(charge.Count,Is.Zero);Assert.That(pc.CanStartPossession,Is.False);Assert.That(level.CanExit,Is.False);
             Assert.That(Object.FindObjectsByType<HUDManager>(FindObjectsSortMode.None).Length,Is.EqualTo(1));
         }
@@ -152,16 +154,16 @@ namespace Possession.Tests
             Assert.That(pc.TryEject(false),Is.True);var exit=Object.FindFirstObjectByType<Level02Exit>();level.Spirit.RestoreAt(exit.transform.position);Physics.SyncTransforms();
             Assert.That(exit.TryFinish(level.Spirit.GetComponent<Collider>()),Is.True);
         }
-        [UnityTest] public IEnumerator CourtyardRetryResetsPuzzleHostsSourcesAndStartsEmptyBeforeC1()
+        [UnityTest] public IEnumerator CourtyardRetryResetsPuzzleHostsSourcesAndRestoresStartingChargeBeforeC1()
         {
             level.MarkCheckpoint();Collect("C1");GameObject.Find("TN").GetComponent<Target>().OnHit();GameObject.Find("BN").GetComponent<BreakableWall>().TakeDamage(2);
             Assert.That(level.NorthReady,Is.True);Host("Guard_Courtyard").TakeDamage(999);
             level.RetryCourtyard();yield return null;yield return null;Bind();Freeze();yield return new WaitForSeconds(.1f);
-            Assert.That(level.CheckpointReached,Is.True);Assert.That(level.Charge.Count,Is.Zero);Assert.That(level.CanExit,Is.False);
+            Assert.That(level.CheckpointReached,Is.True);Assert.That(level.Charge.Count,Is.EqualTo(1));Assert.That(level.CanExit,Is.False);
             Assert.That(Object.FindObjectsByType<EnemyBase>(FindObjectsSortMode.None).Length,Is.EqualTo(8));
             foreach(var c in Object.FindObjectsByType<PossessionChargePickup>(FindObjectsSortMode.None))Assert.That(c.IsReady,Is.True);
             Assert.That(Vector3.Distance(level.Spirit.transform.position,Map(10,14)),Is.LessThan(.3f));
-            level.FullRestart();yield return null;yield return null;Bind();Freeze();Assert.That(level.CheckpointReached,Is.False);Assert.That(charge.Count,Is.Zero);
+            level.FullRestart();yield return null;yield return null;Bind();Freeze();Assert.That(level.CheckpointReached,Is.False);Assert.That(charge.Count,Is.EqualTo(1));
         }
         [Test] public void ExitRejectsAnUnsolvedRouteAndUnoccupiedEnemies()
         {
