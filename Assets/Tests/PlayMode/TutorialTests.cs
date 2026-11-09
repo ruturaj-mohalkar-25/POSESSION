@@ -264,7 +264,17 @@ namespace Possession.Tests
         private static void Dismiss(TutorialGuide guide)
         { for (int i = 0; i < 5 && guide.IsCoaching; i++) guide.ContinueCoaching(); }
         private static void Possess(TutorialGuide guide, EnemyBase body)
-        { Invoke(guide.Possession, "Possess", body); Dismiss(guide); }
+        {
+            Dismiss(guide);
+            var charge=guide.Spirit.GetComponent<PossessionCharge>();
+            if(charge!=null&&!charge.HasCharge)charge.TryCollect();
+            // This sequence isolates lesson transitions; cooldown duration has its own cross-level check.
+            Set(guide.Possession,"ejectCooldownTimer",0f);
+            guide.Spirit.RestoreAt(body.transform.position-body.transform.forward*2f);
+            Physics.SyncTransforms();
+            Assert.That(guide.Possession.TryPossess(body),Is.True,body.name);
+            Dismiss(guide);
+        }
         private static void Set(object item, string name, object value) => item.GetType()
             .GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).SetValue(item, value);
         private static void Invoke(object item, string name, params object[] args) => item.GetType()

@@ -48,6 +48,13 @@ namespace Possession.Editor
                 }
             }
             Resize(spirit.transform, CharacterMultiplier);
+            var player = new SerializedObject(spirit);
+            player.FindProperty("moveSpeed").floatValue = 8f;
+            player.FindProperty("jumpForce").floatValue = 8f;
+            player.ApplyModifiedPropertiesWithoutUndo();
+            var rigidbody = spirit.GetComponent<Rigidbody>();
+            rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+            rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
             foreach (var enemy in enemies)
             {
                 bool heavy = enemy is HeavyEnemy;
@@ -75,6 +82,8 @@ namespace Possession.Editor
                     attack.FindProperty("smashRange").floatValue = HeavyAttackRange;
                     attack.ApplyModifiedPropertiesWithoutUndo();
                 }
+                // Hunted clones existing actors; recompute its new room rather than inherit a template home.
+                if (scene.name != CampaignLevels.ThirdScene || !enemy.HasHomeBounds) AssignPatrolArea(enemy, roots);
                 PrefabUtility.RecordPrefabInstancePropertyModifications(enemy);
                 foreach (var label in roots.SelectMany(r => r.GetComponentsInChildren<WorldLabel>(true)).Where(l => l.Follow == enemy.transform))
                 {
@@ -108,6 +117,30 @@ namespace Possession.Editor
             }
             CampaignPresentationSetup.Apply(scene);
             EditorSceneManager.MarkSceneDirty(scene);
+        }
+
+        private static void AssignPatrolArea(EnemyBase enemy, GameObject[] roots)
+        {
+            var floors = roots.SelectMany(r => r.GetComponentsInChildren<BoxCollider>(true))
+                .Where(c => c.name.EndsWith("_Floor") || c.name.StartsWith("Hall_")).ToArray();
+            bool Contains(Bounds b, Vector3 p) => p.x >= b.min.x && p.x <= b.max.x
+                && p.z >= b.min.z && p.z <= b.max.z;
+            var home = floors.Where(c => Contains(c.bounds, enemy.transform.position))
+                .OrderBy(c => c.bounds.size.x * c.bounds.size.z).FirstOrDefault();
+            if (home == null) throw new System.InvalidOperationException("No patrol floor for " + enemy.name);
+            Bounds area = home.bounds;
+            var points = new SerializedObject(enemy).FindProperty("waypoints");
+            for (int i = 0; i < points.arraySize; i++)
+            {
+                if (!(points.GetArrayElementAtIndex(i).objectReferenceValue is Transform point)) continue;
+                if (Contains(area, point.position)) continue;
+                var next = floors.Where(c => Contains(c.bounds, point.position))
+                    .OrderBy(c => c.bounds.size.x * c.bounds.size.z).FirstOrDefault();
+                if (next != null) area.Encapsulate(next.bounds);
+            }
+            area.center = new Vector3(area.center.x, 3f, area.center.z);
+            area.size = new Vector3(area.size.x, 10f, area.size.z);
+            enemy.ConfigureHomeBounds(area);
         }
 
         private static void Resize(Transform actor, float scale)

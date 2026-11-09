@@ -25,33 +25,28 @@ namespace Possession
         private float ejectCooldownTimer;
         private SpiritController spirit;
         private Vector3 lastSpiritPosition;
-        private GameObject shieldBubble;
-        private Renderer shieldRenderer;
+        private EjectShieldVisual shieldVisual;
+        private Bounds lastHostBounds;
+        private Vector3 lastHostForward = Vector3.forward;
 
         public PlayerState CurrentState => currentState;
         public float PossessTimer => possessTimer;
         public float PossessDuration => possessDuration;
         public float EjectProtectionSeconds => 2f;
         public EnemyBase PossessedEnemy => possessedEnemy;
-        public bool CanStartPossession => GetComponent<PossessionCharge>() == null
-            || GetComponent<PossessionCharge>().HasCharge && ejectCooldownTimer <= 0f;
+        public float PossessRange => possessRange;
+        public bool CanStartPossession => currentState == PlayerState.Spirit && ejectCooldownTimer <= 0f
+            && spirit != null && spirit.CurrentHP > 0
+            && (GameManager.Instance == null || GameManager.Instance.CurrentState == LevelState.InProgress)
+            && (GetComponent<PossessionCharge>() == null || GetComponent<PossessionCharge>().HasCharge);
 
-        public bool IsEjectShielded => ejectCooldownTimer > 0f;
+        public bool IsEjectShielded => currentState == PlayerState.Spirit && spirit != null && spirit.IsDamageProtected;
 
         private void Awake()
         {
             spirit = GetComponent<SpiritController>();
-            shieldBubble = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            shieldBubble.name = "EjectShield";
-            shieldBubble.layer = 2;
-            shieldBubble.transform.SetParent(transform, false);
-            shieldBubble.transform.localScale = Vector3.one * 1.8f;
-            var col = shieldBubble.GetComponent<Collider>();
-            if (col != null) { col.enabled = false; Destroy(col); }
-            shieldRenderer = shieldBubble.GetComponent<Renderer>();
-            shieldRenderer.material = new Material(Shader.Find("Sprites/Default"));
-            shieldRenderer.material.color = new Color(0.3f, 0.85f, 1f, 0.25f);
-            shieldBubble.SetActive(false);
+            shieldVisual = GetComponent<EjectShieldVisual>();
+            if (shieldVisual == null) shieldVisual = gameObject.AddComponent<EjectShieldVisual>();
         }
 
         private void Update()
@@ -68,6 +63,12 @@ namespace Possession
             }
             else
             {
+                if (possessedEnemy == null || possessedEnemy.CurrentHP <= 0 || !possessedEnemy.gameObject.activeInHierarchy)
+                {
+                    Eject(forced: false);
+                    return;
+                }
+                CacheHostPose();
                 possessTimer -= Time.deltaTime;
                 EventBus.PossessTimerUpdated?.Invoke(possessTimer, possessDuration);
 
@@ -86,7 +87,21 @@ namespace Possession
             EventBus.PossessPromptUpdated?.Invoke(canPossess);
 
             if (!Input.GetKeyDown(KeyCode.E) || !canPossess) return;
-            Possess(nearest);
+            TryPossess(nearest);
+        }
+
+        public EnemyBase FindPossessableEnemy() => FindNearestEnemy();
+
+        public bool TryPossess(EnemyBase enemy)
+        {
+            if (!CanStartPossession || Time.timeScale <= 0f || enemy == null
+                || GameManager.Instance != null && GameManager.Instance.CurrentState != LevelState.InProgress
+                || !enemy.gameObject.activeInHierarchy || !enemy.CanBePossessedFrom(transform)
+                || (enemyLayer.value & (1 << enemy.gameObject.layer)) == 0
+                || Vector3.Distance(transform.position, enemy.transform.position) > possessRange
+                || !HasLineOfSight(enemy)) return false;
+            Possess(enemy);
+            return possessedEnemy == enemy;
         }
 
         private EnemyBase FindNearestEnemy()
@@ -133,6 +148,7 @@ namespace Possession
                 || !HasLineOfSight(enemy))) return;
             lastSpiritPosition = transform.position;
             possessedEnemy = enemy;
+            CacheHostPose();
             possessTimer = possessDuration;
 
             currentState = enemy switch
@@ -149,22 +165,24 @@ namespace Possession
 
         private void Eject(bool forced)
         {
-            if (possessedEnemy == null) return;
+            if (currentState == PlayerState.Spirit) return;
+            CacheHostPose();
 
             if (!TryFindEjectionPosition(out Vector3 ejectPos))
                 return;
 
             spirit.GrantDamageProtection(EjectProtectionSeconds);
 
-            if (forced)
-                possessedEnemy.OnForcedEject(hostileTime);
-            else
-                possessedEnemy.OnEjected();
-
+            if (possessedEnemy != null)
+            {
+                if (forced && possessedEnemy.CurrentHP > 0 && possessedEnemy.gameObject.activeInHierarchy)
+                    possessedEnemy.OnForcedEject(hostileTime);
+                else possessedEnemy.OnEjected();
+            }
             spirit.RestoreAt(ejectPos);
-            Vector3 awayFromSpirit = possessedEnemy.transform.position - ejectPos;
+            Vector3 awayFromSpirit = lastHostBounds.center - ejectPos;
             awayFromSpirit.y = 0f;
-            if (awayFromSpirit.sqrMagnitude > 0.01f)
+            if (possessedEnemy != null && awayFromSpirit.sqrMagnitude > .01f)
                 possessedEnemy.transform.rotation = Quaternion.LookRotation(awayFromSpirit.normalized);
             ejectCooldownTimer = ejectCooldown;
 
@@ -172,11 +190,13 @@ namespace Possession
             possessedEnemy = null;
             currentState = PlayerState.Spirit;
 
+            UpdateShield();
             EventBus.Ejected?.Invoke(ejectedEnemy, forced);
         }
 
         public bool TryEject(bool forced)
         {
+            if (Time.timeScale <= 0f || GameManager.Instance != null && GameManager.Instance.CurrentState != LevelState.InProgress) return false;
             Eject(forced);
             return currentState == PlayerState.Spirit;
         }
@@ -189,9 +209,7 @@ namespace Possession
             if (capsule == null) return false;
 
             Physics.SyncTransforms();
-            var enemyCollider = possessedEnemy.GetComponent<Collider>();
-            Bounds bounds = enemyCollider != null && enemyCollider.bounds.size.sqrMagnitude > 0.01f
-                ? enemyCollider.bounds : new Bounds(possessedEnemy.transform.position, Vector3.one * 2f);
+            Bounds bounds = lastHostBounds;
             Vector3 scale = transform.lossyScale;
             float radius = capsule.radius * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z));
             float halfHeight = Mathf.Max(radius, capsule.height * Mathf.Abs(scale.y) * 0.5f);
@@ -205,7 +223,7 @@ namespace Possession
                 for (int ring = 0; ring < 2; ring++)
                 {
                     Vector3 direction = Quaternion.AngleAxis(angle, Vector3.up)
-                        * -possessedEnemy.transform.forward;
+                        * -lastHostForward;
                     direction.y = 0f;
                     direction.Normalize();
                     float bodyExtent = Mathf.Abs(direction.x) * bounds.extents.x
@@ -221,7 +239,7 @@ namespace Possession
                         path.normalized, path.magnitude, ~0, QueryTriggerInteraction.Ignore))
                     {
                         if (hit.collider.transform.IsChildOf(transform)
-                            || hit.collider.transform.IsChildOf(possessedEnemy.transform)) continue;
+                            || (possessedEnemy != null && hit.collider.transform.IsChildOf(possessedEnemy.transform))) continue;
                         blocked = true;
                         break;
                     }
@@ -245,7 +263,7 @@ namespace Possession
                 enemyBounds.size.y + 2f, ~0, QueryTriggerInteraction.Ignore))
             {
                 if (hit.collider.transform.IsChildOf(transform)
-                    || hit.collider.transform.IsChildOf(possessedEnemy.transform)
+                    || (possessedEnemy != null && hit.collider.transform.IsChildOf(possessedEnemy.transform))
                     || hit.normal.y < 0.5f || hit.point.y > enemyBounds.min.y + 0.3f)
                     continue;
                 groundY = Mathf.Max(groundY, hit.point.y);
@@ -263,24 +281,18 @@ namespace Possession
             return true;
         }
 
-        private void UpdateShield()
+        private void CacheHostPose()
         {
-            if (shieldBubble == null) return;
-            bool active = ejectCooldownTimer > 0f && currentState == PlayerState.Spirit;
-            shieldBubble.SetActive(active);
-            if (active && shieldRenderer != null)
-            {
-                float pulse = 0.15f + 0.15f * Mathf.Sin(Time.time * 6f);
-                var c = shieldRenderer.material.color;
-                c.a = pulse;
-                shieldRenderer.material.color = c;
-            }
+            if (possessedEnemy == null) return;
+            var collider = possessedEnemy.GetComponent<Collider>();
+            if (collider != null && collider.bounds.size.sqrMagnitude > .01f) lastHostBounds = collider.bounds;
+            else lastHostBounds.center = possessedEnemy.transform.position;
+            lastHostForward = possessedEnemy.transform.forward;
         }
 
-        private void OnDestroy()
+        private void UpdateShield()
         {
-            if (shieldRenderer != null)
-                Destroy(shieldRenderer.sharedMaterial);
+            if (shieldVisual != null) shieldVisual.Refresh();
         }
     }
 }

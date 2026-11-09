@@ -364,7 +364,9 @@ namespace Possession
                 displacement = next - transform.position;
             }
             if (displacement.sqrMagnitude <= 0f) return;
-            transform.rotation = Quaternion.LookRotation(displacement);
+            // Keep tiny high-frame-rate movement steps; normalize facing without Vector3's cutoff.
+            Vector3 facing = displacement / displacement.magnitude;
+            if (facing.sqrMagnitude > .5f) transform.rotation = Quaternion.LookRotation(facing);
             controller.Move(displacement);
         }
 

@@ -593,7 +593,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.CameraFollow
   target: {fileID: 181652304}
-  offset: {x: 0, y: 15, z: -11}
+  offset: {x: 0, y: 25, z: -18}
   smoothSpeed: 5
 --- !u!81 &28453598
 AudioListener:
@@ -663,7 +663,7 @@ Transform:
   m_GameObject: {fileID: 28453596}
   serializedVersion: 2
   m_LocalRotation: {x: 0.46174863, y: 0, z: 0, w: 0.8870109}
-  m_LocalPosition: {x: -44.8, y: 16.4, z: -17.4}
+  m_LocalPosition: {x: -44.8, y: 26.4, z: -24.4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3441,6 +3441,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1163164391160891401, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
+      propertyPath: moveSpeed
+      value: 8
+      objectReference: {fileID: 0}
     - target: {fileID: 3635890944769277190, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
       propertyPath: m_Name
       value: Spirit
@@ -3449,6 +3453,14 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 6c9f4ff37a0b0455c80db54e3d849591, type: 2}
+    - target: {fileID: 5469995996649020363, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
+      propertyPath: m_Interpolate
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5469995996649020363, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 7810502230852115814, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
       propertyPath: m_LocalScale.x
       value: 1.25
@@ -3467,7 +3479,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7810502230852115814, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.4
+      value: 1.3999999
       objectReference: {fileID: 0}
     - target: {fileID: 7810502230852115814, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
       propertyPath: m_LocalPosition.z
@@ -17180,7 +17192,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc1d0a7277bfc4c1984189b3d4eace5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.GuardEnemy
-  moveSpeed: 3
+  moveSpeed: 5
   maxHP: 3
   waypoints:
   - {fileID: 17459888}
@@ -17195,10 +17207,10 @@ MonoBehaviour:
   patrolStartDelay: 0.5
   loseSightSearchTime: 1.5
   visionAngle: 75
-  useHomeBounds: 0
+  useHomeBounds: 1
   homeBounds:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+    m_Center: {x: -16, y: 3, z: -1.6000004}
+    m_Extent: {x: 9.6, y: 5, z: 11.2}
 --- !u!143 &1028582867
 CharacterController:
   m_ObjectHideFlags: 0
@@ -19340,7 +19352,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc1d0a7277bfc4c1984189b3d4eace5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.GuardEnemy
-  moveSpeed: 3
+  moveSpeed: 5
   maxHP: 3
   waypoints:
   - {fileID: 689170161}
@@ -19355,10 +19367,10 @@ MonoBehaviour:
   patrolStartDelay: 0
   loseSightSearchTime: 1.5
   visionAngle: 75
-  useHomeBounds: 0
+  useHomeBounds: 1
   homeBounds:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+    m_Center: {x: 20.800001, y: 3, z: -28.800001}
+    m_Extent: {x: 11.199999, y: 5, z: 6.3999996}
 --- !u!143 &1158619553
 CharacterController:
   m_ObjectHideFlags: 0
@@ -21824,7 +21836,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 853161baa85df408db19d555e03a8750, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.HeavyEnemy
-  moveSpeed: 2
+  moveSpeed: 4
   maxHP: 5
   waypoints:
   - {fileID: 586672845}
@@ -21839,10 +21851,10 @@ MonoBehaviour:
   patrolStartDelay: 0
   loseSightSearchTime: 1.5
   visionAngle: 75
-  useHomeBounds: 0
+  useHomeBounds: 1
   homeBounds:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+    m_Center: {x: 20.800001, y: 3, z: 27.2}
+    m_Extent: {x: 11.199999, y: 5, z: 8}
 --- !u!143 &1314578484
 CharacterController:
   m_ObjectHideFlags: 0
@@ -25386,7 +25398,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 853161baa85df408db19d555e03a8750, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.HeavyEnemy
-  moveSpeed: 2
+  moveSpeed: 4
   maxHP: 5
   waypoints:
   - {fileID: 948294558}
@@ -25401,10 +25413,10 @@ MonoBehaviour:
   patrolStartDelay: 0.25
   loseSightSearchTime: 1.5
   visionAngle: 75
-  useHomeBounds: 0
+  useHomeBounds: 1
   homeBounds:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+    m_Center: {x: -16, y: 3, z: -1.6000004}
+    m_Extent: {x: 9.6, y: 5, z: 11.2}
 --- !u!143 &1566655615
 CharacterController:
   m_ObjectHideFlags: 0
@@ -28020,7 +28032,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc1d0a7277bfc4c1984189b3d4eace5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.GuardEnemy
-  moveSpeed: 3
+  moveSpeed: 5
   maxHP: 3
   waypoints:
   - {fileID: 2095757444}
@@ -28035,10 +28047,10 @@ MonoBehaviour:
   patrolStartDelay: 0.5
   loseSightSearchTime: 1.5
   visionAngle: 75
-  useHomeBounds: 0
+  useHomeBounds: 1
   homeBounds:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+    m_Center: {x: -14.400001, y: 3, z: -28.800001}
+    m_Extent: {x: 11.2, y: 5, z: 6.3999996}
 --- !u!143 &1688631468
 CharacterController:
   m_ObjectHideFlags: 0
@@ -28230,7 +28242,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc1d0a7277bfc4c1984189b3d4eace5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.GuardEnemy
-  moveSpeed: 3
+  moveSpeed: 5
   maxHP: 3
   waypoints:
   - {fileID: 249541108}
@@ -28245,10 +28257,10 @@ MonoBehaviour:
   patrolStartDelay: 0
   loseSightSearchTime: 1.5
   visionAngle: 75
-  useHomeBounds: 0
+  useHomeBounds: 1
   homeBounds:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+    m_Center: {x: -43.2, y: 3, z: -1.6000004}
+    m_Extent: {x: 8, y: 5, z: 11.2}
 --- !u!143 &1694059600
 CharacterController:
   m_ObjectHideFlags: 0
@@ -28837,7 +28849,7 @@ MonoBehaviour:
   northWall: {fileID: 113272493}
   southWall: {fileID: 1452944205}
   spirit: {fileID: 181652306}
-  courtyard: {x: -22.4, y: 1.4, z: -6.4}
+  courtyard: {x: -22.4, y: 1.3999999, z: -6.4}
 --- !u!1 &1721128436
 GameObject:
   m_ObjectHideFlags: 0
@@ -30300,7 +30312,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 853161baa85df408db19d555e03a8750, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.HeavyEnemy
-  moveSpeed: 2
+  moveSpeed: 4
   maxHP: 5
   waypoints:
   - {fileID: 1702752803}
@@ -30315,10 +30327,10 @@ MonoBehaviour:
   patrolStartDelay: 0.75
   loseSightSearchTime: 1.5
   visionAngle: 75
-  useHomeBounds: 0
+  useHomeBounds: 1
   homeBounds:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+    m_Center: {x: 44.8, y: 3, z: -1.6000004}
+    m_Extent: {x: 6.4000015, y: 5, z: 11.2}
 --- !u!143 &1861617221
 CharacterController:
   m_ObjectHideFlags: 0
@@ -33444,7 +33456,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc1d0a7277bfc4c1984189b3d4eace5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.GuardEnemy
-  moveSpeed: 3
+  moveSpeed: 5
   maxHP: 3
   waypoints:
   - {fileID: 86554845}
@@ -33459,10 +33471,10 @@ MonoBehaviour:
   patrolStartDelay: 0.5
   loseSightSearchTime: 1.5
   visionAngle: 75
-  useHomeBounds: 0
+  useHomeBounds: 1
   homeBounds:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+    m_Center: {x: -14.400001, y: 3, z: 27.2}
+    m_Extent: {x: 11.2, y: 5, z: 8}
 --- !u!143 &2042364195
 CharacterController:
   m_ObjectHideFlags: 0

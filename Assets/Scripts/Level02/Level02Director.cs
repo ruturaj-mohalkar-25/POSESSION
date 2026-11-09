@@ -51,6 +51,7 @@ namespace Possession
         }
         public bool TryContactDamage()
         {
+            if (Time.timeScale <= 0f || GameManager.Instance != null && GameManager.Instance.CurrentState != LevelState.InProgress) return false;
             if (Time.time < nextContactHit || spirit.CurrentHP <= 0 || Possession.CurrentState != PlayerState.Spirit) return false;
             nextContactHit = Time.time + 3f;
             spirit.TakeDamage(1);

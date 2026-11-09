@@ -250,7 +250,17 @@ namespace Possession.Tests
 
         private void Begin() { guide.BeginPractice(); Dismiss(); }
         private void Dismiss() { for (int i = 0; i < 5 && guide.IsCoaching; i++) guide.ContinueCoaching(); }
-        private static void Invoke(object item, string method, params object[] args) => item.GetType()
-            .GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(item, args);
+        private static void Invoke(object item, string method, params object[] args)
+        {
+            if(item is PossessionController pc && method=="Possess")
+            {
+                var body=(EnemyBase)args[0];var spirit=pc.GetComponent<SpiritController>();
+                var charge=pc.GetComponent<PossessionCharge>();if(charge!=null&&!charge.HasCharge)charge.TryCollect();
+                typeof(PossessionController).GetField("ejectCooldownTimer",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(pc,0f);
+                spirit.RestoreAt(body.transform.position-body.transform.forward*2f);Physics.SyncTransforms();
+                Assert.That(pc.TryPossess(body),Is.True,body.name);return;
+            }
+            item.GetType().GetMethod(method,BindingFlags.Instance|BindingFlags.NonPublic).Invoke(item,args);
+        }
     }
 }

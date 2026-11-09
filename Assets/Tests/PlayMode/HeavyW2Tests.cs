@@ -22,8 +22,8 @@ namespace Possession.Tests
         }
 
         [UnityTest] public IEnumerator Level01RetainsHeavyStats() => CheckPlacement("Level_01", 1, 1.8f);
-        [UnityTest] public IEnumerator Level02HasThreeHeaviesWithPatrolAndSpeed2() => CheckPlacement("Level_02", 3, 2f);
-        [UnityTest] public IEnumerator Level03HasTwoHeaviesWithPatrolAndSpeed22() => CheckPlacement("Level_03", 2, 2.2f);
+        [UnityTest] public IEnumerator Level02HasThreeHeaviesWithSharedMovement() => CheckPlacement("Level_02", 3, 4f);
+        [UnityTest] public IEnumerator Level03HasTwoHeaviesWithSharedMovement() => CheckPlacement("Level_03", 2, 4f);
         // Level02ChargeMazeTests exercises both replacement Level 2 solutions with charge collection.
         [UnityTest] public IEnumerator Level03HeaviesSmashBothWallsAndSpiritFinishes() => CheckPuzzle("Level_03");
 
@@ -91,8 +91,7 @@ namespace Possession.Tests
                 }
                 if (name != "Level_01")
                 {
-                    int index = heavy.name.EndsWith("02") ? 2 : 1;
-                    var marker = GameObject.Find(name == "Level_02" ? "SpawnPoint_" + heavy.name : "SpawnPoint_Heavy_0" + index);
+                    var marker = GameObject.Find("SpawnPoint_" + heavy.name);
                     Assert.That(heavy.transform.position.x, Is.EqualTo(marker.transform.position.x).Within(.1f));
                     Assert.That(heavy.transform.position.z, Is.EqualTo(marker.transform.position.z).Within(.1f));
                     Assert.That(Physics.SphereCast(points[0].position, .65f,
@@ -142,7 +141,8 @@ namespace Possession.Tests
                         .FirstOrDefault(p => p.IsReady);
                     if (pickup != null) { spirit.RestoreAt(pickup.transform.position + Vector3.up); Physics.SyncTransforms(); pickup.TryCollect(charge); }
                 }
-                if (i < walls.Length - 1) Assert.That(Object.FindFirstObjectByType<LevelExit>().IsReady, Is.False);
+                var gate = Object.FindFirstObjectByType<LevelExit>();
+                Assert.That(gate.IsReady, Is.EqualTo(Read<BreakableWall>(gate, "breakableWall").CurrentHP <= 0));
             }
             Assert.That(Object.FindFirstObjectByType<LevelExit>().IsReady, Is.True);
             var exit = Object.FindFirstObjectByType<LevelExit>();
@@ -158,7 +158,11 @@ namespace Possession.Tests
         }
         private static HeavyEnemy[] Heavies() => Object.FindObjectsByType<HeavyEnemy>(FindObjectsSortMode.None).OrderBy(h => h.name).ToArray();
         private static BreakableWall[] Walls() => Object.FindObjectsByType<BreakableWall>(FindObjectsSortMode.None).OrderByDescending(w => w.transform.position.z).ToArray();
-        private static void FreezeHeavies() { foreach (var heavy in Heavies()) heavy.enabled = false; }
+        private static void FreezeHeavies()
+        {
+            foreach (var enemy in Object.FindObjectsByType<EnemyBase>(FindObjectsSortMode.None)) enemy.enabled = false;
+            foreach (var attack in Object.FindObjectsByType<EnemyContactDamage>(FindObjectsSortMode.None)) attack.enabled = false;
+        }
         private static void Move(HeavyEnemy heavy, Vector3 position, Vector3 forward)
         {
             var cc = heavy.GetComponent<CharacterController>(); cc.enabled = false;

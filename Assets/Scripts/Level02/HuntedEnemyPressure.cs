@@ -16,6 +16,7 @@ namespace Possession
         private void OnDisable() => readyAt = -1f;
         private void Update()
         {
+            if (Time.timeScale <= 0f || GameManager.Instance != null && GameManager.Instance.CurrentState != LevelState.InProgress) return;
             if (level == null) level = FindFirstObjectByType<Level02Director>();
             if (level == null) return;
             var spirit = level.Spirit;
