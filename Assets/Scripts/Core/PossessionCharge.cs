@@ -8,9 +8,14 @@ namespace Possession
         [SerializeField] private int maxCharges = 3;
         [SerializeField] private int startingCharges = 1;
 
+        private static readonly Color MoteColor = new Color(0.55f, 1f, 0.85f);
+
         private PossessionController possession;
-        private Transform[] motes;
-        private Renderer[] moteRenderers;
+        private Transform[] motes;              // one tiny ghost per carried charge
+        private Renderer[][] moteParts;
+        private Material moteBody;
+        private Material moteEyes;
+        private Camera cam;
         private Transform flightTarget;
         private Vector3 flightStart;
         private float spentAt = -10f;
@@ -39,25 +44,53 @@ namespace Possession
         private void Start()
         {
             Count = startingCharges;
+            moteBody = new Material(Shader.Find("Standard")) { color = MoteColor };
+            moteBody.EnableKeyword("_EMISSION");
+            moteBody.SetColor("_EmissionColor", MoteColor * 0.7f);
+            moteEyes = new Material(Shader.Find("Standard")) { color = new Color(0.06f, 0.06f, 0.08f) };
+
             motes = new Transform[maxCharges];
-            moteRenderers = new Renderer[maxCharges];
+            moteParts = new Renderer[maxCharges][];
             for (int i = 0; i < maxCharges; i++)
             {
-                var orb = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                orb.name = "Carried charge " + i;
-                orb.layer = 2;
-                orb.transform.SetParent(transform, false);
-                orb.transform.localScale = Vector3.one * 0.26f;
-                var col = orb.GetComponent<Collider>();
-                col.enabled = false;
-                Destroy(col);
-                var r = orb.GetComponent<Renderer>();
-                r.material = new Material(Shader.Find("Sprites/Default"));
-                r.material.color = new Color(0.55f, 1f, 0.85f);
-                r.enabled = false;
-                motes[i] = orb.transform;
-                moteRenderers[i] = r;
+                motes[i] = BuildMiniGhost(i);
+                moteParts[i] = motes[i].GetComponentsInChildren<Renderer>(true);
+                SetVisible(i, false);
             }
+        }
+
+        // Tiny ghost (head, droplet tail, two eyes) the size of the old charge dot; eyes face -z
+        private Transform BuildMiniGhost(int index)
+        {
+            var root = new GameObject("Carried charge " + index) { layer = 2 }.transform;
+            root.SetParent(transform, false);
+            root.localScale = Vector3.one * 0.55f;
+            MotePart(root, new Vector3(0f, 0.05f, 0f), new Vector3(0.46f, 0.5f, 0.46f), moteBody);
+            MotePart(root, new Vector3(0f, -0.2f, 0f), new Vector3(0.32f, 0.3f, 0.32f), moteBody);
+            MotePart(root, new Vector3(-0.08f, 0.1f, -0.21f), new Vector3(0.08f, 0.11f, 0.04f), moteEyes);
+            MotePart(root, new Vector3(0.08f, 0.1f, -0.21f), new Vector3(0.08f, 0.11f, 0.04f), moteEyes);
+            return root;
+        }
+
+        private static void MotePart(Transform parent, Vector3 localPos, Vector3 localScale, Material mat)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            go.layer = 2;
+            var col = go.GetComponent<Collider>();
+            col.enabled = false;
+            Destroy(col);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = localPos;
+            go.transform.localScale = localScale;
+            var r = go.GetComponent<Renderer>();
+            r.sharedMaterial = mat;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+
+        private void SetVisible(int index, bool visible)
+        {
+            foreach (var r in moteParts[index])
+                if (r != null) r.enabled = visible;
         }
 
         public bool TryCollect()
@@ -102,12 +135,14 @@ namespace Possession
             bool flying = flightTarget != null && Time.time - spentAt < 0.3f;
             bool spiritVisible = possession.CurrentState == PlayerState.Spirit;
 
+            if (cam == null) cam = Camera.main;
             for (int i = 0; i < maxCharges; i++)
             {
-                if (moteRenderers[i] == null) continue;
+                if (motes[i] == null) continue;
                 bool show = (flying && i == Count) || (!flying && spiritVisible && i < Count);
-                moteRenderers[i].enabled = show;
+                SetVisible(i, show);
                 if (!show) continue;
+                if (cam != null) motes[i].rotation = Quaternion.LookRotation(cam.transform.forward, Vector3.up);
 
                 if (flying && i == Count)
                 {
@@ -126,9 +161,8 @@ namespace Possession
 
         private void OnDestroy()
         {
-            if (moteRenderers == null) return;
-            foreach (var r in moteRenderers)
-                if (r != null) Destroy(r.sharedMaterial);
+            if (moteBody != null) Destroy(moteBody);
+            if (moteEyes != null) Destroy(moteEyes);
         }
     }
 }
