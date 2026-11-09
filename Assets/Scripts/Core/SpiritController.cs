@@ -15,6 +15,16 @@ namespace Possession
         private int currentHP;
         private bool isGrounded;
         private bool isVisible = true;
+        private float damageProtectedUntil;
+
+        public float DamageProtectionRemaining => Mathf.Max(0f, damageProtectedUntil - Time.time);
+        public bool IsDamageProtected => Time.time < damageProtectedUntil;
+
+        // Opt-in grace for scenes that request it; normal health behaviour is unchanged otherwise.
+        public void GrantDamageProtection(float seconds)
+        {
+            if (seconds > 0f) damageProtectedUntil = Mathf.Max(damageProtectedUntil, Time.time + seconds);
+        }
 
         private void Awake()
         {
@@ -58,7 +68,7 @@ namespace Possession
         public void TakeDamage(int amount)
         {
             var possession = GetComponent<PossessionController>();
-            if (possession != null && possession.IsEjectShielded) return;
+            if (IsDamageProtected || possession != null && possession.IsEjectShielded) return;
             currentHP -= amount;
             EventBus.SpiritDamaged?.Invoke(currentHP, maxHP);
             if (currentHP <= 0)

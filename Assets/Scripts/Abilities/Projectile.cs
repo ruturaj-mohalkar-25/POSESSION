@@ -39,6 +39,12 @@ namespace Possession
         private void HandleHit(Collider other)
         {
             if (other == ownerCollider) return;
+            var hostile = GetComponent<EnemyShot>();
+            if (hostile != null && hostile.TryHitSpirit(other))
+            {
+                Destroy(gameObject);
+                return;
+            }
             var damageable = other.GetComponent<IDamageable>();
             if (damageable != null)
             {

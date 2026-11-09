@@ -175,6 +175,8 @@ namespace Possession.Editor
                 Set(hud,"objectiveText",objective.GetComponentInChildren<UnityEngine.UI.Text>(true));
             }
             foreach(var t in world.GetComponentsInChildren<WorldLabel>())Object.DestroyImmediate(t.gameObject);
+            CampaignSpaceSetup.Apply(scene);
+            CampaignCombatSetup.Apply(scene);
             EditorSceneManager.MarkSceneDirty(scene);EditorSceneManager.SaveScene(scene,Path);
             LevelBuildKit.RegisterScene(Path);AssetDatabase.SaveAssets();
             Debug.Log("Level 2 Hunted built: 7 rooms, 3 dead ends, 8 enemies, 8 shards, 2 independent routes.");

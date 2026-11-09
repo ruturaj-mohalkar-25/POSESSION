@@ -100,6 +100,8 @@ namespace Possession.Editor
 
             LevelBuildKit.ApplyConfig(LevelConfigAssets.Load("Level_03"), manager, spirit);
 
+            CampaignSpaceSetup.Apply(scene);
+            CampaignCombatSetup.Apply(scene);
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.SaveAssets();

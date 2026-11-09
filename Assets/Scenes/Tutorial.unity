@@ -3768,6 +3768,10 @@ MonoBehaviour:
   patrolStartDelay: 0
   loseSightSearchTime: 1.5
   visionAngle: 45
+  useHomeBounds: 0
+  homeBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!143 &755056815
 CharacterController:
   m_ObjectHideFlags: 0
@@ -4566,10 +4570,6 @@ MonoBehaviour:
   - 100
   - 150
   - 225
-  levelOrder:
-  - Level_01
-  - Level_03
-  - Level_02
 --- !u!4 &822176289
 Transform:
   m_ObjectHideFlags: 0
@@ -7021,7 +7021,6 @@ MonoBehaviour:
   gameOverPanel: {fileID: 0}
   gameCompletePanel: {fileID: 0}
   nextButtonLabel: {fileID: 761004089}
-  firstLevelScene: Level_01
 --- !u!114 &1339390796
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10937,6 +10936,10 @@ MonoBehaviour:
   patrolStartDelay: 0
   loseSightSearchTime: 1.5
   visionAngle: 45
+  useHomeBounds: 0
+  homeBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!143 &1888259997
 CharacterController:
   m_ObjectHideFlags: 0

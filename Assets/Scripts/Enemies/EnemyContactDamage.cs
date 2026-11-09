@@ -118,6 +118,11 @@ namespace Possession
             }
 
             if (!FindSpirit()) return;
+            if (!enemy.CanPursue(spirit.transform))
+            {
+                CancelWindup();
+                return;
+            }
 
             // Spirit is hidden while possessing another enemy
             if (spiritCollider != null && !spiritCollider.enabled) return;
@@ -138,7 +143,7 @@ namespace Possession
                     if (distance <= shootRange && CanSeeSpirit()) Shoot();
                     break;
                 case Attack.Smash:
-                    if (distance <= smashRange) StartSmash();
+                    if (distance <= smashRange && CanSeeSpirit()) StartSmash();
                     break;
                 default:
                     if (distance <= touchRange)
@@ -153,6 +158,11 @@ namespace Possession
 
         private void Shoot()
         {
+            // A Spirit can eject behind a stationary Guard. Aim the muzzle before firing.
+            Vector3 facing = spirit.transform.position - transform.position;
+            facing.y = 0f;
+            if (facing.sqrMagnitude < .01f) return;
+            transform.rotation = Quaternion.LookRotation(facing.normalized);
             Vector3 origin = firePoint != null ? firePoint.position : transform.position + Vector3.up * 0.5f;
             Vector3 dir = spirit.transform.position - origin;
             dir.y = 0f;
@@ -186,7 +196,7 @@ namespace Possession
             impact.y = 0.3f;
             SimpleFX.Burst(impact, dustMaterial, 1f, 3.2f, 0.35f);
 
-            if (distance <= smashRange + 0.3f) spirit.TakeDamage(damage);
+            if (distance <= smashRange + 0.3f && CanSeeSpirit()) spirit.TakeDamage(damage);
         }
 
         private void StopHostile()

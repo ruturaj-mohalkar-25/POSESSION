@@ -69,6 +69,7 @@ namespace Possession.Editor
             Debug.Log("Step 10/10: Building Tutorial practice level...");
             TutorialBuilder.Build();
 
+            WarehouseCampaignSetup.Build();
             UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/Scenes/MainMenu.unity");
             Debug.Log("=== Full Build All Levels: complete ===");
         }

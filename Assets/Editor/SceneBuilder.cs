@@ -111,7 +111,7 @@ namespace Possession.Editor
             titleRect.sizeDelta = new Vector2(600, 100);
 
             // Play button
-            CreateMenuButton(canvasGO.transform, "Play", new Vector2(0, -20), "Level_01");
+            CreateMenuButton(canvasGO.transform, "Play", new Vector2(0, -20), CampaignLevels.FirstScene);
 
             // Quit button
             var quitGO = CreateButton(canvasGO.transform, "Quit", new Vector2(0, -100));
