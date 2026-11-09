@@ -23,8 +23,13 @@ namespace Possession
             if (groundPlane.Raycast(ray, out float distance))
             {
                 Vector3 worldPoint = ray.GetPoint(distance);
-                Vector3 aimDir = (worldPoint - firePoint.position).normalized;
+                Vector3 aimDir = worldPoint - firePoint.position;
                 aimDir.y = 0f;
+                // Clicking right under the shooter leaves no direction: fire the way it is facing
+                if (aimDir.sqrMagnitude < 0.0001f) aimDir = firePoint.forward;
+                aimDir.y = 0f;
+                if (aimDir.sqrMagnitude < 0.0001f) aimDir = transform.forward;
+                aimDir.Normalize();
 
                 if (projectilePrefab != null)
                 {

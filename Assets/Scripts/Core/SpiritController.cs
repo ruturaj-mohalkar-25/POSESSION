@@ -75,6 +75,15 @@ namespace Possession
                 EventBus.SpiritDied?.Invoke();
         }
 
+        // Restores HP up to the maximum; returns false when already full or dead so a pickup is not wasted
+        public bool Heal(int amount)
+        {
+            if (amount <= 0 || currentHP <= 0 || currentHP >= maxHP) return false;
+            currentHP = Mathf.Min(maxHP, currentHP + amount);
+            EventBus.SpiritDamaged?.Invoke(currentHP, maxHP); // the HUD refreshes the health bar from this event
+            return true;
+        }
+
         public void SetVisible(bool visible)
         {
             isVisible = visible;
