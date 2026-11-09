@@ -110,17 +110,25 @@ namespace Possession.Editor
             var canvas = hud.transform;
             var so = new SerializedObject(hud);
 
-            // Health text: top-left, with the bar underneath
+            // Health: bottom-centre, left side of status row above objective bar
             var healthText = so.FindProperty("healthText").objectReferenceValue as Text;
             if (healthText != null)
             {
-                PlaceTopLeft(healthText.rectTransform, new Vector2(24, -18), new Vector2(280, 36));
-                StyleText(healthText, 26, TextAnchor.MiddleLeft);
-                healthText.text = "HP 3/3";
+                var htRect = healthText.rectTransform;
+                htRect.anchorMin = htRect.anchorMax = new Vector2(0.5f, 0);
+                htRect.pivot = new Vector2(1f, 0);
+                htRect.anchoredPosition = new Vector2(-100, 108);
+                htRect.sizeDelta = new Vector2(300, 36);
+                StyleText(healthText, 28, TextAnchor.MiddleLeft);
+                healthText.text = "HP 5/5";
             }
 
             var healthBG = FindOrCreateImage(canvas, "HealthBarBG", BarBackground);
-            PlaceTopLeft(healthBG.rectTransform, new Vector2(24, -58), new Vector2(280, 18));
+            var hbRect = healthBG.rectTransform;
+            hbRect.anchorMin = hbRect.anchorMax = new Vector2(0.5f, 0);
+            hbRect.pivot = new Vector2(1f, 0);
+            hbRect.anchoredPosition = new Vector2(-100, 84);
+            hbRect.sizeDelta = new Vector2(300, 20);
             var healthFill = FindOrCreateImage(healthBG.transform, "HealthFill", new Color(0.2f, 0.85f, 0.3f));
             StretchFromLeft(healthFill.rectTransform);
 
@@ -187,12 +195,16 @@ namespace Possession.Editor
             message.text = "DOOR OPEN";
             message.gameObject.SetActive(false);
 
-            // Level timer: top-left under the health bar, clear of the play area
+            // Level timer: bottom-centre, right side of status row above objective bar
             var timer = so.FindProperty("levelTimerText").objectReferenceValue as Text;
             if (timer != null)
             {
-                PlaceTopLeft(timer.rectTransform, new Vector2(24, -84), new Vector2(280, 36));
-                StyleText(timer, 28, TextAnchor.MiddleLeft);
+                var tRect = timer.rectTransform;
+                tRect.anchorMin = tRect.anchorMax = new Vector2(0.5f, 0);
+                tRect.pivot = new Vector2(0f, 0);
+                tRect.anchoredPosition = new Vector2(100, 84);
+                tRect.sizeDelta = new Vector2(300, 56);
+                StyleText(timer, 28, TextAnchor.MiddleRight);
                 timer.text = "TIME 5:00";
             }
 
@@ -253,6 +265,14 @@ namespace Possession.Editor
             var ammoSo = new SerializedObject(ammo);
             ammoSo.FindProperty("pipRow").objectReferenceValue = pips;
             ammoSo.FindProperty("pipSprite").objectReferenceValue = KnobSprite();
+            ammoSo.FindProperty("bulletSprite").objectReferenceValue =
+                AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Sprites/BulletPip.png");
+            ammoSo.FindProperty("hammerSprite").objectReferenceValue =
+                AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Sprites/HammerPip.png");
+            ammoSo.FindProperty("pipSize").floatValue = 56f;
+            ammoSo.FindProperty("pipSpacing").floatValue = 2f;
+            ammoSo.FindProperty("cursorOffset").vector2Value = new Vector2(32f, -32f);
+            ammoSo.FindProperty("fullColor").colorValue = new Color(1f, 0.85f, 0.3f);
             ammoSo.ApplyModifiedPropertiesWithoutUndo();
             so.FindProperty("ammoDisplay").objectReferenceValue = ammo;
             ammoRow.gameObject.SetActive(false);
@@ -735,6 +755,13 @@ namespace Possession.Editor
         static void PlaceTopLeft(RectTransform r, Vector2 pos, Vector2 size)
         {
             r.anchorMin = r.anchorMax = r.pivot = new Vector2(0, 1);
+            r.anchoredPosition = pos;
+            r.sizeDelta = size;
+        }
+
+        static void PlaceTopCentre(RectTransform r, Vector2 pos, Vector2 size)
+        {
+            r.anchorMin = r.anchorMax = r.pivot = new Vector2(0.5f, 1);
             r.anchoredPosition = pos;
             r.sizeDelta = size;
         }

@@ -60,15 +60,15 @@ namespace Possession.Editor
             foreach(var old in manager.GetComponents<Level02Director>()) Object.DestroyImmediate(old);
             if(spirit.GetComponent<PossessionCharge>()==null) spirit.gameObject.AddComponent<PossessionCharge>();
             var chargeSo=new SerializedObject(spirit.GetComponent<PossessionCharge>());
-            chargeSo.FindProperty("startingCharges").intValue=0;
+            chargeSo.FindProperty("startingCharges").intValue=1;
             chargeSo.ApplyModifiedPropertiesWithoutUndo();
             spirit.transform.position=Map(3,14);
             LevelBuildKit.BuildLighting();
             camera.backgroundColor=new Color(.08f,.08f,.1f);
             camera.fieldOfView=40f;
             camera.transform.rotation=Quaternion.Euler(55,0,0);
-            camera.transform.position=spirit.transform.position+new Vector3(0,25,-10);
-            Set(camera.GetComponent<CameraFollow>(),"offset",new Vector3(0,25,-10));
+            camera.transform.position=spirit.transform.position+new Vector3(0,15,-11);
+            Set(camera.GetComponent<CameraFollow>(),"offset",new Vector3(0,15,-11));
             Set(camera.GetComponent<CameraFollow>(),"target",spirit.transform);
             var world=new GameObject("Level02_ChargeMaze").transform;
             var floor=Material("CourtyardStone",new Color(.33f,.42f,.36f));
