@@ -42,6 +42,7 @@ namespace Possession.Editor
             {
                 var scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
                 CampaignSpaceSetup.Apply(scene);
+                CampaignCombatSetup.Apply(scene);
                 EditorSceneManager.MarkSceneDirty(scene);
                 EditorSceneManager.SaveScene(scene);
             }

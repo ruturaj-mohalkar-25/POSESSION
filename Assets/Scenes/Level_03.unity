@@ -476,16 +476,28 @@ PrefabInstance:
     m_TransformParent: {fileID: 1608604984}
     m_Modifications:
     - target: {fileID: 7322445785533570483, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.625
+      objectReference: {fileID: 0}
+    - target: {fileID: 7322445785533570483, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.625
+      objectReference: {fileID: 0}
+    - target: {fileID: 7322445785533570483, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.625
+      objectReference: {fileID: 0}
+    - target: {fileID: 7322445785533570483, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7322445785533570483, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.4499999
+      value: 1.775
       objectReference: {fileID: 0}
     - target: {fileID: 7322445785533570483, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 20
+      value: 14
       objectReference: {fileID: 0}
     - target: {fileID: 7322445785533570483, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
       propertyPath: m_LocalRotation.w
@@ -518,6 +530,14 @@ PrefabInstance:
     - target: {fileID: 8157838245157331785, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
       propertyPath: moveSpeed
       value: 2.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8157838245157331785, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
+      propertyPath: visionAngle
+      value: 75
+      objectReference: {fileID: 0}
+    - target: {fileID: 8157838245157331785, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
+      propertyPath: detectionRange
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 8157838245157331785, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
       propertyPath: waypoints.Array.size
@@ -577,9 +597,9 @@ MonoBehaviour:
   spotReactionTime: 0.6
   projectilePrefab: {fileID: 0}
   firePoint: {fileID: 0}
-  shootRange: 4.5
+  shootRange: 8
   shootInterval: 1.2
-  smashRange: 3
+  smashRange: 3.5
   smashWindup: 0.5
   smashCooldown: 1.5
   dustMaterial: {fileID: 2100000, guid: 06416cdae87cb470daa2edaf86d621f5, type: 2}
@@ -799,7 +819,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.WorldLabel
   follow: {fileID: 2024780560}
-  offset: {x: 0, y: 1.7, z: 0}
+  offset: {x: 0, y: 1.85, z: 0}
   target: {fileID: 0}
   door: {fileID: 0}
   doneText: 
@@ -2821,7 +2841,7 @@ Transform:
   m_GameObject: {fileID: 366056552}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.4499999, z: 20}
+  m_LocalPosition: {x: 0, y: 1.775, z: 20}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4181,7 +4201,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.WorldLabel
   follow: {fileID: 646526909}
-  offset: {x: 0, y: 2.1, z: 0}
+  offset: {x: 0, y: 2.225, z: 0}
   target: {fileID: 0}
   door: {fileID: 0}
   doneText: 
@@ -4952,7 +4972,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.WorldLabel
   follow: {fileID: 1452944205}
-  offset: {x: 0, y: 1.7, z: 0}
+  offset: {x: 0, y: 1.85, z: 0}
   target: {fileID: 0}
   door: {fileID: 0}
   doneText: 
@@ -5371,12 +5391,24 @@ PrefabInstance:
     m_TransformParent: {fileID: 1608604984}
     m_Modifications:
     - target: {fileID: 7322445785533570483, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.625
+      objectReference: {fileID: 0}
+    - target: {fileID: 7322445785533570483, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.625
+      objectReference: {fileID: 0}
+    - target: {fileID: 7322445785533570483, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.625
+      objectReference: {fileID: 0}
+    - target: {fileID: 7322445785533570483, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 16
       objectReference: {fileID: 0}
     - target: {fileID: 7322445785533570483, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.4499999
+      value: 1.775
       objectReference: {fileID: 0}
     - target: {fileID: 7322445785533570483, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
       propertyPath: m_LocalPosition.z
@@ -5413,6 +5445,14 @@ PrefabInstance:
     - target: {fileID: 8157838245157331785, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
       propertyPath: moveSpeed
       value: 2.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8157838245157331785, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
+      propertyPath: visionAngle
+      value: 75
+      objectReference: {fileID: 0}
+    - target: {fileID: 8157838245157331785, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
+      propertyPath: detectionRange
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 8157838245157331785, guid: 08a9de8fc64a543d8aa271da83056a0e, type: 3}
       propertyPath: waypoints.Array.size
@@ -5472,9 +5512,9 @@ MonoBehaviour:
   spotReactionTime: 0.6
   projectilePrefab: {fileID: 0}
   firePoint: {fileID: 0}
-  shootRange: 4.5
+  shootRange: 8
   shootInterval: 1.2
-  smashRange: 3
+  smashRange: 3.5
   smashWindup: 0.5
   smashCooldown: 1.5
   dustMaterial: {fileID: 2100000, guid: 06416cdae87cb470daa2edaf86d621f5, type: 2}
@@ -7126,7 +7166,7 @@ Transform:
   m_GameObject: {fileID: 802653994}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 20, y: 1.4499999, z: 66}
+  m_LocalPosition: {x: 20, y: 1.775, z: 66}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7592,7 +7632,7 @@ Transform:
   m_GameObject: {fileID: 824640650}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 16, y: 1.15, z: 28}
+  m_LocalPosition: {x: 16, y: 1.4, z: 28}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7746,7 +7786,7 @@ Transform:
   m_GameObject: {fileID: 882245226}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 16, y: 1.15, z: 36}
+  m_LocalPosition: {x: 16, y: 1.4, z: 36}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7909,7 +7949,7 @@ Transform:
   m_GameObject: {fileID: 908236335}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -14, y: 1.15, z: 64}
+  m_LocalPosition: {x: -14, y: 1.4, z: 64}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -8111,8 +8151,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Possession.Runtime::Possession.AmmoDisplay
   pipRow: {fileID: 2060284747}
   pipSprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  bulletSprite: {fileID: 21300000, guid: ac5695de3344a47e2b8642689ff9843a, type: 3}
+  hammerSprite: {fileID: 21300000, guid: e62741ea7062b47f4846449af52bfa8d, type: 3}
   pipSize: 22
-  pipSpacing: 8
+  pipSpacing: 2
   cursorOffset: {x: 28, y: -28}
   fullColor: {r: 1, g: 0.85, b: 0.3, a: 1}
   spentColor: {r: 1, g: 1, b: 1, a: 0.2}
@@ -8571,7 +8613,7 @@ Transform:
   m_GameObject: {fileID: 971372629}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.3, z: 20}
+  m_LocalPosition: {x: 0, y: 1.775, z: 14}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -8717,7 +8759,7 @@ Transform:
   m_GameObject: {fileID: 1004561124}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 16, y: 1.4499999, z: 68}
+  m_LocalPosition: {x: 16, y: 1.775, z: 68}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -9151,7 +9193,7 @@ Transform:
   m_GameObject: {fileID: 1059637045}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -18, y: 1.15, z: 52}
+  m_LocalPosition: {x: -18, y: 1.4, z: 52}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -9411,7 +9453,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.WorldLabel
   follow: {fileID: 70802171}
-  offset: {x: 0, y: 2.1, z: 0}
+  offset: {x: 0, y: 2.225, z: 0}
   target: {fileID: 0}
   door: {fileID: 0}
   doneText: 
@@ -10174,12 +10216,24 @@ PrefabInstance:
       value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 7810502230852115814, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 7810502230852115814, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 7810502230852115814, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 7810502230852115814, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7810502230852115814, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.15
+      value: 1.4
       objectReference: {fileID: 0}
     - target: {fileID: 7810502230852115814, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
       propertyPath: m_LocalPosition.z
@@ -11124,7 +11178,7 @@ Transform:
   m_GameObject: {fileID: 1400437623}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.4499999, z: 14}
+  m_LocalPosition: {x: 0, y: 1.775, z: 14}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -11594,6 +11648,14 @@ PrefabInstance:
       value: 3.25
       objectReference: {fileID: 0}
     - target: {fileID: 2102161009283349970, guid: 2085df7aa048042d28a6b738f06cc657, type: 3}
+      propertyPath: visionAngle
+      value: 75
+      objectReference: {fileID: 0}
+    - target: {fileID: 2102161009283349970, guid: 2085df7aa048042d28a6b738f06cc657, type: 3}
+      propertyPath: detectionRange
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 2102161009283349970, guid: 2085df7aa048042d28a6b738f06cc657, type: 3}
       propertyPath: patrolStartDelay
       value: 0.35
       objectReference: {fileID: 0}
@@ -11622,12 +11684,24 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 2100000, guid: 92b6a737b4965454b9c88b5c13949f82, type: 2}
     - target: {fileID: 8292971788617692090, guid: 2085df7aa048042d28a6b738f06cc657, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 8292971788617692090, guid: 2085df7aa048042d28a6b738f06cc657, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 8292971788617692090, guid: 2085df7aa048042d28a6b738f06cc657, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 8292971788617692090, guid: 2085df7aa048042d28a6b738f06cc657, type: 3}
       propertyPath: m_LocalPosition.x
       value: -16
       objectReference: {fileID: 0}
     - target: {fileID: 8292971788617692090, guid: 2085df7aa048042d28a6b738f06cc657, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.15
+      value: 1.4
       objectReference: {fileID: 0}
     - target: {fileID: 8292971788617692090, guid: 2085df7aa048042d28a6b738f06cc657, type: 3}
       propertyPath: m_LocalPosition.z
@@ -11704,9 +11778,9 @@ MonoBehaviour:
   spotReactionTime: 0.6
   projectilePrefab: {fileID: 5592161369493967507, guid: 279603b0de41b417aafaaf47adf9e5ed, type: 3}
   firePoint: {fileID: 1452944206}
-  shootRange: 4.5
+  shootRange: 8
   shootInterval: 1.2
-  smashRange: 3
+  smashRange: 3.5
   smashWindup: 0.5
   smashCooldown: 1.5
   dustMaterial: {fileID: 2100000, guid: 06416cdae87cb470daa2edaf86d621f5, type: 2}
@@ -12459,7 +12533,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.CameraFollow
   target: {fileID: 0}
-  offset: {x: 0, y: 25, z: -13}
+  offset: {x: 0, y: 15, z: -11}
   smoothSpeed: 5
 --- !u!81 &1575075200
 AudioListener:
@@ -12529,7 +12603,7 @@ Transform:
   m_GameObject: {fileID: 1575075198}
   serializedVersion: 2
   m_LocalRotation: {x: 0.46174863, y: 0, z: 0, w: 0.8870109}
-  m_LocalPosition: {x: 0, y: 25, z: -7}
+  m_LocalPosition: {x: 0, y: 16.4, z: -5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -16014,6 +16088,14 @@ PrefabInstance:
       value: 3.25
       objectReference: {fileID: 0}
     - target: {fileID: 2102161009283349970, guid: 2085df7aa048042d28a6b738f06cc657, type: 3}
+      propertyPath: visionAngle
+      value: 75
+      objectReference: {fileID: 0}
+    - target: {fileID: 2102161009283349970, guid: 2085df7aa048042d28a6b738f06cc657, type: 3}
+      propertyPath: detectionRange
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 2102161009283349970, guid: 2085df7aa048042d28a6b738f06cc657, type: 3}
       propertyPath: patrolStartDelay
       value: 0.5
       objectReference: {fileID: 0}
@@ -16042,12 +16124,24 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 2100000, guid: 92b6a737b4965454b9c88b5c13949f82, type: 2}
     - target: {fileID: 8292971788617692090, guid: 2085df7aa048042d28a6b738f06cc657, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 8292971788617692090, guid: 2085df7aa048042d28a6b738f06cc657, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 8292971788617692090, guid: 2085df7aa048042d28a6b738f06cc657, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 8292971788617692090, guid: 2085df7aa048042d28a6b738f06cc657, type: 3}
       propertyPath: m_LocalPosition.x
       value: 16
       objectReference: {fileID: 0}
     - target: {fileID: 8292971788617692090, guid: 2085df7aa048042d28a6b738f06cc657, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.15
+      value: 1.4
       objectReference: {fileID: 0}
     - target: {fileID: 8292971788617692090, guid: 2085df7aa048042d28a6b738f06cc657, type: 3}
       propertyPath: m_LocalPosition.z
@@ -16124,9 +16218,9 @@ MonoBehaviour:
   spotReactionTime: 0.6
   projectilePrefab: {fileID: 5592161369493967507, guid: 279603b0de41b417aafaaf47adf9e5ed, type: 3}
   firePoint: {fileID: 2024780561}
-  shootRange: 4.5
+  shootRange: 8
   shootInterval: 1.2
-  smashRange: 3
+  smashRange: 3.5
   smashWindup: 0.5
   smashCooldown: 1.5
   dustMaterial: {fileID: 2100000, guid: 06416cdae87cb470daa2edaf86d621f5, type: 2}

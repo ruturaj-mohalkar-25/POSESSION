@@ -99,6 +99,7 @@ namespace Possession.Editor
             settings.FindProperty("objectives").arraySize=0;settings.ApplyModifiedPropertiesWithoutUndo();Set(level,"objective",objective);
             // Shared HUD callbacks now route the third campaign level to Finish / Play Again.
             foreach(var template in templates)Object.DestroyImmediate(template);
+            CampaignCombatSetup.Apply(scene);
             EditorSceneManager.MarkSceneDirty(scene);EditorSceneManager.SaveScene(scene);AssetDatabase.SaveAssets();
             Debug.Log("Warehouse campaign Level 3 built: 5 Guards, 3 Heavies, 5 target doors, 5 cracked walls and 13 charge sources.");
         }

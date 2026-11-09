@@ -3432,8 +3432,8 @@ Transform:
   m_GameObject: {fileID: 108026517}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -16.25, y: 1.45, z: 27.3}
-  m_LocalScale: {x: 1.3, y: 1.3, z: 1.3}
+  m_LocalPosition: {x: -16.25, y: 1.775, z: 27.3}
+  m_LocalScale: {x: 1.625, y: 1.625, z: 1.625}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1538701062}
@@ -3456,9 +3456,9 @@ MonoBehaviour:
   spotReactionTime: 0.6
   projectilePrefab: {fileID: 0}
   firePoint: {fileID: 0}
-  shootRange: 4.5
+  shootRange: 8
   shootInterval: 1.2
-  smashRange: 3
+  smashRange: 3.5
   smashWindup: 0.5
   smashCooldown: 1.5
   dustMaterial: {fileID: 2100000, guid: 06416cdae87cb470daa2edaf86d621f5, type: 2}
@@ -3503,7 +3503,7 @@ MonoBehaviour:
   waypoints:
   - {fileID: 446594363}
   - {fileID: 501697735}
-  detectionRange: 5
+  detectionRange: 7
   spiritLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -3512,7 +3512,7 @@ MonoBehaviour:
   chaseStopDistance: 1.5
   patrolStartDelay: 1
   loseSightSearchTime: 1.5
-  visionAngle: 45
+  visionAngle: 75
   useHomeBounds: 1
   homeBounds:
     m_Center: {x: -17.224998, y: 3, z: 28.599998}
@@ -3826,7 +3826,7 @@ Transform:
   m_GameObject: {fileID: 123910369}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -21.449999, y: 1.15, z: 81.899994}
+  m_LocalPosition: {x: -21.449999, y: 1.4, z: 81.899994}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6625,7 +6625,7 @@ Transform:
   m_GameObject: {fileID: 227827227}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 24.699999, y: 1.45, z: 81.899994}
+  m_LocalPosition: {x: 24.699999, y: 1.775, z: 81.899994}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -8464,7 +8464,7 @@ Transform:
   m_GameObject: {fileID: 298330327}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 34.449997, y: 1.15, z: 18.199999}
+  m_LocalPosition: {x: 34.449997, y: 1.4, z: 18.199999}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -11675,7 +11675,7 @@ Transform:
   m_GameObject: {fileID: 446594362}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -17.55, y: 1.45, z: 27.3}
+  m_LocalPosition: {x: -17.55, y: 1.775, z: 27.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -13326,7 +13326,7 @@ Transform:
   m_GameObject: {fileID: 501697734}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -14.95, y: 1.45, z: 27.3}
+  m_LocalPosition: {x: -14.95, y: 1.775, z: 27.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -23864,7 +23864,7 @@ Transform:
   m_GameObject: {fileID: 867531628}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -17.55, y: 1.15, z: 81.899994}
+  m_LocalPosition: {x: -17.55, y: 1.4, z: 81.899994}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -24330,7 +24330,7 @@ Transform:
   m_GameObject: {fileID: 889220718}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -25.349998, y: 1.15, z: 40.3}
+  m_LocalPosition: {x: -25.349998, y: 1.4, z: 40.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -25676,8 +25676,8 @@ Transform:
   m_GameObject: {fileID: 939769224}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.3, y: 1.15, z: 13.65}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 1.3, y: 1.4, z: 13.65}
+  m_LocalScale: {x: 1.25, y: 1.25, z: 1.25}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1149498288}
@@ -25701,9 +25701,9 @@ MonoBehaviour:
   spotReactionTime: 0.6
   projectilePrefab: {fileID: 5592161369493967507, guid: 279603b0de41b417aafaaf47adf9e5ed, type: 3}
   firePoint: {fileID: 1149498288}
-  shootRange: 4.5
+  shootRange: 8
   shootInterval: 1.2
-  smashRange: 3
+  smashRange: 3.5
   smashWindup: 0.5
   smashCooldown: 1.5
   dustMaterial: {fileID: 2100000, guid: 06416cdae87cb470daa2edaf86d621f5, type: 2}
@@ -25744,7 +25744,7 @@ MonoBehaviour:
   waypoints:
   - {fileID: 2004505053}
   - {fileID: 1443579189}
-  detectionRange: 5
+  detectionRange: 9
   spiritLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -25753,7 +25753,7 @@ MonoBehaviour:
   chaseStopDistance: 1.5
   patrolStartDelay: 0
   loseSightSearchTime: 1.5
-  visionAngle: 45
+  visionAngle: 75
   useHomeBounds: 1
   homeBounds:
     m_Center: {x: 0, y: 3, z: 15.599999}
@@ -28729,8 +28729,8 @@ Transform:
   m_GameObject: {fileID: 1076785418}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 36.399998, y: 1.15, z: 18.199999}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 36.399998, y: 1.4, z: 18.199999}
+  m_LocalScale: {x: 1.25, y: 1.25, z: 1.25}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1462173151}
@@ -28754,9 +28754,9 @@ MonoBehaviour:
   spotReactionTime: 0.6
   projectilePrefab: {fileID: 5592161369493967507, guid: 279603b0de41b417aafaaf47adf9e5ed, type: 3}
   firePoint: {fileID: 1462173151}
-  shootRange: 4.5
+  shootRange: 8
   shootInterval: 1.2
-  smashRange: 3
+  smashRange: 3.5
   smashWindup: 0.5
   smashCooldown: 1.5
   dustMaterial: {fileID: 2100000, guid: 06416cdae87cb470daa2edaf86d621f5, type: 2}
@@ -28797,7 +28797,7 @@ MonoBehaviour:
   waypoints:
   - {fileID: 298330328}
   - {fileID: 1141365987}
-  detectionRange: 5
+  detectionRange: 9
   spiritLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -28806,7 +28806,7 @@ MonoBehaviour:
   chaseStopDistance: 1.5
   patrolStartDelay: 0.75
   loseSightSearchTime: 1.5
-  visionAngle: 45
+  visionAngle: 75
   useHomeBounds: 1
   homeBounds:
     m_Center: {x: 29.249998, y: 3, z: 16.9}
@@ -30355,7 +30355,7 @@ Transform:
   m_GameObject: {fileID: 1141365986}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 38.35, y: 1.15, z: 18.199999}
+  m_LocalPosition: {x: 38.35, y: 1.4, z: 18.199999}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -30518,8 +30518,8 @@ Transform:
   m_GameObject: {fileID: 1143027449}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -23.4, y: 1.15, z: 40.3}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: -23.4, y: 1.4, z: 40.3}
+  m_LocalScale: {x: 1.25, y: 1.25, z: 1.25}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1673451127}
@@ -30543,9 +30543,9 @@ MonoBehaviour:
   spotReactionTime: 0.6
   projectilePrefab: {fileID: 5592161369493967507, guid: 279603b0de41b417aafaaf47adf9e5ed, type: 3}
   firePoint: {fileID: 1673451127}
-  shootRange: 4.5
+  shootRange: 8
   shootInterval: 1.2
-  smashRange: 3
+  smashRange: 3.5
   smashWindup: 0.5
   smashCooldown: 1.5
   dustMaterial: {fileID: 2100000, guid: 06416cdae87cb470daa2edaf86d621f5, type: 2}
@@ -30586,7 +30586,7 @@ MonoBehaviour:
   waypoints:
   - {fileID: 889220719}
   - {fileID: 1999336685}
-  detectionRange: 5
+  detectionRange: 9
   spiritLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -30595,7 +30595,7 @@ MonoBehaviour:
   chaseStopDistance: 1.5
   patrolStartDelay: 0.5
   loseSightSearchTime: 1.5
-  visionAngle: 45
+  visionAngle: 75
   useHomeBounds: 1
   homeBounds:
     m_Center: {x: -29.249998, y: 3, z: 39.649998}
@@ -32529,7 +32529,7 @@ Transform:
   m_GameObject: {fileID: 1222725119}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 24.05, y: 1.45, z: 27.949999}
+  m_LocalPosition: {x: 24.05, y: 1.775, z: 27.949999}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -35257,7 +35257,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.CameraFollow
   target: {fileID: 1826361506}
-  offset: {x: 0, y: 25, z: -13}
+  offset: {x: 0, y: 15, z: -11}
   smoothSpeed: 5
 --- !u!81 &1310986021
 AudioListener:
@@ -35327,7 +35327,7 @@ Transform:
   m_GameObject: {fileID: 1310986019}
   serializedVersion: 2
   m_LocalRotation: {x: 0.46174863, y: 0, z: 0, w: 0.8870109}
-  m_LocalPosition: {x: 0, y: 26.15, z: -11.7}
+  m_LocalPosition: {x: 0, y: 16.4, z: -9.7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -37153,8 +37153,8 @@ Transform:
   m_GameObject: {fileID: 1378361068}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -30.55, y: 1.15, z: 15.599999}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: -30.55, y: 1.4, z: 15.599999}
+  m_LocalScale: {x: 1.25, y: 1.25, z: 1.25}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 924320592}
@@ -37178,9 +37178,9 @@ MonoBehaviour:
   spotReactionTime: 0.6
   projectilePrefab: {fileID: 5592161369493967507, guid: 279603b0de41b417aafaaf47adf9e5ed, type: 3}
   firePoint: {fileID: 924320592}
-  shootRange: 4.5
+  shootRange: 8
   shootInterval: 1.2
-  smashRange: 3
+  smashRange: 3.5
   smashWindup: 0.5
   smashCooldown: 1.5
   dustMaterial: {fileID: 2100000, guid: 06416cdae87cb470daa2edaf86d621f5, type: 2}
@@ -37221,7 +37221,7 @@ MonoBehaviour:
   waypoints:
   - {fileID: 1412900213}
   - {fileID: 2118638283}
-  detectionRange: 5
+  detectionRange: 9
   spiritLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -37230,7 +37230,7 @@ MonoBehaviour:
   chaseStopDistance: 1.5
   patrolStartDelay: 0.25
   loseSightSearchTime: 1.5
-  visionAngle: 45
+  visionAngle: 75
   useHomeBounds: 1
   homeBounds:
     m_Center: {x: -29.249998, y: 3, z: 16.9}
@@ -38024,7 +38024,7 @@ Transform:
   m_GameObject: {fileID: 1412135424}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 26.65, y: 1.45, z: 27.949999}
+  m_LocalPosition: {x: 26.65, y: 1.775, z: 27.949999}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -38055,7 +38055,7 @@ Transform:
   m_GameObject: {fileID: 1412900212}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -31.849998, y: 1.15, z: 15.599999}
+  m_LocalPosition: {x: -31.849998, y: 1.4, z: 15.599999}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -39368,7 +39368,7 @@ Transform:
   m_GameObject: {fileID: 1443579188}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 3.25, y: 1.15, z: 13.65}
+  m_LocalPosition: {x: 3.25, y: 1.4, z: 13.65}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -43795,8 +43795,8 @@ Transform:
   m_GameObject: {fileID: 1620242166}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -19.5, y: 1.15, z: 81.899994}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: -19.5, y: 1.4, z: 81.899994}
+  m_LocalScale: {x: 1.25, y: 1.25, z: 1.25}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2116684040}
@@ -43820,9 +43820,9 @@ MonoBehaviour:
   spotReactionTime: 0.6
   projectilePrefab: {fileID: 5592161369493967507, guid: 279603b0de41b417aafaaf47adf9e5ed, type: 3}
   firePoint: {fileID: 2116684040}
-  shootRange: 4.5
+  shootRange: 8
   shootInterval: 1.2
-  smashRange: 3
+  smashRange: 3.5
   smashWindup: 0.5
   smashCooldown: 1.5
   dustMaterial: {fileID: 2100000, guid: 06416cdae87cb470daa2edaf86d621f5, type: 2}
@@ -43863,7 +43863,7 @@ MonoBehaviour:
   waypoints:
   - {fileID: 123910370}
   - {fileID: 867531629}
-  detectionRange: 5
+  detectionRange: 9
   spiritLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -43872,7 +43872,7 @@ MonoBehaviour:
   chaseStopDistance: 1.5
   patrolStartDelay: 1.5
   loseSightSearchTime: 1.5
-  visionAngle: 45
+  visionAngle: 75
   useHomeBounds: 1
   homeBounds:
     m_Center: {x: -23.4, y: 3, z: 85.799995}
@@ -47644,7 +47644,7 @@ Transform:
   m_GameObject: {fileID: 1773778385}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 22.099998, y: 1.45, z: 81.899994}
+  m_LocalPosition: {x: 22.099998, y: 1.775, z: 81.899994}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -49317,8 +49317,8 @@ Transform:
   m_GameObject: {fileID: 1826361499}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.15, z: 1.3}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: 1.4, z: 1.3}
+  m_LocalScale: {x: 1.25, y: 1.25, z: 1.25}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 704799864}
@@ -49934,8 +49934,8 @@ Transform:
   m_GameObject: {fileID: 1856822744}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 23.4, y: 1.45, z: 81.899994}
-  m_LocalScale: {x: 1.3, y: 1.3, z: 1.3}
+  m_LocalPosition: {x: 23.4, y: 1.775, z: 81.899994}
+  m_LocalScale: {x: 1.625, y: 1.625, z: 1.625}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 248901628}
@@ -49958,9 +49958,9 @@ MonoBehaviour:
   spotReactionTime: 0.6
   projectilePrefab: {fileID: 0}
   firePoint: {fileID: 0}
-  shootRange: 4.5
+  shootRange: 8
   shootInterval: 1.2
-  smashRange: 3
+  smashRange: 3.5
   smashWindup: 0.5
   smashCooldown: 1.5
   dustMaterial: {fileID: 2100000, guid: 06416cdae87cb470daa2edaf86d621f5, type: 2}
@@ -50005,7 +50005,7 @@ MonoBehaviour:
   waypoints:
   - {fileID: 1773778386}
   - {fileID: 227827228}
-  detectionRange: 5
+  detectionRange: 7
   spiritLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -50014,7 +50014,7 @@ MonoBehaviour:
   chaseStopDistance: 1.5
   patrolStartDelay: 1.75
   loseSightSearchTime: 1.5
-  visionAngle: 45
+  visionAngle: 75
   useHomeBounds: 1
   homeBounds:
     m_Center: {x: 23.4, y: 3, z: 85.799995}
@@ -54170,7 +54170,7 @@ Transform:
   m_GameObject: {fileID: 1999336684}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -21.449999, y: 1.15, z: 40.3}
+  m_LocalPosition: {x: -21.449999, y: 1.4, z: 40.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -54296,7 +54296,7 @@ Transform:
   m_GameObject: {fileID: 2004505052}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.65, y: 1.15, z: 13.65}
+  m_LocalPosition: {x: -0.65, y: 1.4, z: 13.65}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -55978,8 +55978,8 @@ Transform:
   m_GameObject: {fileID: 2044671152}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 25.349998, y: 1.45, z: 27.949999}
-  m_LocalScale: {x: 1.3, y: 1.3, z: 1.3}
+  m_LocalPosition: {x: 25.349998, y: 1.775, z: 27.949999}
+  m_LocalScale: {x: 1.625, y: 1.625, z: 1.625}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1045228568}
@@ -56002,9 +56002,9 @@ MonoBehaviour:
   spotReactionTime: 0.6
   projectilePrefab: {fileID: 0}
   firePoint: {fileID: 0}
-  shootRange: 4.5
+  shootRange: 8
   shootInterval: 1.2
-  smashRange: 3
+  smashRange: 3.5
   smashWindup: 0.5
   smashCooldown: 1.5
   dustMaterial: {fileID: 2100000, guid: 06416cdae87cb470daa2edaf86d621f5, type: 2}
@@ -56049,7 +56049,7 @@ MonoBehaviour:
   waypoints:
   - {fileID: 1222725120}
   - {fileID: 1412135425}
-  detectionRange: 5
+  detectionRange: 7
   spiritLayer:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -56058,7 +56058,7 @@ MonoBehaviour:
   chaseStopDistance: 1.5
   patrolStartDelay: 1.25
   loseSightSearchTime: 1.5
-  visionAngle: 45
+  visionAngle: 75
   useHomeBounds: 1
   homeBounds:
     m_Center: {x: 25.675, y: 3, z: 27.949999}
@@ -58321,8 +58321,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Possession.Runtime::Possession.AmmoDisplay
   pipRow: {fileID: 40200557}
   pipSprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  bulletSprite: {fileID: 21300000, guid: ac5695de3344a47e2b8642689ff9843a, type: 3}
+  hammerSprite: {fileID: 21300000, guid: e62741ea7062b47f4846449af52bfa8d, type: 3}
   pipSize: 22
-  pipSpacing: 8
+  pipSpacing: 2
   cursorOffset: {x: 28, y: -28}
   fullColor: {r: 1, g: 0.85, b: 0.3, a: 1}
   spentColor: {r: 1, g: 1, b: 1, a: 0.2}
@@ -58371,7 +58373,7 @@ Transform:
   m_GameObject: {fileID: 2118638282}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -29.249998, y: 1.15, z: 15.599999}
+  m_LocalPosition: {x: -29.249998, y: 1.4, z: 15.599999}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

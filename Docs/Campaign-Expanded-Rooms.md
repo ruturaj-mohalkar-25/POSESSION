@@ -16,7 +16,7 @@ Both existing layouts have twice their original horizontal dimensions, giving ap
 | Hunted north rooms | 11.2 × 8 m | 22.4 × 16 m |
 | Hunted main passages | 3.2 m | 6.4 m |
 
-Characters, targets, crates and charge crystals retain their original physical size. Health, possession duration, attack damage/ranges/cooldowns, shared ejection protection and the normal follow camera are unchanged. Existing level clocks remain three minutes for Level 1 and four minutes for Hunted. Human playtesting should judge whether these clocks need further tuning for the larger spaces.
+Targets, crates and charge crystals retain their original physical size. The subsequent [character/combat tuning](Campaign-Character-Combat-Tuning.md) enlarges campaign characters by 25% and increases enemy vision/attack reach. Health, possession duration, damage, attack delays/cooldowns and shared ejection protection are retained. Camera and HUD presentation follow merged integration PR 68. Existing level clocks remain three minutes for Level 1 and four minutes for Hunted. Human playtesting should judge whether these clocks need further tuning for the larger spaces.
 
 Floors, boundary walls, puzzle gates, breakable walls, exit areas and checkpoint volumes expand together. Actor positions, external waypoints, spawn markers, pickups and the Hunted checkpoint destination follow the new spacing. Both Hunted puzzle branches remain independent.
 

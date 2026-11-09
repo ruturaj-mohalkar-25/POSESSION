@@ -66,22 +66,23 @@ namespace Possession.Tests
         }
 
         [UnityTest]
-        public IEnumerator SpaceDoesNotEnlargeActorsPickupsTargetsOrSharedRanges()
+        public IEnumerator LargerCharactersAndThreatRangesKeepPropsHealthAndClocksUnchanged()
         {
             foreach (string scene in new[] {CampaignLevels.FirstScene, CampaignLevels.SecondScene})
             {
                 yield return Load(scene);
                 Assert.That(CampaignLayoutScale.ForScene(SceneManager.GetActiveScene()), Is.EqualTo(2f));
                 var spirit = Object.FindFirstObjectByType<SpiritController>();
-                Assert.That(spirit.transform.lossyScale, Is.EqualTo(Vector3.one));
+                Assert.That(spirit.transform.lossyScale, Is.EqualTo(Vector3.one * 1.25f));
                 Assert.That(spirit.CurrentHP, Is.EqualTo(5));
                 Assert.That(Read<float>(spirit.GetComponent<PossessionController>(), "possessRange"), Is.EqualTo(5f));
                 foreach (var enemy in Object.FindObjectsByType<EnemyBase>(FindObjectsSortMode.None))
                 {
-                    float scale = enemy is HeavyEnemy ? 1.3f : 1f;
+                    float scale = enemy is HeavyEnemy ? 1.625f : 1.25f;
                     Assert.That(enemy.transform.lossyScale.x, Is.EqualTo(scale).Within(.001f));
                     Assert.That(enemy.GetComponent<CharacterController>().radius, Is.EqualTo(.5f));
-                    Assert.That(enemy.DetectionRange, Is.LessThanOrEqualTo(5f));
+                    Assert.That(enemy.DetectionRange, Is.EqualTo(enemy is HeavyEnemy ? 7f : 9f));
+                    Assert.That(enemy.VisionAngle, Is.EqualTo(75f));
                 }
                 foreach (var target in Object.FindObjectsByType<Target>(FindObjectsSortMode.None))
                     Assert.That(target.transform.lossyScale.x, Is.EqualTo(1.2f).Within(.001f));
@@ -153,7 +154,7 @@ namespace Possession.Tests
                 Is.False, "Expected unobstructed 2.8 metre turning space at " + at);
         }
         private static Vector3 Map(float x, float y) => CampaignLayoutScale.FromOriginal(
-            SceneManager.GetActiveScene(), new Vector3((x - 17f) * 1.6f, 1.15f, (12f - y) * 1.6f));
+            SceneManager.GetActiveScene(), new Vector3((x - 17f) * 1.6f, 1.4f, (12f - y) * 1.6f));
         private static T Read<T>(object value, string name) => (T)value.GetType().GetField(name,
             BindingFlags.Instance | BindingFlags.NonPublic).GetValue(value);
         private static void Possess(EnemyBase host, Vector3 position, Vector3 forward)
@@ -167,7 +168,7 @@ namespace Possession.Tests
             }
             var cc = host.GetComponent<CharacterController>();cc.enabled = false;position.y = host.transform.position.y;
             host.transform.SetPositionAndRotation(position, Quaternion.LookRotation(forward));cc.enabled = true;
-            var behind = position - forward * 1.8f;behind.y = 1.15f;spirit.RestoreAt(behind);Physics.SyncTransforms();
+            var behind = position - forward * 1.8f;behind.y = 1.4f;spirit.RestoreAt(behind);Physics.SyncTransforms();
             var pc = spirit.GetComponent<PossessionController>();
             typeof(PossessionController).GetMethod("Possess", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(pc, new object[] {host});
             Assert.That(pc.PossessedEnemy, Is.SameAs(host));

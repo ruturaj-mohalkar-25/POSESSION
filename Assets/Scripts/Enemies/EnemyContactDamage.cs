@@ -143,7 +143,7 @@ namespace Possession
                     if (distance <= shootRange && CanSeeSpirit()) Shoot();
                     break;
                 case Attack.Smash:
-                    if (distance <= smashRange) StartSmash();
+                    if (distance <= smashRange && CanSeeSpirit()) StartSmash();
                     break;
                 default:
                     if (distance <= touchRange)
@@ -196,7 +196,7 @@ namespace Possession
             impact.y = 0.3f;
             SimpleFX.Burst(impact, dustMaterial, 1f, 3.2f, 0.35f);
 
-            if (distance <= smashRange + 0.3f) spirit.TakeDamage(damage);
+            if (distance <= smashRange + 0.3f && CanSeeSpirit()) spirit.TakeDamage(damage);
         }
 
         private void StopHostile()
