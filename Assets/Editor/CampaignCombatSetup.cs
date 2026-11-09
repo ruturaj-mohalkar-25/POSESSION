@@ -119,6 +119,7 @@ namespace Possession.Editor
                 so.FindProperty("pipSpacing").floatValue = 2f;
                 so.ApplyModifiedPropertiesWithoutUndo();
             }
+            CampaignDoorSetup.Apply(scene);
             CampaignPresentationSetup.Apply(scene);
             EditorSceneManager.MarkSceneDirty(scene);
         }

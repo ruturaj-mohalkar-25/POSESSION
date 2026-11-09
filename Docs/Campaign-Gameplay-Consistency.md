@@ -38,13 +38,15 @@ The final Level 1 Guard previously received the smaller of two overlapping floor
 
 ## Verification
 
-Unity **6000.3.22f1**: **229/229 full PlayMode tests passed, 0 failed, 0 skipped**. This includes all campaign stages and the tutorial; actual shots/smashes and puzzle routes; retries, Next Level and final replay; repeated landings and buffered jumping; manual/forced Guard and Heavy ejection in every stage; blocked rear positions; shield expiry/damage; lost hosts; pause/completion and ghost-renderer ownership.
+Unity **6000.3.22f1**: **232/232 full PlayMode tests passed, 0 failed, 0 skipped**. This includes all campaign stages and the tutorial; actual shots/smashes and puzzle routes; retries, Next Level and final replay; repeated landings and buffered jumping; manual/forced Guard and Heavy ejection in every stage; blocked rear positions; shield expiry/damage; lost hosts; pause/completion and ghost-renderer ownership.
 
-The initial baseline was 187/212 passing. Outdated fixtures were updated for current HUD placement, starting charges, ranges, expanded spawn markers and movement values. Tutorial fixtures now enter real possession range and use the validated action. Existing behavioral checks remain active; ten checks brought the total to 222. Seven further checks cover the final Guard's repeated patrol cycles and real shooting, reachable home boundaries, shared patrol settings, smooth turns and waits, clear Warehouse loops and actual full-loop completion by all six Warehouse enemies, bringing the total to 229.
+The initial baseline was 187/212 passing. Outdated fixtures were updated for current HUD placement, starting charges, ranges, expanded spawn markers and movement values. Tutorial fixtures now enter real possession range and use the validated action. Existing behavioral checks remain active; ten checks brought the total to 222. Seven further checks cover the final Guard's repeated patrol cycles and real shooting, reachable home boundaries, shared patrol settings, smooth turns and waits, clear Warehouse loops and actual full-loop completion by all six Warehouse enemies, bringing the total to 229. Three shared sliding-door checks now bring the total to 232.
 
 A scripted graphic preview additionally verified post-eject jumping, both shield modes, restored damage/HP feedback and the native campaign completion/replay flow in all three stages. It pauses enemy scripts, relocates hosts and shortens the possession timer inside the temporary preview only; it is not a human difficulty playtest. Screenshots and logs are retained in local QA artifacts.
 
 A further scripted preview observed the final Guard and Warehouse patrols for 16 seconds each, and capsule sweeps confirmed all 18 campaign enemies' route segments clear of static blockers, allowing valid low steps. The graphic editor logged an unrelated UnityEditor.Search indexing exception; the full PlayMode run completed without test failures.
+
+Target-locked doors now share Warehouse's sliding-panel animation, target lamps, pause and retry behavior across all three stages. See [campaign sliding doors](Campaign-Sliding-Doors.md).
 
 ## Local playtest
 

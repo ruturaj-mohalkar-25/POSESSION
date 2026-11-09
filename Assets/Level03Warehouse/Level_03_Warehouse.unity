@@ -15246,6 +15246,7 @@ MonoBehaviour:
   - {fileID: 165895094}
   groupColor: {r: 1, g: 0.7, b: 0.2, a: 1}
   width: 7.7999997
+  clipToFrame: 0
 --- !u!65 &802692372
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -19717,6 +19718,7 @@ MonoBehaviour:
   - {fileID: 1611322823}
   groupColor: {r: 0.2, g: 0.8, b: 1, a: 1}
   width: 7.7999997
+  clipToFrame: 0
 --- !u!65 &991970973
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -27688,6 +27690,7 @@ MonoBehaviour:
   - {fileID: 1367469834}
   groupColor: {r: 0.65, g: 0.4, b: 1, a: 1}
   width: 6.5
+  clipToFrame: 0
 --- !u!65 &1433569027
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -36847,6 +36850,7 @@ MonoBehaviour:
   - {fileID: 408062187}
   groupColor: {r: 1, g: 0.35, b: 0.6, a: 1}
   width: 6.5
+  clipToFrame: 0
 --- !u!65 &1831620486
 BoxCollider:
   m_ObjectHideFlags: 0
