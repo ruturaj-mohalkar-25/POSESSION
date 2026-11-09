@@ -215,15 +215,13 @@ namespace Possession.Tests
             var pc = guide.Possession;
             float guardSpeed = guide.Guard.MoveSpeed;
             yield return TutorialTestSupport.Possess(guide, guide.Guard);
+            Vector3 firingPosition = guide.Spirit.transform.position;
             // Ejection turns the host away; let its real chase turn it back before firing.
             guide.Guard.MoveSpeed = guardSpeed;
             Set(pc, "possessTimer", 0.05f);
             yield return new WaitForSeconds(0.1f);
             var spirit = pc.GetComponent<SpiritController>();
-            Vector3 escape = spirit.transform.position - guide.Guard.transform.position;
-            escape.y = 0f;
-            Vector3 firingPosition = guide.Guard.transform.position + escape.normalized * 2.5f;
-            firingPosition.y = spirit.transform.position.y;
+            // Reuse the verified clear approach instead of extending an ejection point into a wall.
             spirit.RestoreAt(firingPosition);
             spirit.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeAll;
             Physics.SyncTransforms();

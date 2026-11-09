@@ -39,6 +39,8 @@ namespace Possession
         private void HandleHit(Collider other)
         {
             if (other == ownerCollider) return;
+            var enemyShot = GetComponent<EnemyShot>();
+            if (enemyShot != null && enemyShot.TryHitSpirit(other)) return;
             var damageable = other.GetComponent<IDamageable>();
             if (damageable != null)
             {
@@ -48,7 +50,7 @@ namespace Possession
             }
 
             var target = other.GetComponent<Target>();
-            if (target != null && GetComponent<EnemyShot>() == null)
+            if (target != null && enemyShot == null)
             {
                 target.OnHit();
                 Destroy(gameObject);
