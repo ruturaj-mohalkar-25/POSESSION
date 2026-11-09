@@ -3887,11 +3887,11 @@ RectTransform:
   - {fileID: 429193233}
   m_Father: {fileID: 655810777}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 24, y: -58}
-  m_SizeDelta: {x: 280, y: 18}
-  m_Pivot: {x: 0, y: 1}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: -100, y: 84}
+  m_SizeDelta: {x: 300, y: 20}
+  m_Pivot: {x: 1, y: 0}
 --- !u!114 &479614651
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5721,7 +5721,7 @@ MonoBehaviour:
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -8153,9 +8153,9 @@ MonoBehaviour:
   pipSprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
   bulletSprite: {fileID: 21300000, guid: ac5695de3344a47e2b8642689ff9843a, type: 3}
   hammerSprite: {fileID: 21300000, guid: e62741ea7062b47f4846449af52bfa8d, type: 3}
-  pipSize: 22
+  pipSize: 56
   pipSpacing: 2
-  cursorOffset: {x: 28, y: -28}
+  cursorOffset: {x: 32, y: -32}
   fullColor: {r: 1, g: 0.85, b: 0.3, a: 1}
   spentColor: {r: 1, g: 1, b: 1, a: 0.2}
 --- !u!224 &930828420
@@ -9119,7 +9119,7 @@ MonoBehaviour:
     m_BestFit: 0
     m_MinSize: 10
     m_MaxSize: 40
-    m_Alignment: 3
+    m_Alignment: 5
     m_AlignByGeometry: 0
     m_RichText: 1
     m_HorizontalOverflow: 1
@@ -9163,11 +9163,11 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 655810777}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 24, y: -84}
-  m_SizeDelta: {x: 280, y: 36}
-  m_Pivot: {x: 0, y: 1}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 100, y: 84}
+  m_SizeDelta: {x: 300, y: 56}
+  m_Pivot: {x: 0, y: 0}
 --- !u!1 &1059637045
 GameObject:
   m_ObjectHideFlags: 0
@@ -10077,7 +10077,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: "1/4  POSSESS GUARD  \u2022  HIT TARGET"
+  m_Text: "1/3  POSSESS GUARD  \u2022  HIT TARGET"
 --- !u!114 &1260775009
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13506,7 +13506,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 26
+    m_FontSize: 28
     m_FontStyle: 1
     m_BestFit: 0
     m_MinSize: 10
@@ -13517,7 +13517,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: HP 3/3
+  m_Text: HP 5/5
 --- !u!114 &1639385641
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13555,11 +13555,11 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 655810777}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 24, y: -18}
-  m_SizeDelta: {x: 280, y: 36}
-  m_Pivot: {x: 0, y: 1}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: -100, y: 108}
+  m_SizeDelta: {x: 300, y: 36}
+  m_Pivot: {x: 1, y: 0}
 --- !u!1001 &1645929805
 PrefabInstance:
   m_ObjectHideFlags: 0

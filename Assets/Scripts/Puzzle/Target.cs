@@ -8,6 +8,8 @@ namespace Possession
 
         public bool IsHit => isHit;
 
+        private void Awake() => ObjectiveVisibility.Ensure(this);
+
         public void OnHit()
         {
             if (isHit) return;
