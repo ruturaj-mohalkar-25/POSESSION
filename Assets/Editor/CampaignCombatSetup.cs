@@ -93,7 +93,7 @@ namespace Possession.Editor
             foreach (var camera in roots.SelectMany(r => r.GetComponentsInChildren<Camera>(true)))
             {
                 var follow = camera.GetComponent<CameraFollow>();if (follow == null) continue;
-                var so = new SerializedObject(follow);var offset = new Vector3(0f, 15f, -11f);
+                var so = new SerializedObject(follow);var offset = new Vector3(0f, 25f, -18f);
                 so.FindProperty("offset").vector3Value = offset;so.ApplyModifiedPropertiesWithoutUndo();
                 camera.transform.position = spirit.transform.position + offset;
             }

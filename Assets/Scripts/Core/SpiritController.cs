@@ -5,7 +5,7 @@ namespace Possession
     public class SpiritController : MonoBehaviour
     {
         [Header("Movement")]
-        [SerializeField] private float moveSpeed = 6f;
+        [SerializeField] private float moveSpeed = 10f;
         [SerializeField] private float jumpForce = 8f;
 
         [Header("Health")]
