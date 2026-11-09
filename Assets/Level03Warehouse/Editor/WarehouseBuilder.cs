@@ -21,7 +21,7 @@ namespace Possession.Editor
         [Serializable] public class Area { public float x,y,width,depth;public string name; }
         [Serializable] public class Segment { public float x1,y1,x2,y2;public string name;public bool transparent; }
         [Serializable] public class Gate:Segment { public string key;public Point[] targets; }
-        [Serializable] public class Actor:Point { public string kind,name; }
+        [Serializable] public class Actor:Point { public string kind,name; public Point[] patrol; }
         [Serializable] public class Layout
         {
             public float unitSize,levelSeconds,possessionSeconds;public Point start,exit,health;
@@ -199,11 +199,42 @@ namespace Possession.Editor
             Set(enemy,"useHomeBounds",true);
             Set(enemy,"homeBounds",new Bounds(Map(room.x+room.width/2,room.y+room.depth/2,3),new Vector3(room.width*Unit,10f,room.depth*Unit)));
             var controller=obj.GetComponent<CharacterController>();controller.minMoveDistance=0;
-            var route=new GameObject(a.name+"_Patrol").transform;route.SetParent(parent);
-            float distance=heavy||a.name=="Guard_room_Guard"?2f:3f;var points=new Transform[2];
-            for(int i=0;i<2;i++){points[i]=new GameObject("Waypoint_"+i).transform;points[i].SetParent(route);points[i].position=Map(a.x+(i==0?-distance:distance),a.y,obj.transform.position.y);}
-            Array(enemy,"waypoints",points.Cast<Object>().ToArray());Set(enemy,"patrolStartDelay",index*.25f);
+            ConfigurePatrol(parent,a,enemy);
+            Set(enemy,"patrolStartDelay",index*.25f);
         }
+        // Reapply routes without rebuilding room geometry or replacing actors and puzzle references.
+        public static void ApplyPatrols(Scene scene)
+        {
+            data=JsonUtility.FromJson<Layout>(File.ReadAllText(Root+"/Data/warehouse-layout.json"));
+            var enemies=scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<EnemyBase>(true)).ToArray();
+            foreach(var actor in data.actors)
+            {
+                var enemy=enemies.Single(e=>e.name==actor.name);
+                ConfigurePatrol(enemy.transform.parent,actor,enemy);
+            }
+        }
+        private static void ConfigurePatrol(Transform parent,Actor a,EnemyBase enemy)
+        {
+            var route=parent.Find(a.name+"_Patrol");
+            if(route==null){route=new GameObject(a.name+"_Patrol").transform;route.SetParent(parent);}
+            var authored=a.patrol;
+            if(authored==null||authored.Length==0)
+            {
+                float d=enemy is HeavyEnemy||a.name=="Guard_room_Guard"?2f:3f;
+                authored=new[]{new Point{x=a.x-d,y=a.y},new Point{x=a.x+d,y=a.y}};
+            }
+            var points=new Transform[authored.Length];
+            for(int i=0;i<points.Length;i++)
+            {
+                points[i]=route.Find("Waypoint_"+i);
+                if(points[i]==null){points[i]=new GameObject("Waypoint_"+i).transform;points[i].SetParent(route);}
+                points[i].position=Map(authored[i].x,authored[i].y,enemy.transform.position.y);
+            }
+            foreach(Transform child in route.Cast<Transform>().ToArray())
+                if(!points.Contains(child))Object.DestroyImmediate(child.gameObject);
+            Array(enemy,"waypoints",points.Cast<Object>().ToArray());
+        }
+
         private static void BuildSource(Transform parent,Point p,int index)
         {
             var prefab=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Puzzle/SoulCoin.prefab");GameObject obj;

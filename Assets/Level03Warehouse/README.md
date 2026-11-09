@@ -24,12 +24,14 @@ The retained wider layout uses **0.65 metres per plan unit**. Entry is 16.9 × 1
 
 The shared [gameplay consistency rules](../../Docs/Campaign-Gameplay-Consistency.md) apply to jumping, ejection and shield feedback. The current [character/combat tuning](../../Docs/Campaign-Character-Combat-Tuning.md) is retained: characters 25% larger, 75° vision cones, Guard detection/shooting at 9/8 m and Heavy detection/attack reach at 7/3.5 m. The merged camera/HUD, shared five HP, charge rules, shooting/smashing and two-second eject protection are retained. The level clock remains seven minutes with twelve seconds per possession.
 
+All six Warehouse NPCs use authored four-point loops with smooth turns and brief look-around pauses. Guards patrol at 2.5 m/s and chase at 5 m/s; Wall Breakers patrol at 2 m/s and chase at 4 m/s. Detection remains 9 m for Guards and 7 m for Wall Breakers, matching the other campaign stages.
+
 Warehouse NPCs retain their home-room bounds for autonomous pursuit; possessed bodies can cross rooms. Safe ejection prefers behind the host, checks capsule clearance and avoids crossing solid walls. R or Retry reloads the current scene and restores its targets, barriers, charge sources and hosts. Required defeated hosts are restored by Retry.
 
 ## Authoring and checks
 
 Use **Possession → Level Design → Level 3 Warehouse → Build and Open**. The builder copies the shared shell/actors, reads `Data/warehouse-layout.json`, then applies the current campaign character/combat profile. Durable layout edits belong in the JSON, because rebuilding replaces scene-only edits.
 
-**222/222 full PlayMode checks pass** across the current campaign and tutorial. Checks cover the retained wider dimensions and object counts, physical routes for larger bodies, absence of the removed rooms/objects, both independent wings, all remaining target shots and barriers, original exit conditions, NPC rejection/occupied-body completion, retry, campaign Finish/Play Again, rear-ejection safety, shield duration and current enemy pressure.
+**229/229 full PlayMode checks pass** across the current campaign and tutorial. Checks cover the retained wider dimensions and object counts, physical routes for larger bodies, absence of the removed rooms/objects, both independent wings, all remaining target shots and barriers, original exit conditions, NPC rejection/occupied-body completion, retry, campaign Finish/Play Again, rear-ejection safety, shield duration and current enemy pressure.
 
 This layout change is local only. Human playtesting is still required to judge timing and difficulty.

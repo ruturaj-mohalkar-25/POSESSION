@@ -107,7 +107,7 @@ namespace Possession.Tests
                 Assert.That(levelGuard.CurrentHP, Is.EqualTo(3));
                 Assert.That(levelGuard.DetectionRange, Is.EqualTo(9f).Within(0.01f));
                 Assert.That(Read<float>(levelGuard, "moveSpeed"), Is.EqualTo(5f).Within(0.01f));
-                Assert.That(Read<float>(levelGuard, "waypointWaitTime"), Is.EqualTo(0.75f).Within(0.01f));
+                Assert.That(Read<float>(levelGuard, "waypointWaitTime"), Is.EqualTo(.9f).Within(0.01f));
             }
         }
 
@@ -125,7 +125,7 @@ namespace Possession.Tests
                 Assert.That(levelGuard.CurrentHP, Is.EqualTo(3));
                 Assert.That(levelGuard.DetectionRange, Is.EqualTo(9f).Within(0.01f));
                 Assert.That(Read<float>(levelGuard, "moveSpeed"), Is.EqualTo(5f).Within(0.01f));
-                Assert.That(Read<float>(levelGuard, "waypointWaitTime"), Is.EqualTo(0.5f).Within(0.01f));
+                Assert.That(Read<float>(levelGuard, "waypointWaitTime"), Is.EqualTo(.9f).Within(0.01f));
                 Assert.That(Read<float>(levelGuard, "chaseStopDistance"), Is.EqualTo(1.25f).Within(0.01f));
                 Transform[] route = GetRoute(levelGuard);
                 Assert.That(Vector3.Distance(route[0].position, route[1].position), Is.LessThan(16f),

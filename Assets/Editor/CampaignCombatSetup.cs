@@ -55,6 +55,7 @@ namespace Possession.Editor
             var rigidbody = spirit.GetComponent<Rigidbody>();
             rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
             rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+            if (scene.name == CampaignLevels.ThirdScene) WarehouseBuilder.ApplyPatrols(scene);
             foreach (var enemy in enemies)
             {
                 bool heavy = enemy is HeavyEnemy;
@@ -63,6 +64,9 @@ namespace Possession.Editor
                 so.FindProperty("detectionRange").floatValue = heavy ? HeavyDetection : GuardDetection;
                 so.FindProperty("visionAngle").floatValue = ConeAngle;
                 so.FindProperty("moveSpeed").floatValue = heavy ? 4f : 5f;
+                so.FindProperty("patrolSpeedMultiplier").floatValue = .5f;
+                so.FindProperty("turnSpeed").floatValue = 240f;
+                so.FindProperty("waypointWaitTime").floatValue = .9f;
                 var points = so.FindProperty("waypoints");
                 for (int i = 0; i < points.arraySize; i++)
                     if (points.GetArrayElementAtIndex(i).objectReferenceValue is Transform point)
@@ -125,17 +129,31 @@ namespace Possession.Editor
                 .Where(c => c.name.EndsWith("_Floor") || c.name.StartsWith("Hall_")).ToArray();
             bool Contains(Bounds b, Vector3 p) => p.x >= b.min.x && p.x <= b.max.x
                 && p.z >= b.min.z && p.z <= b.max.z;
-            var home = floors.Where(c => Contains(c.bounds, enemy.transform.position))
+            var points = new SerializedObject(enemy).FindProperty("waypoints");
+            var route = Enumerable.Range(0, points.arraySize)
+                .Select(i => points.GetArrayElementAtIndex(i).objectReferenceValue as Transform)
+                .Where(t => t != null).Select(t => t.position).Prepend(enemy.transform.position).ToArray();
+            float inset = enemy.GetComponent<CharacterController>().radius
+                * Mathf.Max(Mathf.Abs(enemy.transform.lossyScale.x), Mathf.Abs(enemy.transform.lossyScale.z)) + .05f;
+            bool Fits(Bounds b, Vector3 p) => p.x >= b.min.x + inset && p.x <= b.max.x - inset
+                && p.z >= b.min.z + inset && p.z <= b.max.z - inset;
+            // Overlapping floor rectangles are not separate rooms. Choose the floor that contains
+            // the whole route with body clearance, rather than the smallest one under the spawn.
+            var home = floors.Where(c => route.All(p => Fits(c.bounds, p)))
                 .OrderBy(c => c.bounds.size.x * c.bounds.size.z).FirstOrDefault();
+            if (home == null)
+                home = floors.Where(c => Contains(c.bounds, enemy.transform.position))
+                    .OrderBy(c => c.bounds.size.x * c.bounds.size.z).FirstOrDefault();
             if (home == null) throw new System.InvalidOperationException("No patrol floor for " + enemy.name);
             Bounds area = home.bounds;
-            var points = new SerializedObject(enemy).FindProperty("waypoints");
-            for (int i = 0; i < points.arraySize; i++)
+            foreach (Vector3 point in route)
             {
-                if (!(points.GetArrayElementAtIndex(i).objectReferenceValue is Transform point)) continue;
-                if (Contains(area, point.position)) continue;
-                var next = floors.Where(c => Contains(c.bounds, point.position))
+                if (Fits(area, point)) continue;
+                var next = floors.Where(c => Fits(c.bounds, point))
                     .OrderBy(c => c.bounds.size.x * c.bounds.size.z).FirstOrDefault();
+                if (next == null)
+                    next = floors.Where(c => Contains(c.bounds, point))
+                        .OrderBy(c => c.bounds.size.x * c.bounds.size.z).FirstOrDefault();
                 if (next != null) area.Encapsulate(next.bounds);
             }
             area.center = new Vector3(area.center.x, 3f, area.center.z);

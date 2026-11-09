@@ -124,7 +124,10 @@ namespace Possession.Tests
                 Assert.That(guard.IsChasing, Is.False);
 
                 float distanceBeforeResume = NearestRouteDistance(guard.transform.position, route);
-                yield return new WaitForSeconds(0.25f);
+                // Natural patrols turn before walking; allow a bounded turn instead of demanding a snap.
+                float resumeDeadline = Time.time + 1.5f;
+                while (NearestRouteDistance(guard.transform.position, route) >= distanceBeforeResume - .03f && Time.time < resumeDeadline)
+                    yield return null;
                 float distanceAfterResume = NearestRouteDistance(guard.transform.position, route);
                 Assert.That(distanceAfterResume, Is.LessThan(distanceBeforeResume - 0.03f),
                     levelName + "/" + guard.name + " did not resume toward its nearest waypoint.");

@@ -66,6 +66,7 @@ namespace Possession.Tests
         private static IEnumerator CheckPlacement(string name, int count, float speed)
         {
             yield return Load(name);
+            Object.FindFirstObjectByType<SpiritController>().SetVisible(false); // Observe patrol, not a nearby-player chase/stop.
             var heavies = Heavies();
             Assert.That(heavies.Length, Is.EqualTo(count));
             if (name != "Level_01") Assert.That(Walls().Length, Is.EqualTo(name == "Level_02" ? 2 : count));
@@ -100,12 +101,19 @@ namespace Possession.Tests
                         QueryTriggerInteraction.Ignore), Is.False, "Patrol segment must clear the room walls.");
                 }
             }
-            yield return new WaitForSeconds(heavies.Max(h => h.PatrolStartDelay) + 1.3f);
-            for (int i = 0; i < heavies.Length; i++)
+            var moved = new bool[heavies.Length];
+            float deadline = Time.time + heavies.Max(h => h.PatrolStartDelay) + 4f;
+            while (moved.Any(value => !value) && Time.time < deadline)
             {
-                Vector3 displacement = heavies[i].transform.position - positions[i]; displacement.y = 0;
-                Assert.That(displacement.magnitude, Is.GreaterThan(.15f), heavies[i].name + " did not patrol.");
+                for (int i = 0; i < heavies.Length; i++)
+                {
+                    Vector3 displacement = heavies[i].transform.position - positions[i]; displacement.y = 0;
+                    moved[i] |= displacement.magnitude > .15f;
+                }
+                yield return null;
             }
+            for (int i = 0; i < heavies.Length; i++)
+                Assert.That(moved[i], Is.True, heavies[i].name + " did not patrol after its pause and turn.");
         }
 
         private static IEnumerator CheckPuzzle(string name)

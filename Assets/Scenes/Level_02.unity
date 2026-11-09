@@ -3479,7 +3479,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7810502230852115814, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.3999999
+      value: 1.4
       objectReference: {fileID: 0}
     - target: {fileID: 7810502230852115814, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
       propertyPath: m_LocalPosition.z
@@ -3549,6 +3549,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aacebcf863fff4921b980a38f4d09165, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.SpiritVisualSync
+  modelRoot: {fileID: 0}
 --- !u!114 &181652306 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1163164391160891401, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
@@ -17197,11 +17198,13 @@ MonoBehaviour:
   waypoints:
   - {fileID: 17459888}
   - {fileID: 970586408}
+  patrolSpeedMultiplier: 0.5
+  turnSpeed: 240
   detectionRange: 9
   spiritLayer:
     serializedVersion: 2
     m_Bits: 4294967295
-  waypointWaitTime: 0.75
+  waypointWaitTime: 0.9
   waypointArrivalDistance: 0.3
   chaseStopDistance: 1.5
   patrolStartDelay: 0.5
@@ -19357,11 +19360,13 @@ MonoBehaviour:
   waypoints:
   - {fileID: 689170161}
   - {fileID: 1721128437}
+  patrolSpeedMultiplier: 0.5
+  turnSpeed: 240
   detectionRange: 9
   spiritLayer:
     serializedVersion: 2
     m_Bits: 4294967295
-  waypointWaitTime: 0.75
+  waypointWaitTime: 0.9
   waypointArrivalDistance: 0.3
   chaseStopDistance: 1.5
   patrolStartDelay: 0
@@ -21841,11 +21846,13 @@ MonoBehaviour:
   waypoints:
   - {fileID: 586672845}
   - {fileID: 746983782}
+  patrolSpeedMultiplier: 0.5
+  turnSpeed: 240
   detectionRange: 7
   spiritLayer:
     serializedVersion: 2
     m_Bits: 4294967295
-  waypointWaitTime: 0.75
+  waypointWaitTime: 0.9
   waypointArrivalDistance: 0.3
   chaseStopDistance: 1.5
   patrolStartDelay: 0
@@ -25403,11 +25410,13 @@ MonoBehaviour:
   waypoints:
   - {fileID: 948294558}
   - {fileID: 1638776251}
+  patrolSpeedMultiplier: 0.5
+  turnSpeed: 240
   detectionRange: 7
   spiritLayer:
     serializedVersion: 2
     m_Bits: 4294967295
-  waypointWaitTime: 0.75
+  waypointWaitTime: 0.9
   waypointArrivalDistance: 0.3
   chaseStopDistance: 1.5
   patrolStartDelay: 0.25
@@ -28037,11 +28046,13 @@ MonoBehaviour:
   waypoints:
   - {fileID: 2095757444}
   - {fileID: 1102459124}
+  patrolSpeedMultiplier: 0.5
+  turnSpeed: 240
   detectionRange: 9
   spiritLayer:
     serializedVersion: 2
     m_Bits: 4294967295
-  waypointWaitTime: 0.75
+  waypointWaitTime: 0.9
   waypointArrivalDistance: 0.3
   chaseStopDistance: 1.5
   patrolStartDelay: 0.5
@@ -28247,11 +28258,13 @@ MonoBehaviour:
   waypoints:
   - {fileID: 249541108}
   - {fileID: 520979133}
+  patrolSpeedMultiplier: 0.5
+  turnSpeed: 240
   detectionRange: 9
   spiritLayer:
     serializedVersion: 2
     m_Bits: 4294967295
-  waypointWaitTime: 0.75
+  waypointWaitTime: 0.9
   waypointArrivalDistance: 0.3
   chaseStopDistance: 1.5
   patrolStartDelay: 0
@@ -28849,7 +28862,7 @@ MonoBehaviour:
   northWall: {fileID: 113272493}
   southWall: {fileID: 1452944205}
   spirit: {fileID: 181652306}
-  courtyard: {x: -22.4, y: 1.3999999, z: -6.4}
+  courtyard: {x: -22.4, y: 1.4, z: -6.4}
 --- !u!1 &1721128436
 GameObject:
   m_ObjectHideFlags: 0
@@ -30317,11 +30330,13 @@ MonoBehaviour:
   waypoints:
   - {fileID: 1702752803}
   - {fileID: 755056813}
+  patrolSpeedMultiplier: 0.5
+  turnSpeed: 240
   detectionRange: 7
   spiritLayer:
     serializedVersion: 2
     m_Bits: 4294967295
-  waypointWaitTime: 0.75
+  waypointWaitTime: 0.9
   waypointArrivalDistance: 0.3
   chaseStopDistance: 1.5
   patrolStartDelay: 0.75
@@ -33461,11 +33476,13 @@ MonoBehaviour:
   waypoints:
   - {fileID: 86554845}
   - {fileID: 1921267230}
+  patrolSpeedMultiplier: 0.5
+  turnSpeed: 240
   detectionRange: 9
   spiritLayer:
     serializedVersion: 2
     m_Bits: 4294967295
-  waypointWaitTime: 0.75
+  waypointWaitTime: 0.9
   waypointArrivalDistance: 0.3
   chaseStopDistance: 1.5
   patrolStartDelay: 0.5

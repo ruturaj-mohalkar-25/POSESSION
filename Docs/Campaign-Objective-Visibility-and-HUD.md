@@ -8,7 +8,7 @@ Use **Possession → Level Design → Sync Campaign HUD with Level 1** to reappl
 
 ## Validation
 
-Unity 6000.3.22f1: **222/222 full PlayMode checks pass**, no failures or skips. Checks cover immediate target/shard visibility, collected/reforming shards, real projectile obstruction, shared HUD layout across transitions, checkpoint retry, existing wall fading, both Warehouse wings, expanded campaign routes, combat ranges and safe ejection. Geometry/actor/camera signatures were unchanged by the HUD authoring pass in all three saved scenes.
+Unity 6000.3.22f1: **229/229 full PlayMode checks pass**, no failures or skips. Checks cover immediate target/shard visibility, collected/reforming shards, real projectile obstruction, shared HUD layout across transitions, checkpoint retry, existing wall fading, both Warehouse wings, expanded campaign routes, combat ranges and safe ejection. Geometry/actor/camera signatures were unchanged by the HUD authoring pass in all three saved scenes.
 
 Graphic previews checked all three HUDs, naturally obscured targets/shards and a controlled fully occluded target. With a solid wall in front, its visible red pixels changed from zero to 11,004 when the silhouette was enabled. The independent projectile check confirms the wall still blocks the shot. The current full gameplay validation is documented in [gameplay consistency](Campaign-Gameplay-Consistency.md).
 

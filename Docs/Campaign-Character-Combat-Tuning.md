@@ -7,6 +7,8 @@ The saved campaign uses merged integration f5ee9d3 (including PRs 67 and 69) plu
 | Spirit / Guard root scale | 1.25 |
 | Heavy root scale | 1.625 |
 | Spirit speed / jump launch | 8 m/s / 8 m/s |
+| Guard / Heavy patrol speed | 2.5 / 2 m/s |
+| Patrol turning / average waypoint pause | 240 degrees/s / 0.9 s, slightly varied |
 | Guard / Heavy base speed | 5 / 4 m/s |
 | Full enemy vision cone | 75 degrees |
 | Guard / Heavy detection | 9 / 7 m |
@@ -20,4 +22,4 @@ The wider vision mesh follows the real detection angle and range and stops at so
 
 Use **Possession → Level Design → Tune Campaign Characters and Enemy Cones** to reapply. Campaign builders use this same final authoring pass. The wider first two stages and original ten-room Warehouse route at 0.65 scale are retained without the removed extension.
 
-**222/222 full PlayMode tests pass**, with no failures or skips. All three stages were also visually checked for jumping, shield/eject behavior and native completion/replay. See [gameplay consistency](Campaign-Gameplay-Consistency.md) for the full rules, fixes, test scope and local playtest steps. Work remains local; no push was made.
+**229/229 full PlayMode tests pass**, with no failures or skips. All three stages were also visually checked for jumping, shield/eject behavior and native completion/replay. See [gameplay consistency](Campaign-Gameplay-Consistency.md) for the full rules, fixes, test scope and local playtest steps. Work remains local; no push was made.
