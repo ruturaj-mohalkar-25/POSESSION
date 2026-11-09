@@ -1,6 +1,6 @@
 # C3 possession and beta HUD validation
 
-Verified November 8, 2026, using Unity **6000.3.22f1**.
+Verified November 9, 2026, using Unity **6000.3.22f1**.
 
 This branch combines the circular countdown from PR #65 (`bb55e2a`) with the latest beta HUD, ammo and camera changes from PR #68 (`46d5967`).
 
@@ -13,7 +13,7 @@ This branch combines the circular countdown from PR #65 (`bb55e2a`) with the lat
 
 ## Behavior covered
 
-The ring stays below the white possessed body, retains equipment colours, and changes from green through amber to red without flashing. Its hint keeps a gap during tutorial zoom. Pause/re-enable, missed level-end events, offscreen hosts, material restoration and aim-line disposal have regression coverage.
+The ring lies flat on the floor around the white possessed body’s feet, retains equipment colours, and changes from green through amber to red without flashing. Its hint keeps a gap during tutorial zoom. Pause/re-enable, missed level-end events, offscreen hosts, material restoration and aim-line disposal have regression coverage.
 
 Every saved level and Tutorial now uses the beta bullet/hammer sprites and camera offset. Ammo stays inside all screen edges on overlay and camera canvases. Level 3 uses the intended Heavy_03 spawn at z=7.
 
@@ -25,7 +25,7 @@ Open the project in Unity 6000.3.22f1, then use **Window → General → Test Ru
 
 ## Native previews
 
-Guard with the circular timer, typed ammunition and bottom-centre status row:
+Guard with the ground-level circular timer, typed ammunition and bottom-centre status row:
 
 ![Guard possession](c3-guard.png)
 

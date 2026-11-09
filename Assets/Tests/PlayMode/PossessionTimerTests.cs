@@ -206,7 +206,7 @@ namespace Possession.Tests
         [UnityTest]
         public IEnumerator CameraCanvasAlsoKeepsCircleBelowVisibleBody()
         {
-            Canvas canvas = group.GetComponentInParent<Canvas>();
+            Canvas canvas = hud.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceCamera;
             canvas.worldCamera = Camera.main;
             canvas.planeDistance = 1f;
@@ -328,7 +328,10 @@ namespace Possession.Tests
                 hint.rectTransform.GetWorldCorners(corners);
                 Vector3[] circle = new Vector3[4];
                 group.GetWorldCorners(circle);
-                Assert.That(corners[1].y, Is.LessThan(circle[0].y), "The tutorial zoom must preserve the gap.");
+                Camera uiCamera = hint.canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : hint.canvas.worldCamera;
+                float hintTop = RectTransformUtility.WorldToScreenPoint(uiCamera, corners[1]).y;
+                float ringBottom = circle.Min(p => Camera.main.WorldToScreenPoint(p).y);
+                Assert.That(hintTop, Is.LessThan(ringBottom), "The tutorial zoom must preserve the gap.");
             }
         }
 
@@ -382,17 +385,16 @@ namespace Possession.Tests
 
         private void AssertBelowFeet()
         {
-            Vector3 feet = enemy.transform.position;
-            feet.y = enemy.GetComponent<Renderer>().bounds.min.y;
-            Vector3 screen = Camera.main.WorldToScreenPoint(feet);
-            Canvas canvas = group.GetComponentInParent<Canvas>();
-            Camera uiCamera = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
-            Vector2 center = RectTransformUtility.WorldToScreenPoint(uiCamera, group.position);
-            Vector3[] corners = new Vector3[4];
+            Assert.That(group.GetComponentInParent<Canvas>().renderMode, Is.EqualTo(RenderMode.WorldSpace));
+            Assert.That(group.GetComponentInParent<Canvas>().worldCamera, Is.SameAs(Camera.main));
+            Assert.That(group.position.x, Is.EqualTo(enemy.transform.position.x).Within(0.01f));
+            Assert.That(group.position.z, Is.EqualTo(enemy.transform.position.z).Within(0.01f));
+            Assert.That(Mathf.Abs(Vector3.Dot(group.forward, Vector3.up)), Is.GreaterThan(0.999f));
+            var corners = new Vector3[4];
             group.GetWorldCorners(corners);
-            float top = RectTransformUtility.WorldToScreenPoint(uiCamera, corners[1]).y;
-            Assert.That(center.x, Is.EqualTo(screen.x).Within(1f));
-            Assert.That(top, Is.LessThan(screen.y));
+            Assert.That(corners.Max(p => p.y) - corners.Min(p => p.y), Is.LessThan(0.001f));
+            Assert.That(group.position.y, Is.InRange(-0.05f, 0.3f));
+            Assert.That(Vector3.Distance(corners[0], corners[3]), Is.InRange(1.7f, 2.5f));
         }
 
         private int MeshVertices()

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 namespace Possession
 {
@@ -15,7 +16,6 @@ namespace Possession
 
         [Header("Timer below the body")]
         [SerializeField] private RectTransform timerGroup; // HUDManager drives the circular countdown
-        [SerializeField] private float timerDrop = 40f;
 
         [Header("Ability hint")]
         [SerializeField] private Text hintText;
@@ -41,6 +41,8 @@ namespace Possession
         private GameObject hiddenLabel;
         private CanvasGroup timerVisibility;
         private Material aimMaterial;
+        private Canvas groundCanvas;
+        private readonly Vector3[] timerCorners = new Vector3[4];
 
         private void Awake()
         {
@@ -50,6 +52,19 @@ namespace Possession
             {
                 timerVisibility = timerGroup.GetComponent<CanvasGroup>();
                 if (timerVisibility == null) timerVisibility = timerGroup.gameObject.AddComponent<CanvasGroup>();
+                var ground = new GameObject("Possession Ground Ring", typeof(RectTransform), typeof(Canvas));
+                SceneManager.MoveGameObjectToScene(ground, gameObject.scene);
+                ground.layer = 2;
+                groundCanvas = ground.GetComponent<Canvas>();
+                groundCanvas.renderMode = RenderMode.WorldSpace;
+                groundCanvas.worldCamera = Camera.main;
+                groundCanvas.GetComponent<RectTransform>().sizeDelta = new Vector2(52f, 52f);
+                ground.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+                ground.transform.localScale = Vector3.one * 0.035f;
+                timerGroup.SetParent(ground.transform, false);
+                timerGroup.anchorMin = timerGroup.anchorMax = new Vector2(0.5f, 0.5f);
+                timerGroup.anchoredPosition3D = Vector3.zero;
+                timerGroup.localRotation = Quaternion.identity;
             }
         }
 
@@ -83,6 +98,7 @@ namespace Possession
         {
             if (aimLine != null) Destroy(aimLine.gameObject);
             if (aimMaterial != null) Destroy(aimMaterial);
+            if (groundCanvas != null) Destroy(groundCanvas.gameObject);
         }
 
         private void Start()
@@ -162,6 +178,7 @@ namespace Possession
             }
             if (cam == null) cam = Camera.main;
             if (cam == null) return;
+            if (groundCanvas != null) groundCanvas.worldCamera = cam;
 
             Vector3 feet = possessed.transform.position;
             if (bodyRenderer != null) feet.y = bodyRenderer.bounds.min.y;
@@ -170,17 +187,31 @@ namespace Possession
                 && viewport.y >= 0f && viewport.y <= 1f;
             if (timerVisibility != null) timerVisibility.alpha = visible ? 1f : 0f;
 
-            // Keep the circle upright and equally readable for Guard and Heavy.
-            if (timerGroup != null)
-                PlaceAt(timerGroup, feet, -timerDrop);
+            // The countdown lies on the floor around the host's feet, like the reference.
+            if (groundCanvas != null)
+            {
+                float floor = float.NegativeInfinity;
+                foreach (var hit in Physics.RaycastAll(feet + Vector3.up * 0.5f, Vector3.down, 3f,
+                    1 << 0, QueryTriggerInteraction.Ignore))
+                    if (hit.normal.y > 0.5f && hit.point.y <= feet.y + 0.1f)
+                    floor = Mathf.Max(floor, hit.point.y);
+                if (float.IsNegativeInfinity(floor)) floor = feet.y;
+                groundCanvas.transform.position = new Vector3(feet.x, floor + 0.04f, feet.z);
+            }
 
             if (hintText != null && hintText.gameObject.activeSelf)
             {
                 hintTimer -= Time.unscaledDeltaTime;
                 float drop = hintDrop;
                 if (timerGroup != null)
-                    drop = Mathf.Max(drop, timerDrop + timerGroup.rect.height * Mathf.Abs(timerGroup.localScale.y) * 0.5f
-                        + hintText.rectTransform.rect.height * Mathf.Abs(hintText.rectTransform.localScale.y) * 0.5f + 8f);
+                {
+                    timerGroup.GetWorldCorners(timerCorners);
+                    float bottom = float.PositiveInfinity;
+                    foreach (var corner in timerCorners) bottom = Mathf.Min(bottom, cam.WorldToScreenPoint(corner).y);
+                    float scale = canvas != null ? canvas.scaleFactor : 1f;
+                    drop = Mathf.Max(drop, (cam.WorldToScreenPoint(feet).y - bottom) / scale
+                        + hintText.rectTransform.rect.height * 0.5f + 8f);
+                }
                 PlaceAt(hintText.rectTransform, feet, -drop);
                 var c = hintText.color;
                 c.a = visible ? Mathf.Clamp01(hintTimer / hintFadeTime) : 0f;
