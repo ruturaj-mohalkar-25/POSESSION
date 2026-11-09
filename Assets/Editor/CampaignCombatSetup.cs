@@ -55,6 +55,7 @@ namespace Possession.Editor
                 var so = new SerializedObject(enemy);
                 so.FindProperty("detectionRange").floatValue = heavy ? HeavyDetection : GuardDetection;
                 so.FindProperty("visionAngle").floatValue = ConeAngle;
+                so.FindProperty("moveSpeed").floatValue = heavy ? 4f : 5f;
                 var points = so.FindProperty("waypoints");
                 for (int i = 0; i < points.arraySize; i++)
                     if (points.GetArrayElementAtIndex(i).objectReferenceValue is Transform point)
@@ -93,7 +94,7 @@ namespace Possession.Editor
             foreach (var camera in roots.SelectMany(r => r.GetComponentsInChildren<Camera>(true)))
             {
                 var follow = camera.GetComponent<CameraFollow>();if (follow == null) continue;
-                var so = new SerializedObject(follow);var offset = new Vector3(0f, 15f, -11f);
+                var so = new SerializedObject(follow);var offset = new Vector3(0f, 25f, -18f);
                 so.FindProperty("offset").vector3Value = offset;so.ApplyModifiedPropertiesWithoutUndo();
                 camera.transform.position = spirit.transform.position + offset;
             }
