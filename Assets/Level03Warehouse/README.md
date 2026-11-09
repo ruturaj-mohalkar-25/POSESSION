@@ -1,74 +1,35 @@
-# Warehouse — campaign Level 3
+# Warehouse — Level 3, iteration 1 layout
 
-Use Unity **6000.3.22f1**. Open `Assets/Scenes/MainMenu.unity`, press Play, then select a level. For direct Warehouse testing, open `Assets/Level03Warehouse/Level_03_Warehouse.unity`. If a level was already open when its saved scene changed, stop Play Mode and reopen it; accept Reload if Unity asks.
+Use Unity **6000.3.22f1**. Stop Play Mode, reopen `Assets/Scenes/MainMenu.unity`, then Play → Level 3. Direct scene: `Assets/Level03Warehouse/Level_03_Warehouse.unity`. Reopen an already-open scene rather than saving its older in-memory objects over the updated asset.
 
-## Campaign order
+## Campaign
 
-| New slot | Source |
-| --- | --- |
-| Level 1 | Current displayed Level 2 (legacy `Assets/Scenes/Level_03.unity`) |
-| Level 2 | Current displayed Level 3, Hunted maze (legacy `Assets/Scenes/Level_02.unity`) |
-| Level 3 | This Warehouse design |
+The campaign order is unchanged: previous displayed Level 2 (`Assets/Scenes/Level_03.unity`) → Hunted (`Assets/Scenes/Level_02.unity`) → Warehouse. Expanded Levels 1 and 2 retain their authored dimensions. Scene names and GUIDs remain stable.
 
-This order is active in the menu, tutorial exit, Next Level and Play Again. `CampaignLevels` is the shared source of stage order. Scene asset names and GUIDs stay stable so existing builders and references continue working. The old `Assets/Scenes/Level_01.unity` is retained as an internal authoring/test fixture, outside the three-stage menu and progression. Build Settings place MainMenu and Tutorial before the three campaign scenes, with the fixture afterward.
+## Original layout
 
-## Expanded layout
+The authored JSON is restored to the original iteration 1 plan: **10 rooms, 10 connecting halls, 13 cover blocks, 4 Guards, 2 Wall Breakers, 4 target doors, 12 targets, 3 breakable barriers and 9 reforming charge sources**.
 
-Fifteen rooms on one floor, with the widened existing rooms retained in their world positions. The former Exit is now a Transfer Lobby. Two new final branches extend beyond it: Records/Control and Workshop/Machine. Both lead to the relocated extraction area. Sixteen cover blocks and eight solid partition segments have been added, bringing the layout to 29 cover blocks. Camera cutaway affects rendering while the partitions still block movement, vision and shots.
+Records, Control, Workshop, Machine, their connecting halls, the four-target final door, the two additional cracked walls and the two extra enemies are removed. The original northern Exit room is the finish again; there is no transfer lobby or final extension objective.
 
-Totals: **5 Guards, 3 Wall Breakers, 5 target doors, 16 targets, 5 breakable barriers, 13 reforming possession-charge sources and 1 health-placement socket**.
+- **Left route:** Entry → Sorting → Guard Room. Shoot its three cyan targets to open Inspection. Shoot Inspection's three violet targets to open Exit Hall → Exit. The right wing and recovery barriers can stay closed.
+- **Right route:** Shoot Sorting's three pink targets to open Cargo. Shoot Cargo's three amber targets to open Loading. Possess the right-junction Wall Breaker and smash Loading's cracked exit wall → Exit Hall → Exit. The left wing can stay closed.
+- **Optional middle crossing:** Service Lobby → left recovery barrier → health-placement chamber → right recovery barrier → right junction. Barriers stay broken, allowing retreat or a wing change. The green cross is still a placement socket awaiting the shared healing API, not a functioning heal.
 
-## Initial wings
+Completing either original wing unlocks the exit. It accepts the living Spirit or the currently possessed living body; unoccupied enemies cannot finish the level. Warehouse remains the final campaign stage, with the native Finish → Game Complete → Play Again flow.
 
-- **Left:** Entry → Sorting → Guard Room. Shoot its three cyan targets to open Inspection. Shoot Inspection's three violet targets to open Exit Hall → Transfer Lobby. The original right wing and middle walls can stay closed.
-- **Right:** Shoot Sorting's three pink targets to open Cargo. Shoot Cargo's three amber targets to open Loading. Use the right-junction Wall Breaker to smash Loading's cracked exit wall → Exit Hall → Transfer Lobby. The original left wing and middle walls can stay closed.
-- **Optional recovery crossing:** Service Lobby → left cracked barrier → health chamber → right cracked barrier → right junction. Either wall can be opened independently and remains open for retreat. Both broken entrances allow a wing change, without solving target doors.
+## Dimensions and current gameplay
 
-The new partitions in Guard Room and Cargo require changing firing angles. Inspection and Loading have more offset cover. Both initial wings remain complete routes to Transfer Lobby.
+Iteration 1 uses **0.5 metres per plan unit**. Entry is 11 × 8 m; Sorting is 13 × 8 m; Guard/Cargo rooms are 17 × 11 m; Inspection/Loading are 17 × 12 m; Recovery is 18 × 6 m; Service Lobby is 8.5 × 6 m. The original connecting passages are approximately 3–4 m wide.
 
-## Final branches
+The current [character/combat tuning](../../Docs/Campaign-Character-Combat-Tuning.md) is retained: characters 25% larger, 75° vision cones, Guard detection/shooting at 9/8 m and Heavy detection/attack reach at 7/3.5 m. The merged camera/HUD, shared five HP, charge rules, shooting/smashing and two-second eject protection are retained. The level clock remains seven minutes with twelve seconds per possession.
 
-Choose either after reaching Transfer Lobby; completing both is optional.
+Warehouse NPCs retain their home-room bounds for autonomous pursuit; possessed bodies can cross rooms. Safe ejection prefers behind the host, checks capsule clearance and avoids crossing solid walls. R or Retry reloads the current scene and restores its targets, barriers, charge sources and hosts. Required defeated hosts are restored by Retry.
 
-- **Records → Control:** Records has opposing wall baffles with broad zigzag gaps. Control has a local Guard, recharge source, partial wall and four gold targets. All four distinct targets open its sliding Extraction door; four lamps show progress. Three hits do not open it, and duplicate hits never count again. Shared Guard ammo is three shots per possession, so eject, recharge from the local source and possess again to finish the fourth target. Earlier hits persist.
-- **Workshop → Machine:** Workshop has a vertical baffle with two approaches. Machine has a local Wall Breaker and recharge source before an internal cracked divider. Break it, then recharge and use a fresh possession to break the cracked exit wall. Shared Heavy rules retain one smash per possession. The final exit wall sits entirely beyond the divider, preventing a bypass through its near end. Both broken walls remain open.
+## Authoring and checks
 
-The new Exit is a checkered deck and illuminated arch. It requires **one initial wing AND one final branch**, accepts Spirit or the currently possessed living body, and rejects unoccupied enemies. Transfer Lobby has no completion trigger. No additional charge or enemy-clear task is required at the new Exit.
+Use **Possession → Level Design → Level 3 Warehouse → Build and Open**. The builder copies the shared shell/actors, reads `Data/warehouse-layout.json`, then applies the current campaign character/combat profile. Durable layout edits belong in the JSON, because rebuilding replaces scene-only edits.
 
-## Space and tuning
+**45/45 targeted PlayMode checks pass** for this restored layout. Checks cover original dimensions and object counts, physical routes for larger bodies, absence of the removed rooms/objects, both independent wings, all remaining target shots and barriers, original exit conditions, NPC rejection/occupied-body completion, retry, campaign Finish/Play Again, rear-ejection safety, shield duration and current enemy pressure.
 
-The coordinate scale is restored to the **iteration 2 value of 0.65 metres**, from 0.8. Width and depth are each 18.75% smaller than the latest enlargement (approximately 34% less floor area). The room arrangement and Control/Machine final routes are retained. Guard/Cargo rooms are 22.1 × 14.3 m; Inspection/Loading are 22.1 × 15.6 m; Sorting is 16.9 × 13 m. New challenge rooms are 20.8 × 13 m. Main passages and matching final door openings are 6.5–7.8 m wide. The middle Recovery passage is 23.4 × 7.8 m; the Service lobby is 11.05 × 7.8 m. The Records baffles each leave a 7.8 m gap. Crates retain their physical size. The current [character/combat tuning](../../Docs/Campaign-Character-Combat-Tuning.md) makes campaign actors 25% larger, sets a 75° cone, extends Guard/Heavy detection to 9/7 m, Guard shooting to 8 m and Heavy attack reach to 3.5 m. The merged camera offset is (0, 15, -11). The expanded Level 1 and Level 2 dimensions are unchanged.
-
-Seven-minute level clock, twelve seconds per possession; tuning remains in `Data/warehouse-layout.json`. Combat, movement, health, abilities, charge rules and ejection use the shared integration systems. The campaign authoring profile applies the current character-size, vision and NPC attack-range overrides to the copied actors. Human playtesting is still needed to judge final pacing and combat difficulty.
-
-## Controls and retries
-
-WASD move, Space jump, E possess/eject, LMB shoot/smash. Use a carried charge to possess and collect green crystals to recharge; approach outside the enemy vision cone. Integration now supplies five Spirit HP, one starting possession charge, capacity for three charges, retained spare charges after ejecting and a two-second ejection cooldown. Sources reform after eight seconds. **R** or Retry resets the whole preview, including defeated hosts, targets, walls and sources. The shared result screen shows **Finish** after Warehouse; it opens the game-complete screen. **Play Again** starts the promoted Level 1. Earlier stages use **Next Level** to advance in campaign order. Charge regeneration does not replace a defeated required host; use Retry in that case.
-
-## Ejection protection and enemy rooms
-
-Manual ejection, timer expiry and a completed return from a defeated host grant the Spirit **two seconds of damage protection** in this scene. A blue bubble, upright arch and draining ground ring show the remaining grace period. Damage and health/damage events are ignored during that window; ordinary damage resumes afterward. Movement and collision remain enabled.
-
-All eight NPCs are assigned the floor bounds of their room (the right-junction Heavy uses its junction area). Enemies stop pursuing when the Spirit leaves that area, cancel attacks across its boundary and keep autonomous movement inside. The rule applies to patrol detection and post-eject hostility. Possessed bodies can still cross rooms to solve puzzles. If the player leaves a body outside its assigned home, it stops pursuing there and resumes returning to its own patrol once its hostile recovery ends.
-
-The shared `PossessionController` grants protection directly after finding a valid eject location, before any eject callbacks. It no longer depends on a visual component or possession-event subscription. The two-second rule applies to every successful ejection using that controller, including older campaign scenes. `WarehouseEjectShield` only displays the actual protection state.
-
-Ejection prefers the enemy's rear, then rear diagonals, sides and finally its front if needed. Ground checks, capsule clearance and a swept path check prevent spawning inside or through a wall. If the rear is blocked, a safe alternative is chosen.
-
-Integration's shared shield bubble is retained; Warehouse adds its countdown ring and arch without rendering a second bubble. The shared enemy and attack scripts have optional home-bound checks, enabled only in Warehouse. `WarehouseSceneSafety` also repairs missing Warehouse visuals and room assignments on Play/scene load, covering older open scenes whose in-memory setup predates the saved builder changes. It is idempotent and leaves other scenes' room rules unchanged. These hooks use the shared health and enemy systems, rather than duplicating them.
-
-## Health dependency
-
-The green cross remains a **placement socket, not a functioning heal**. Current integration has no shared healing API. Bind the team's incoming component here after merge. Intended rule: once per run, restore 30% of maximum Spirit/player HP, capped at maximum, persistent after ejecting, collectible in either form, not consumed at full HP. Do not introduce a second local HP pool or implement healing through negative damage.
-
-## Rebuild and merge boundary
-
-Use **Possession → Level Design → Level 3 Warehouse → Build and Open**. The builder copies the latest Level 1 shell and actors, then generates this scene from the authored JSON. Rebuilding replaces edits made only in the generated scene; keep durable layout changes in that JSON. Boundary generation supports the new negative plan coordinates, so the original built rooms do not shift to make room for the extension.
-
-Use **Possession → Level Design → Build Three-Level Campaign** to rebuild Warehouse and synchronize campaign registration. The existing Full Build All Levels workflow also includes this setup. After future shared gameplay merges, rebuild and retest against those components. Future merge conflicts cannot be guaranteed absent. The ejection-protection API, rear spawn search and optional room checks touch the shared Spirit, PossessionController, EnemyBase and enemy-attack scripts. Shared prefabs and gameplay come from integration; this change updates campaign routing and build registration without renaming existing scenes or changing either promoted level's layout.
-
-## Validation
-
-Campaign checks cover all three menu destinations, Next Level progression through the promoted stages, the final Warehouse Finish screen, Play Again returning to Level 1, tutorial entry into Level 1 and build-list registration. Warehouse checks cover authored geometry and room/door clearance; distinct target hits and actual Guard shots; all route combinations; shared abilities, charges, completion and retry; rear ejection, two-second protection and room-limited pursuit.
-
-**52/52 focused campaign, Warehouse and combat-tuning checks pass.** The full local suite reports 189/214 passing with 25 failing checks; unmodified merged integration `1ada259` reports 136/162 passing with 26 failures. There are no additional failing test cases. See [character/combat tuning](../../Docs/Campaign-Character-Combat-Tuning.md) for values and validation details, and [expanded stage spacing](../../Docs/Campaign-Expanded-Rooms.md) for room dimensions. Human playtesting remains necessary to judge difficulty. This tuning pass is local only; no push, PR update or deployment is made.
+This layout change is local only. Human playtesting is still required to judge timing and difficulty.

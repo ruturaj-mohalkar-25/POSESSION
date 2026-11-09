@@ -60,7 +60,7 @@ namespace Possession.Warehouse.Tests
             Assert.That(SceneManager.GetActiveScene().name,Is.EqualTo(CampaignLevels.ThirdScene));
             Assert.That(GameManager.Instance.IsLastLevel,Is.True);
             var level=Object.FindFirstObjectByType<WarehouseLevel>();
-            foreach(var key in new[]{"inspection","exit-passage","extraction"})
+            foreach(var key in new[]{"inspection","exit-passage"})
                 foreach(var target in GameObject.Find(key+"_Door").GetComponent<WarehouseDoorView>().Targets)target.OnHit();
             level.Spirit.RestoreAt(level.transform.position);Physics.SyncTransforms();
             Assert.That(level.TryFinish(level.Spirit.GetComponent<Collider>()),Is.True);

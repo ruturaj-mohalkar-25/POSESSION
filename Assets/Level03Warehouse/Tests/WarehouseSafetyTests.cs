@@ -85,11 +85,14 @@ namespace Possession.Warehouse.Tests
             var host=Host("Sorting_hall_Guard");Move(host,Map(58.5f,65),Vector3.left);Possess(host);
             typeof(EnemyBase).GetMethod("Move",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(host,new object[]{Vector3.left*3f});
             Assert.That(host.IsInsideHome(host.transform.position),Is.False,"Player movement must not be clamped to the NPC's room.");
-            Assert.That(possession.TryEject(false),Is.True);Assert.That(host.CanPursue(spirit.transform),Is.False);
+            Assert.That(possession.TryEject(false),Is.True);
+            // Keep the Spirit outside the room without physically blocking the returning body's narrow hall.
+            var outside=host.transform.position+Vector3.left*3f;outside.y=spirit.transform.position.y;
+            spirit.RestoreAt(outside);Physics.SyncTransforms();Assert.That(host.CanPursue(spirit.transform),Is.False);
             host.enabled=true;yield return new WaitForSeconds(2f);
             Assert.That(host.IsInsideHome(host.transform.position),Is.True);Assert.That(host.IsChasing,Is.False);
         }
-        [TestCase("Sorting_hall_Guard")] [TestCase("Machine_Heavy")]
+        [TestCase("Sorting_hall_Guard")] [TestCase("Right_junction_Heavy")]
         public void ManualEjectPrefersBehindTheHostWhenClear(string name)
         {
             var host=Host(name);Possess(host);Assert.That(possession.TryEject(false),Is.True);
@@ -141,7 +144,7 @@ namespace Possession.Warehouse.Tests
             Assert.That(possession.PossessedEnemy,Is.SameAs(host));
         }
         private static EnemyBase Host(string name)=>GameObject.Find(name).GetComponent<EnemyBase>();
-        private static Vector3 Map(float x,float y)=>new((x-70)*.65f,1.4f,(90-y)*.65f);
+        private static Vector3 Map(float x,float y)=>new((x-70)*.5f,1.4f,(90-y)*.5f);
         private static void Move(EnemyBase host,Vector3 at,Vector3 forward)
         {
             var cc=host.GetComponent<CharacterController>();cc.enabled=false;at.y=host.transform.position.y;host.transform.SetPositionAndRotation(at,Quaternion.LookRotation(forward));cc.enabled=true;Physics.SyncTransforms();

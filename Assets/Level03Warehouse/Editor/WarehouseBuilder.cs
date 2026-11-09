@@ -31,8 +31,8 @@ namespace Possession.Editor
         private static Layout data;
         private static Material floorMat,wallMat,coverMat,steelMat,chargeMat,glowMat;
         private static GameObject targetTemplate,wallTemplate,guardTemplate,heavyTemplate;
-        private static readonly Color[] Palette={new(.2f,.8f,1f),new(1f,.7f,.2f),new(1f,.35f,.6f),new(.65f,.4f,1f),new(1f,.85f,.35f)};
-        private static float Unit => data != null ? data.unitSize : .65f;
+        private static readonly Color[] Palette={new(.2f,.8f,1f),new(1f,.7f,.2f),new(1f,.35f,.6f),new(.65f,.4f,1f)};
+        private static float Unit => data != null ? data.unitSize : .5f;
         public static Vector3 Map(float x,float y,float height=1.15f)=>new((x-70f)*Unit,height,(90f-y)*Unit);
 
         [MenuItem("Possession/Level Design/Level 3 Warehouse/Build and Open")]
@@ -94,14 +94,13 @@ namespace Possession.Editor
             var level=BuildExit(world,data.exit);
             Set(level,"spirit",spirit);Set(level,"inspection",doors["inspection"]);Set(level,"exitPassage",doors["exit-passage"]);
             Set(level,"cargoEntry",doors["cargo-entry"]);Set(level,"cargo",doors["cargo"]);Set(level,"loadingWall",walls["Loading wall"]);
-            Set(level,"extraction",doors["extraction"]);Set(level,"machineDivider",walls["Machine divider"]);Set(level,"machineExit",walls["Machine exit wall"]);
             var settings=new SerializedObject(hud);var objective=settings.FindProperty("objectiveText").objectReferenceValue;
             settings.FindProperty("objectives").arraySize=0;settings.ApplyModifiedPropertiesWithoutUndo();Set(level,"objective",objective);
             // Shared HUD callbacks now route the third campaign level to Finish / Play Again.
             foreach(var template in templates)Object.DestroyImmediate(template);
             CampaignCombatSetup.Apply(scene);
             EditorSceneManager.MarkSceneDirty(scene);EditorSceneManager.SaveScene(scene);AssetDatabase.SaveAssets();
-            Debug.Log("Warehouse campaign Level 3 built: 5 Guards, 3 Heavies, 5 target doors, 5 cracked walls and 13 charge sources.");
+            Debug.Log("Warehouse campaign Level 3 built: iteration 1 layout; 4 Guards, 2 Heavies, 4 target doors, 3 cracked walls and 9 charge sources.");
         }
         [MenuItem("Possession/Level Design/Level 3 Warehouse/Open Local Scene")]
         public static void Open(){if(!EditorApplication.isPlayingOrWillChangePlaymode)EditorSceneManager.OpenScene(ScenePath);}

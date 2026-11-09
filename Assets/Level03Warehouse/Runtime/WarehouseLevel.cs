@@ -8,8 +8,8 @@ namespace Possession.Warehouse
     public sealed class WarehouseLevel : MonoBehaviour
     {
         [SerializeField] private SpiritController spirit;
-        [SerializeField] private Door inspection, exitPassage, cargoEntry, cargo, extraction;
-        [SerializeField] private BreakableWall loadingWall, machineDivider, machineExit;
+        [SerializeField] private Door inspection, exitPassage, cargoEntry, cargo;
+        [SerializeField] private BreakableWall loadingWall;
         [SerializeField] private Text objective;
         [SerializeField] private Renderer[] exitLights;
         private bool completed;
@@ -17,14 +17,11 @@ namespace Possession.Warehouse
         public PossessionController Possession => spirit.GetComponent<PossessionController>();
         public bool LeftReady => inspection.IsOpen && exitPassage.IsOpen;
         public bool RightReady => cargoEntry.IsOpen && cargo.IsOpen && loadingWall.CurrentHP <= 0;
-        public bool CanReachTransfer => LeftReady || RightReady;
-        public bool ControlReady => extraction.IsOpen;
-        public bool MachineReady => machineDivider.CurrentHP <= 0 && machineExit.CurrentHP <= 0;
-        public bool CanExtract => CanReachTransfer && (ControlReady || MachineReady);
+        public bool CanExtract => LeftReady || RightReady;
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.R)) RestartPreview();
-            if (objective != null) objective.text = CanExtract ? "EXIT OPEN  •  REACH EXTRACTION" : CanReachTransfer ? "CHOOSE A FINAL WING  •  4 TARGETS OR 2 WALLS" : "OPEN A WING  •  EACH DOOR NEEDS 3 TARGETS";
+            if (objective != null) objective.text = CanExtract ? "EXIT OPEN  •  REACH THE EXIT" : "OPEN A WING  •  EACH DOOR NEEDS 3 TARGETS";
             if (exitLights != null) foreach (var light in exitLights) if (light != null)
                 light.material.color = CanExtract ? new Color(.2f,1f,.65f) : new Color(1f,.65f,.18f);
         }
