@@ -18,6 +18,7 @@ namespace Possession.Editor
             {
                 var scene = EditorSceneManager.OpenScene(path);
                 Apply(scene);
+                CampaignDoorSecurityStyle.Apply(scene);
                 EditorSceneManager.SaveScene(scene);
             }
             AssetDatabase.SaveAssets();

@@ -120,6 +120,7 @@ namespace Possession.Editor
                 so.ApplyModifiedPropertiesWithoutUndo();
             }
             CampaignDoorSetup.Apply(scene);
+            CampaignDoorSecurityStyle.Apply(scene);
             CampaignPresentationSetup.Apply(scene);
             EditorSceneManager.MarkSceneDirty(scene);
         }

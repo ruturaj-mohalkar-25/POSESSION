@@ -204,7 +204,7 @@ namespace Possession.Tests
                 typeof(SpiritVisualSync).GetMethod("Awake",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(sync,null);
                 var late=typeof(SpiritVisualSync).GetMethod("LateUpdate",BindingFlags.NonPublic|BindingFlags.Instance);
                 visual.Refresh();late.Invoke(sync,null);
-                Assert.That(visual.IsVisible,Is.False,scene+" ghost sync enabled the inactive shield ring");
+                Assert.That(visual.IsVisible,Is.False,scene+" ghost sync enabled the inactive shield bubble");
                 Assert.That(Read<Renderer>(visual,"bubble").enabled,Is.False,scene+" ghost sync enabled the inactive bubble");
                 var pc=spirit.GetComponent<PossessionController>();Assert.That(pc.TryPossess(PrepareHost(false)),Is.True);
                 late.Invoke(sync,null);
