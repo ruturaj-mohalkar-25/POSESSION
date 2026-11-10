@@ -104,6 +104,7 @@ namespace Possession
         private void OnEnable()
         {
             EventBus.SpiritDamaged += OnSpiritDamaged;
+            EventBus.SpiritHealed += UpdateHealth;
             EventBus.LevelTimerUpdated += UpdateLevelTimer;
             EventBus.PossessTimerUpdated += UpdatePossessTimer;
             EventBus.Possessed += OnPossessed;
@@ -132,6 +133,7 @@ namespace Possession
         private void OnDisable()
         {
             EventBus.SpiritDamaged -= OnSpiritDamaged;
+            EventBus.SpiritHealed -= UpdateHealth;
             EventBus.LevelTimerUpdated -= UpdateLevelTimer;
             EventBus.PossessTimerUpdated -= UpdatePossessTimer;
             EventBus.Possessed -= OnPossessed;

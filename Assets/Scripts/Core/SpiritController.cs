@@ -128,6 +128,15 @@ namespace Possession
             Physics.SyncTransforms();
             RefreshGrounding();
         }
+        // Restores HP (never above max); returns false if nothing changed, so a pickup is not wasted
+        public bool Heal(int amount)
+        {
+            if (amount <= 0 || currentHP <= 0 || currentHP >= maxHP) return false;
+            currentHP = Mathf.Min(maxHP, currentHP + amount);
+            EventBus.SpiritHealed?.Invoke(currentHP, maxHP);
+            return true;
+        }
+
         public int CurrentHP => currentHP;
         public int MaxHP => maxHP;
     }
