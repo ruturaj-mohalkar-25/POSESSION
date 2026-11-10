@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Possession.Runtime::Possession.LevelConfig
   levelName: Tutorial
   possessionTimer: 12
-  levelTime: 300
-  guardMoveSpeed: 2.6
+  levelTime: 150
+  guardMoveSpeed: 2.2
   guardMaxHP: 3
-  guardDetectionRange: 4
+  guardDetectionRange: 5.5
   guardWaypointWaitTime: 0.75
   guardChaseStopDistance: 1.5
   goldParTime: 100

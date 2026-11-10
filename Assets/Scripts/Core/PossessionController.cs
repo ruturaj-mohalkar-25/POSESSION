@@ -116,7 +116,8 @@ namespace Possession
                 if (enemy == null || !enemy.CanBePossessedFrom(transform)) continue;
                 if (!HasLineOfSight(enemy)) continue;
 
-                float dist = Vector3.Distance(transform.position, hit.transform.position);
+                float dist = Vector3.Distance(transform.position, enemy.transform.position);
+                if (dist > possessRange) continue;
                 if (dist < bestDist)
                 {
                     bestDist = dist;

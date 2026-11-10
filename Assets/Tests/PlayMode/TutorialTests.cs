@@ -111,35 +111,40 @@ namespace Possession.Tests
         }
 
         [UnityTest]
-        public IEnumerator WelcomePausesClockAndBeginStartsSharedGameplay()
+        public IEnumerator TutorialAutoStartsWithoutAModalOrPausedCoaching()
         {
             yield return Load(TutorialScene.Name);
             var guide = Object.FindFirstObjectByType<TutorialGuide>();
             var manager = Object.FindFirstObjectByType<GameManager>();
-            Assert.That(guide.Progress.Lesson, Is.EqualTo(TutorialLesson.Welcome));
-            Assert.That(Time.timeScale, Is.Zero);
-            float remaining = manager.LevelTimer;
-            yield return new WaitForSecondsRealtime(0.1f);
-            Assert.That(manager.LevelTimer, Is.EqualTo(remaining));
-            guide.BeginPractice();
-            Assert.That(guide.CoachingFocus, Is.EqualTo(TutorialFocus.LevelClock));
-            Assert.That(Time.timeScale, Is.Zero);
-            Assert.That(guide.Possession.enabled, Is.False);
-            yield return new WaitForSecondsRealtime(0.1f);
-            Assert.That(manager.LevelTimer, Is.EqualTo(remaining));
-            guide.ContinueCoaching();
-            Assert.That(guide.CoachingFocus, Is.EqualTo(TutorialFocus.Health));
-            var hp = guide.FocusWidgets(TutorialFocus.Health)[1];
-            Vector3 originalScale = hp.localScale;
-            yield return new WaitForSecondsRealtime(0.2f);
-            Assert.That(hp.localScale.x, Is.GreaterThan(originalScale.x));
-            guide.ContinueCoaching();
-            Assert.That(hp.localScale, Is.EqualTo(originalScale));
+            var overlay = Object.FindFirstObjectByType<TutorialOverlay>();
+            Assert.That(guide.Progress.Started, Is.True);
+            Assert.That(guide.IsCoaching, Is.False);
+            Assert.That(Time.timeScale, Is.EqualTo(1f));
             Assert.That(guide.Possession.enabled, Is.True);
+            Assert.That(Object.FindFirstObjectByType<TutorialCoach>(), Is.Null);
+            Assert.That(overlay.GetComponentsInChildren<Transform>(true)
+                .Any(t => t.name == "StartPractice" || t.name == "PracticeModal" || t.name == "CoachCard"), Is.False);
+            var objectiveBars = Object.FindObjectsByType<Transform>(FindObjectsInactive.Include,
+                FindObjectsSortMode.None).Where(t => t.name == "ObjectiveBar").ToArray();
+            Assert.That(objectiveBars, Has.Length.EqualTo(1),
+                "The tutorial should reuse the campaign objective bar instead of adding another HUD style.");
+            Assert.That(objectiveBars[0].gameObject.activeInHierarchy, Is.True);
+            Assert.That(Object.FindObjectsByType<Text>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                .Single(t => t.name == "ObjectiveText").text, Is.EqualTo(guide.Title));
+            float remaining = manager.LevelTimer;
             yield return new WaitForSeconds(0.1f);
             Assert.That(manager.LevelTimer, Is.LessThan(remaining));
-            Assert.That(guide.Progress.Lesson, Is.EqualTo(TutorialLesson.Movement));
             Assert.That(guide.Possession.PossessDuration, Is.EqualTo(12f));
+            var chargeHud = guide.Spirit.GetComponent<ChargeHUD>();
+            Assert.That(chargeHud, Is.Not.Null);
+            Assert.That(chargeHud.enabled, Is.True,
+                "The tutorial should use the same charge banner as the campaign levels.");
+            var hud = Object.FindFirstObjectByType<HUDManager>();
+            Assert.That(Get<GameObject>(hud, "possessPrompt"), Is.Not.Null,
+                "The tutorial should retain the campaign's possession prompt.");
+            Assert.That(Object.FindObjectsByType<WorldLabel>(FindObjectsInactive.Include,
+                FindObjectsSortMode.None).Any(label => label.gameObject.activeSelf), Is.True,
+                "The tutorial should retain the same enemy labels used in the campaign.");
         }
 
         [UnityTest]
@@ -155,10 +160,8 @@ namespace Possession.Tests
             yield return new WaitForSeconds(0.15f);
             Assert.That(pc.CurrentState, Is.EqualTo(PlayerState.Spirit));
             Assert.That(guide.Guard.IsHostile, Is.True);
-            Assert.That(guide.Progress.Lesson, Is.EqualTo(TutorialLesson.EscapeHostile));
             yield return new WaitForSeconds(0.25f);
             Assert.That(guide.Guard.IsHostile, Is.False);
-            Assert.That(guide.Progress.SurvivedHostility, Is.True);
         }
 
         [UnityTest]
@@ -193,12 +196,9 @@ namespace Possession.Tests
             Physics.SyncTransforms();
             Invoke(exit, "OnTriggerStay", spirit.GetComponent<Collider>());
             Assert.That(guide.Progress.Completed, Is.True);
-            Assert.That(guide.Progress.ClearedSkills, Is.EqualTo(9));
             Assert.That(Object.FindFirstObjectByType<GameManager>().CurrentState, Is.EqualTo(LevelState.Complete));
             yield return null;
-            var overlay = Object.FindFirstObjectByType<TutorialOverlay>();
-            var play = overlay.GetComponentsInChildren<Button>(true).First(b => b.name == "StartPractice");
-            Assert.That(play.GetComponentInChildren<Text>().text, Is.EqualTo("PLAY LEVEL 01"));
+            Assert.That(Object.FindFirstObjectByType<TutorialOverlay>(), Is.Not.Null);
         }
 
         [UnityTest]
@@ -232,8 +232,42 @@ namespace Possession.Tests
             Assert.That(guide.Progress.Failed, Is.True);
             guide.Replay(); yield return null;
             guide = Object.FindFirstObjectByType<TutorialGuide>();
-            Assert.That(guide.Progress.Lesson, Is.EqualTo(TutorialLesson.Welcome));
-            Assert.That(Object.FindFirstObjectByType<GameManager>().LevelTimer, Is.EqualTo(300f).Within(0.05f));
+            Assert.That(guide.Progress.Started, Is.True);
+            Assert.That(guide.IsCoaching, Is.False);
+            Assert.That(Object.FindFirstObjectByType<GameManager>().LevelTimer, Is.EqualTo(150f).Within(0.1f));
+        }
+
+        [UnityTest]
+        public IEnumerator TutorialUsesAShortTwoBayLayoutWithProductionElementsOnly()
+        {
+            yield return Load(TutorialScene.Name);
+            var guide = Object.FindFirstObjectByType<TutorialGuide>();
+            Assert.That(GameObject.Find("CompactTutorialLayout"), Is.Not.Null);
+            Assert.That(GameObject.Find("Bay1_Floor"), Is.Not.Null);
+            Assert.That(GameObject.Find("Bay2_Floor"), Is.Not.Null);
+            Assert.That(GameObject.Find("Room1_Floor"), Is.Null);
+            Assert.That(GameObject.Find("Room2_Floor"), Is.Null);
+            Assert.That(GameObject.Find("Room3_Floor"), Is.Null);
+            Assert.That(GameObject.Find("SpiritOnlyGate"), Is.Null,
+                "A tutorial-only gate would teach a visual rule that the campaign never uses.");
+            Assert.That(Vector3.Distance(guide.Guard.transform.position, guide.Heavy.transform.position), Is.LessThan(12f));
+            Assert.That(Object.FindObjectsByType<PossessionChargePickup>(FindObjectsInactive.Include,
+                FindObjectsSortMode.None), Is.Not.Empty,
+                "The production charge pickup itself should teach the player to return to Spirit form.");
+        }
+
+        [UnityTest]
+        public IEnumerator DeathIsPartOfPracticeAndQueuesAFastRetry()
+        {
+            yield return Load(TutorialScene.Name);
+            var guide = Object.FindFirstObjectByType<TutorialGuide>();
+            guide.Spirit.TakeDamage(guide.Spirit.MaxHP);
+            yield return null;
+            Assert.That(guide.Progress.Failed, Is.True);
+            Assert.That(guide.FailureMessage, Does.Contain("CAUGHT"));
+            var overlay = Object.FindFirstObjectByType<TutorialOverlay>();
+            Assert.That(overlay.GetComponentsInChildren<Text>(true).Single(t => t.name == "ResultBody").text,
+                Is.EqualTo("Restarting…"));
         }
 
         [UnityTest]
@@ -277,6 +311,8 @@ namespace Possession.Tests
         }
         private static void Set(object item, string name, object value) => item.GetType()
             .GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).SetValue(item, value);
+        private static T Get<T>(object item, string name) => (T)item.GetType()
+            .GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).GetValue(item);
         private static void Invoke(object item, string name, params object[] args) => item.GetType()
             .GetMethod(name, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(item, args);
     }
