@@ -126,7 +126,7 @@
     <h1>POSSESSION Analytics</h1>
     <div class="subtitle">Live playtest data from Firebase</div>
   </div>
-  <button class="refresh-btn" onclick="loadAll()">Refresh</button>
+  <button class="refresh-btn" onclick="loadAll(true)">Refresh</button>
 </div>
 <div class="status" id="status">
   <span class="status-dot loading"></span>
@@ -190,7 +190,28 @@ function parse(doc) {
   return out;
 }
 
-async function fetchCollection(name) {
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+function readCache(name) {
+  try {
+    const raw = localStorage.getItem('dash_' + name);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) return null;
+    return data;
+  } catch { return null; }
+}
+
+function writeCache(name, data) {
+  try { localStorage.setItem('dash_' + name, JSON.stringify({ ts: Date.now(), data })); }
+  catch { /* quota exceeded, ignore */ }
+}
+
+async function fetchCollection(name, skipCache) {
+  if (!skipCache) {
+    const cached = readCache(name);
+    if (cached) return cached;
+  }
   const all = [];
   let pageToken = null;
   do {
@@ -202,6 +223,7 @@ async function fetchCollection(name) {
     (data.documents || []).forEach(d => all.push(parse(d)));
     pageToken = data.nextPageToken || null;
   } while (pageToken);
+  writeCache(name, all);
   return all;
 }
 
@@ -522,12 +544,12 @@ function setStatus(state, text) {
   el.querySelector('span:last-child').textContent = text;
 }
 
-async function loadAll() {
-  setStatus('loading', 'Fetching from Firestore...');
+async function loadAll(skipCache) {
+  setStatus('loading', skipCache ? 'Refreshing from Firestore...' : 'Loading...');
   try {
     const [sessions, timings] = await Promise.all([
-      fetchCollection('sessions'),
-      fetchCollection('timings')
+      fetchCollection('sessions', skipCache),
+      fetchCollection('timings', skipCache)
     ]);
     const realSessions = sessions.filter(s => isReal(s.levelName));
     const realTimings = timings.filter(t => isReal(t.levelName));
@@ -538,7 +560,9 @@ async function loadAll() {
     renderEngageCharts(realSessions, realTimings);
     renderSessionTable(sessions);
     renderTimingTable(timings);
-    setStatus('', `${sessions.length} sessions, ${timings.length} timings loaded (${sessions.length - realSessions.length} test runs filtered)`);
+    const fromCache = !skipCache && readCache('sessions') !== null;
+    const src = fromCache ? ' (cached)' : '';
+    setStatus('', `${sessions.length} sessions, ${timings.length} timings loaded${src} (${sessions.length - realSessions.length} test runs filtered)`);
   } catch (err) {
     setStatus('error', 'Error: ' + err.message);
     console.error(err);
