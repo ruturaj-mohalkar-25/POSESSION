@@ -12,6 +12,7 @@ namespace Possession
 
         // Spirit
         public static Action<int, int> SpiritDamaged; // current, max
+        public static Action<int, int> SpiritHealed; // current, max
         public static Action SpiritDied;
 
         // Puzzle
@@ -39,6 +40,7 @@ namespace Possession
             PossessTimerUpdated = null;
             PossessPromptUpdated = null;
             SpiritDamaged = null;
+            SpiritHealed = null;
             SpiritDied = null;
             TargetHit = null;
             DoorOpened = null;
