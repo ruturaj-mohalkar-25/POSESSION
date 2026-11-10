@@ -12,7 +12,8 @@ namespace Possession
         private bool consumed;
         public bool IsReady => !consumed && Time.time >= readyAt;
         public bool Reforms => reforms;
-        private void Awake() { GetComponent<SphereCollider>().isTrigger = true; }
+        public Renderer Visual => shard;
+        private void Awake() { GetComponent<SphereCollider>().isTrigger = true; ObjectiveVisibility.Ensure(this); }
         private void Update()
         {
             if (shard == null) return;

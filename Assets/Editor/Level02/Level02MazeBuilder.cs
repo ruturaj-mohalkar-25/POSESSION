@@ -171,7 +171,7 @@ namespace Possession.Editor
             var objective=hud.transform.Find("ObjectiveBar");
             if(objective!=null)
             {
-                objective.gameObject.SetActive(false);
+                objective.gameObject.SetActive(true);
                 Set(hud,"objectiveText",objective.GetComponentInChildren<UnityEngine.UI.Text>(true));
             }
             foreach(var t in world.GetComponentsInChildren<WorldLabel>())Object.DestroyImmediate(t.gameObject);

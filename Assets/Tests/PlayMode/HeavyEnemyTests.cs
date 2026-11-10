@@ -84,7 +84,9 @@ namespace Possession.Tests
             Assert.That(levelHeavy.CurrentHP, Is.EqualTo(5));
             Assert.That(levelHeavy.GetComponent<CharacterController>(), Is.Not.Null);
             Vector3 start = levelHeavy.transform.position;
-            yield return new WaitForSeconds(0.2f);
+            float patrolDeadline = Time.time + 1.5f;
+            while (Vector3.ProjectOnPlane(levelHeavy.transform.position - start, Vector3.up).sqrMagnitude <= .01f && Time.time < patrolDeadline)
+                yield return null;
             Vector3 movement = levelHeavy.transform.position - start;
             movement.y = 0f;
             Assert.That(movement.magnitude, Is.GreaterThan(0.1f));
@@ -227,6 +229,9 @@ namespace Possession.Tests
         {
             var guard = Create("Guard", new Vector3(0f, 1f, 20f)).AddComponent<GuardEnemy>();
             Set(guard, "waypoints", new[] { Create("Guard WP", new Vector3(50f, 1f, 20f)).transform });
+            // Measure linear pace after matching headings, rather than mixing in different turn times.
+            guard.transform.rotation = Quaternion.LookRotation(Vector3.right);
+            heavy.transform.rotation = Quaternion.LookRotation(Vector3.right);
             Set(heavy, "waypoints", new[] { Create("Heavy WP", new Vector3(50f, 1f, 0f)).transform });
             // Match the Heavy fixture: otherwise fast batch-mode frames can produce
             // Guard steps below CharacterController's default minimum distance.

@@ -48,7 +48,7 @@ namespace Possession.Tests
                             &&!c.name.EndsWith("_Floor")&&!c.name.StartsWith("Hall_")).ToArray();
                     Assert.That(hits,Is.Empty,enemy.name+" must not spawn embedded in cover or a wall.");
                 }
-                Assert.That(Read<Vector3>(Camera.main.GetComponent<CameraFollow>(),"offset"),Is.EqualTo(new Vector3(0,15,-11)));
+                Assert.That(Read<Vector3>(Camera.main.GetComponent<CameraFollow>(),"offset"),Is.EqualTo(new Vector3(0,25,-18)));
                 var ammo=Object.FindFirstObjectByType<AmmoDisplay>(FindObjectsInactive.Include);
                 Assert.That(Read<Sprite>(ammo,"bulletSprite"),Is.Not.Null);Assert.That(Read<Sprite>(ammo,"hammerSprite"),Is.Not.Null);
                 if(scene==CampaignLevels.FirstScene)Assert.That(GameObject.Find("Heavy_03").transform.position.z,Is.EqualTo(14f).Within(.02f));
@@ -147,7 +147,10 @@ namespace Possession.Tests
         private static void Move(EnemyBase e,Vector3 at,Vector3 forward)
         {
             var cc=e.GetComponent<CharacterController>();cc.enabled=false;at.y=e.transform.position.y;
-            e.transform.SetPositionAndRotation(at,Quaternion.LookRotation(forward));cc.enabled=true;Physics.SyncTransforms();
+            e.transform.SetPositionAndRotation(at,Quaternion.LookRotation(forward));
+            // These combat checks use a relocated arena; saved-room leash behavior is checked separately.
+            e.ConfigureHomeBounds(new Bounds(at,Vector3.one*50f));
+            cc.enabled=true;Physics.SyncTransforms();
         }
         private static void Wall(Vector3 at)
         {

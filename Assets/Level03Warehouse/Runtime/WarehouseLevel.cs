@@ -13,6 +13,7 @@ namespace Possession.Warehouse
         [SerializeField] private Text objective;
         [SerializeField] private Renderer[] exitLights;
         private bool completed;
+        private HUDManager hud;
         public SpiritController Spirit => spirit;
         public PossessionController Possession => spirit.GetComponent<PossessionController>();
         public bool LeftReady => inspection.IsOpen && exitPassage.IsOpen;
@@ -21,7 +22,10 @@ namespace Possession.Warehouse
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.R)) RestartPreview();
-            if (objective != null) objective.text = CanExtract ? "EXIT OPEN  •  REACH THE EXIT" : "OPEN A WING  •  EACH DOOR NEEDS 3 TARGETS";
+            if (hud == null && objective != null) hud = objective.GetComponentInParent<HUDManager>();
+            string text = CanExtract ? "EXIT OPEN  •  REACH THE EXIT" : "OPEN A WING  •  EACH DOOR NEEDS 3 TARGETS";
+            if (hud != null) hud.SetLevelObjective(text);
+            else if (objective != null) objective.text = text;
             if (exitLights != null) foreach (var light in exitLights) if (light != null)
                 light.material.color = CanExtract ? new Color(.2f,1f,.65f) : new Color(1f,.65f,.18f);
         }

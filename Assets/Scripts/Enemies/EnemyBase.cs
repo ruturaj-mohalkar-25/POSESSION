@@ -11,6 +11,14 @@ namespace Possession
         [SerializeField] protected int maxHP = 3;
         [SerializeField] protected Transform[] waypoints;
 
+        [Header("Patrol feel")]
+        [SerializeField, Range(.1f, 1f)] private float patrolSpeedMultiplier = 1f;
+        [SerializeField, Min(1f)] private float turnSpeed = 720f;
+        private Quaternion idleFacing;
+        private float idleDuration;
+        private int patrolVisits;
+        public float PatrolSpeed => moveSpeed * patrolSpeedMultiplier;
+
         [Header("Shared AI")]
         [SerializeField, Min(0f)] protected float detectionRange = 5f;
         [SerializeField] protected LayerMask spiritLayer = ~0;
@@ -85,7 +93,8 @@ namespace Possession
         {
             currentHP = maxHP;
             controller = GetComponent<CharacterController>();
-            waypointWaitTimer = patrolStartDelay;
+            waypointWaitTimer = idleDuration = patrolStartDelay;
+            idleFacing = transform.rotation;
 
             // CharacterController handles collision for both AI and possessed movement.
             var legacyCollider = GetComponent<CapsuleCollider>();
@@ -165,6 +174,11 @@ namespace Possession
             if (waypointWaitTimer > 0f)
             {
                 waypointWaitTimer -= Time.deltaTime;
+                if (idleDuration > .01f)
+                {
+                    float progress = Mathf.Clamp01(1f - waypointWaitTimer / idleDuration);
+                    transform.rotation = idleFacing * Quaternion.Euler(0, Mathf.Sin(progress * Mathf.PI * 2f) * 15f, 0);
+                }
                 return;
             }
 
@@ -175,7 +189,10 @@ namespace Possession
             if (delta.magnitude <= waypointArrivalDistance)
             {
                 currentWaypointIndex = (currentWaypointIndex + 1) % waypoints.Length;
-                waypointWaitTimer = waypointWaitTime;
+                // Slightly varied pauses avoid every patrol repeating a metronomic turn.
+                float variation = .85f + .3f * Mathf.PingPong(++patrolVisits * .618f, 1f);
+                waypointWaitTimer = idleDuration = waypointWaitTime * variation;
+                idleFacing = transform.rotation;
                 return;
             }
 
@@ -348,8 +365,8 @@ namespace Possession
             float distance = delta.magnitude;
             if (distance <= stopDistance) return;
 
-            Move(delta.normalized * Mathf.Min(moveSpeed * Time.deltaTime,
-                distance - stopDistance));
+            float speed = isHostile || IsChasing ? moveSpeed : PatrolSpeed;
+            Move(delta.normalized * Mathf.Min(speed * Time.deltaTime, distance - stopDistance));
         }
 
         private void Move(Vector3 displacement)
@@ -364,7 +381,19 @@ namespace Possession
                 displacement = next - transform.position;
             }
             if (displacement.sqrMagnitude <= 0f) return;
-            transform.rotation = Quaternion.LookRotation(displacement);
+            // Keep tiny high-frame-rate movement steps; normalize facing without Vector3's cutoff.
+            Vector3 facing = displacement / displacement.magnitude;
+            if (facing.sqrMagnitude > .5f)
+            {
+                var desired = Quaternion.LookRotation(facing);
+                if (isPossessed) transform.rotation = desired;
+                else
+                {
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, desired, turnSpeed * Time.deltaTime);
+                    // Calm patrols turn before walking; chasing and player input stay responsive.
+                    if (!isHostile && !IsChasing && Quaternion.Angle(transform.rotation, desired) > 45f) return;
+                }
+            }
             controller.Move(displacement);
         }
 

@@ -22,7 +22,9 @@ Completing either original wing unlocks the exit. It accepts the living Spirit o
 
 The retained wider layout uses **0.65 metres per plan unit**. Entry is 16.9 × 11.7 m; Sorting is 16.9 × 13 m; Guard/Cargo rooms are 22.1 × 14.3 m; Inspection/Loading are 22.1 × 15.6 m; Recovery is 23.4 × 7.8 m; Service Lobby is 11.05 × 7.8 m. Main connecting passages are 6.5–7.8 m wide. Cover blocks keep their existing compact physical sizes; characters, wall heights and gameplay tuning are unchanged. Only the additional sections and their objectives are removed.
 
-The current [character/combat tuning](../../Docs/Campaign-Character-Combat-Tuning.md) is retained: characters 25% larger, 75° vision cones, Guard detection/shooting at 9/8 m and Heavy detection/attack reach at 7/3.5 m. The merged camera/HUD, shared five HP, charge rules, shooting/smashing and two-second eject protection are retained. The level clock remains seven minutes with twelve seconds per possession.
+The shared [gameplay consistency rules](../../Docs/Campaign-Gameplay-Consistency.md) apply to jumping, ejection and shield feedback. The current [character/combat tuning](../../Docs/Campaign-Character-Combat-Tuning.md) is retained: characters 25% larger, 75° vision cones, Guard detection/shooting at 9/8 m and Heavy detection/attack reach at 7/3.5 m. The merged camera/HUD, shared five HP, charge rules, shooting/smashing and two-second eject protection are retained. The level clock remains seven minutes with twelve seconds per possession.
+
+All six Warehouse NPCs use authored four-point loops with smooth turns and brief look-around pauses. Guards patrol at 2.5 m/s and chase at 5 m/s; Wall Breakers patrol at 2 m/s and chase at 4 m/s. Detection remains 9 m for Guards and 7 m for Wall Breakers, matching the other campaign stages.
 
 Warehouse NPCs retain their home-room bounds for autonomous pursuit; possessed bodies can cross rooms. Safe ejection prefers behind the host, checks capsule clearance and avoids crossing solid walls. R or Retry reloads the current scene and restores its targets, barriers, charge sources and hosts. Required defeated hosts are restored by Retry.
 
@@ -30,6 +32,6 @@ Warehouse NPCs retain their home-room bounds for autonomous pursuit; possessed b
 
 Use **Possession → Level Design → Level 3 Warehouse → Build and Open**. The builder copies the shared shell/actors, reads `Data/warehouse-layout.json`, then applies the current campaign character/combat profile. Durable layout edits belong in the JSON, because rebuilding replaces scene-only edits.
 
-**45/45 targeted PlayMode checks pass** for the wider original route. Checks cover the retained wider dimensions and object counts, physical routes for larger bodies, absence of the removed rooms/objects, both independent wings, all remaining target shots and barriers, original exit conditions, NPC rejection/occupied-body completion, retry, campaign Finish/Play Again, rear-ejection safety, shield duration and current enemy pressure.
+**232/232 full PlayMode checks pass** across the current campaign and tutorial. Checks cover the retained wider dimensions and object counts, physical routes for larger bodies, absence of the removed rooms/objects, both independent wings, all remaining target shots and barriers, original exit conditions, NPC rejection/occupied-body completion, retry, campaign Finish/Play Again, rear-ejection safety, shield duration and current enemy pressure.
 
-This layout change is local only. Human playtesting is still required to judge timing and difficulty.
+Human playtesting is still required to judge timing and difficulty.

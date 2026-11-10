@@ -22,8 +22,8 @@ namespace Possession.Tests
         }
 
         [UnityTest] public IEnumerator Level01RetainsHeavyStats() => CheckPlacement("Level_01", 1, 1.8f);
-        [UnityTest] public IEnumerator Level02HasThreeHeaviesWithPatrolAndSpeed2() => CheckPlacement("Level_02", 3, 2f);
-        [UnityTest] public IEnumerator Level03HasTwoHeaviesWithPatrolAndSpeed22() => CheckPlacement("Level_03", 2, 2.2f);
+        [UnityTest] public IEnumerator Level02HasThreeHeaviesWithSharedMovement() => CheckPlacement("Level_02", 3, 4f);
+        [UnityTest] public IEnumerator Level03HasTwoHeaviesWithSharedMovement() => CheckPlacement("Level_03", 2, 4f);
         // Level02ChargeMazeTests exercises both replacement Level 2 solutions with charge collection.
         [UnityTest] public IEnumerator Level03HeaviesSmashBothWallsAndSpiritFinishes() => CheckPuzzle("Level_03");
 
@@ -66,6 +66,7 @@ namespace Possession.Tests
         private static IEnumerator CheckPlacement(string name, int count, float speed)
         {
             yield return Load(name);
+            Object.FindFirstObjectByType<SpiritController>().SetVisible(false); // Observe patrol, not a nearby-player chase/stop.
             var heavies = Heavies();
             Assert.That(heavies.Length, Is.EqualTo(count));
             if (name != "Level_01") Assert.That(Walls().Length, Is.EqualTo(name == "Level_02" ? 2 : count));
@@ -91,8 +92,7 @@ namespace Possession.Tests
                 }
                 if (name != "Level_01")
                 {
-                    int index = heavy.name.EndsWith("02") ? 2 : 1;
-                    var marker = GameObject.Find(name == "Level_02" ? "SpawnPoint_" + heavy.name : "SpawnPoint_Heavy_0" + index);
+                    var marker = GameObject.Find("SpawnPoint_" + heavy.name);
                     Assert.That(heavy.transform.position.x, Is.EqualTo(marker.transform.position.x).Within(.1f));
                     Assert.That(heavy.transform.position.z, Is.EqualTo(marker.transform.position.z).Within(.1f));
                     Assert.That(Physics.SphereCast(points[0].position, .65f,
@@ -101,12 +101,19 @@ namespace Possession.Tests
                         QueryTriggerInteraction.Ignore), Is.False, "Patrol segment must clear the room walls.");
                 }
             }
-            yield return new WaitForSeconds(heavies.Max(h => h.PatrolStartDelay) + 1.3f);
-            for (int i = 0; i < heavies.Length; i++)
+            var moved = new bool[heavies.Length];
+            float deadline = Time.time + heavies.Max(h => h.PatrolStartDelay) + 4f;
+            while (moved.Any(value => !value) && Time.time < deadline)
             {
-                Vector3 displacement = heavies[i].transform.position - positions[i]; displacement.y = 0;
-                Assert.That(displacement.magnitude, Is.GreaterThan(.15f), heavies[i].name + " did not patrol.");
+                for (int i = 0; i < heavies.Length; i++)
+                {
+                    Vector3 displacement = heavies[i].transform.position - positions[i]; displacement.y = 0;
+                    moved[i] |= displacement.magnitude > .15f;
+                }
+                yield return null;
             }
+            for (int i = 0; i < heavies.Length; i++)
+                Assert.That(moved[i], Is.True, heavies[i].name + " did not patrol after its pause and turn.");
         }
 
         private static IEnumerator CheckPuzzle(string name)
@@ -142,7 +149,8 @@ namespace Possession.Tests
                         .FirstOrDefault(p => p.IsReady);
                     if (pickup != null) { spirit.RestoreAt(pickup.transform.position + Vector3.up); Physics.SyncTransforms(); pickup.TryCollect(charge); }
                 }
-                if (i < walls.Length - 1) Assert.That(Object.FindFirstObjectByType<LevelExit>().IsReady, Is.False);
+                var gate = Object.FindFirstObjectByType<LevelExit>();
+                Assert.That(gate.IsReady, Is.EqualTo(Read<BreakableWall>(gate, "breakableWall").CurrentHP <= 0));
             }
             Assert.That(Object.FindFirstObjectByType<LevelExit>().IsReady, Is.True);
             var exit = Object.FindFirstObjectByType<LevelExit>();
@@ -158,7 +166,11 @@ namespace Possession.Tests
         }
         private static HeavyEnemy[] Heavies() => Object.FindObjectsByType<HeavyEnemy>(FindObjectsSortMode.None).OrderBy(h => h.name).ToArray();
         private static BreakableWall[] Walls() => Object.FindObjectsByType<BreakableWall>(FindObjectsSortMode.None).OrderByDescending(w => w.transform.position.z).ToArray();
-        private static void FreezeHeavies() { foreach (var heavy in Heavies()) heavy.enabled = false; }
+        private static void FreezeHeavies()
+        {
+            foreach (var enemy in Object.FindObjectsByType<EnemyBase>(FindObjectsSortMode.None)) enemy.enabled = false;
+            foreach (var attack in Object.FindObjectsByType<EnemyContactDamage>(FindObjectsSortMode.None)) attack.enabled = false;
+        }
         private static void Move(HeavyEnemy heavy, Vector3 position, Vector3 forward)
         {
             var cc = heavy.GetComponent<CharacterController>(); cc.enabled = false;

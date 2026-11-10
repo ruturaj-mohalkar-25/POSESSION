@@ -89,6 +89,7 @@ namespace Possession.Tests
                 Create("Patrol WP", new Vector3(-20f, 1f, 0f)).transform });
             SetBase(guard, "loseSightSearchTime", 0.6f);
             Set(attack, "spotReactionTime", 5f);
+            SetBase(guard, "detectionRange", 8f); // Keep the search fixture inside its configured detection range.
             var spirit = CreateSpirit(new Vector3(6f, 1f, 0f));
 
             yield return new WaitForSeconds(0.3f);
@@ -118,6 +119,7 @@ namespace Possession.Tests
         public IEnumerator SpottingAgainDuringSearchResumesChase()
         {
             SetBase(guard, "loseSightSearchTime", 2f);
+            SetBase(guard, "detectionRange", 8f); // Keep the search fixture inside its configured detection range.
             var spirit = CreateSpirit(new Vector3(6f, 1f, 0f));
             yield return new WaitForSeconds(0.2f);
 

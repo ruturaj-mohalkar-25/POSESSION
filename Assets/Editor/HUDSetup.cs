@@ -105,7 +105,7 @@ namespace Possession.Editor
             SetupMainMenu();
         }
 
-        static void StyleHUD(HUDManager hud)
+        public static void StyleHUD(HUDManager hud)
         {
             var canvas = hud.transform;
             var so = new SerializedObject(hud);

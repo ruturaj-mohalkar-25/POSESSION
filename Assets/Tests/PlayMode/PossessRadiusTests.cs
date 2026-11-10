@@ -47,10 +47,10 @@ namespace Possession.Tests
         }
 
         [Test]
-        public void PossessRangeDefaultIs7()
+        public void PossessRangeDefaultIs5()
         {
             float range = Read<float>(possession, "possessRange");
-            Assert.That(range, Is.EqualTo(7f));
+            Assert.That(range, Is.EqualTo(5f));
         }
 
         [Test]
@@ -63,15 +63,15 @@ namespace Possession.Tests
         }
 
         [UnityTest]
-        public IEnumerator EnemyAt6fIsDetectedAsPossessable()
+        public IEnumerator EnemyAt4fIsDetectedAsPossessable()
         {
-            var enemy = CreateEnemy(new Vector3(6f, 1f, 0f));
+            var enemy = CreateEnemy(new Vector3(4f, 1f, 0f));
             Physics.SyncTransforms();
             yield return null;
 
             var nearest = CallFindNearest();
             Assert.That(nearest, Is.Not.Null,
-                "Enemy at 6f should be within the 7f possess range");
+                "Enemy at 4f should be within the shared 5f possess range");
         }
 
         [UnityTest]
@@ -114,9 +114,9 @@ namespace Possession.Tests
         }
 
         [UnityTest]
-        public IEnumerator ReadabilityCueAppearsAt6f()
+        public IEnumerator ReadabilityCueAppearsAt4f()
         {
-            var enemy = CreateEnemy(new Vector3(6f, 1f, 0f));
+            var enemy = CreateEnemy(new Vector3(4f, 1f, 0f));
             var cue = enemy.GetComponent<EnemyReadability>();
             Physics.SyncTransforms();
             yield return null;
@@ -124,7 +124,7 @@ namespace Possession.Tests
 
             var mode = Read<EnemyReadability.Mode>(cue, "mode");
             Assert.That(mode, Is.EqualTo(EnemyReadability.Mode.Possessable),
-                "Green cue should show on enemy within 7f range");
+                "Green cue should show on enemy within 5f range");
         }
 
         [UnityTest]
@@ -137,7 +137,7 @@ namespace Possession.Tests
 
             var mode = Read<EnemyReadability.Mode>(cue, "mode");
             Assert.That(mode, Is.EqualTo(EnemyReadability.Mode.None),
-                "No cue should show on enemy well beyond 7f range");
+                "No cue should show on enemy well beyond 5f range");
         }
 
         private GuardEnemy CreateEnemy(Vector3 position)

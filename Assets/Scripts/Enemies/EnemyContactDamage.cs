@@ -92,6 +92,8 @@ namespace Possession
 
         private void Update()
         {
+            if (Time.timeScale <= 0f || GameManager.Instance != null && GameManager.Instance.CurrentState != LevelState.InProgress) return;
+
             if (blinkUntil > 0f && Time.time >= blinkUntil && smashAt <= 0f)
             {
                 blinkUntil = 0f;
