@@ -233,6 +233,9 @@ function renderCards(sessions, timings) {
   const avgPoss = sessions.reduce((s, d) => s + (d.possessionCount || 0), 0) / total;
   const avgStars = sessions.reduce((s, d) => s + (d.stars || 0), 0) / total;
   const totalDeaths = timings.filter(t => t.outcome === 'Died').length;
+  const totalForced = sessions.reduce((s, d) => s + (d.forcedEjectCount || 0), 0);
+  const totalPossessions = sessions.reduce((s, d) => s + (d.possessionCount || 0), 0);
+  const forcedRate = totalPossessions > 0 ? ((totalForced / totalPossessions) * 100).toFixed(0) : '0';
   const completions = timings.filter(t => t.outcome === 'Completed').length;
   const completionRate = totalTimings > 0 ? ((completions / totalTimings) * 100).toFixed(0) : '0';
   const uniqueDays = new Set(sessions.map(s => (s.timestamp || '').slice(0, 10)).filter(Boolean)).size;
@@ -244,6 +247,7 @@ function renderCards(sessions, timings) {
     <div class="card"><div class="card-label">Avg Completion</div><div class="card-value">${fmt(avgTime)}</div></div>
     <div class="card"><div class="card-label">Avg Possessions</div><div class="card-value">${avgPoss.toFixed(1)}</div><div class="card-detail">per completed level</div></div>
     <div class="card"><div class="card-label">Avg Stars</div><div class="card-value" style="color:var(--orange)">${avgStars.toFixed(1)}</div><div class="card-detail">out of 3</div></div>
+    <div class="card"><div class="card-label">Forced Eject Rate</div><div class="card-value" style="color:${forcedRate > 35 ? 'var(--red)' : forcedRate > 15 ? 'var(--orange)' : 'var(--green)'}">${forcedRate}%</div><div class="card-detail">target: 15-35%</div></div>
     <div class="card"><div class="card-label">Deaths</div><div class="card-value" style="color:var(--red)">${totalDeaths}</div></div>
   `;
 }
@@ -316,6 +320,8 @@ function renderDiffCharts(timings) {
     <div class="chart-box full-width"><div class="chart-title">Attempt Outcomes by Level</div><div class="chart-subtitle">How attempts end: completed, died, failed, or abandoned</div><div class="chart-container tall"><canvas id="c-outcomes"></canvas></div></div>
     <div class="chart-box"><div class="chart-title">Deaths by Level</div><div class="chart-container"><canvas id="c-deaths"></canvas></div></div>
     <div class="chart-box"><div class="chart-title">Time to First Possession</div><div class="chart-subtitle">Seconds before the player possesses for the first time</div><div class="chart-container"><canvas id="c-first-possess"></canvas></div></div>
+    <div class="chart-box"><div class="chart-title">Forced Eject Rate by Level</div><div class="chart-subtitle">% of possessions ending in forced eject (target: 15-35%)</div><div class="chart-container"><canvas id="c-eject-rate"></canvas></div></div>
+    <div class="chart-box"><div class="chart-title">Avg Time per Objective Step</div><div class="chart-subtitle">Seconds spent on each puzzle step</div><div class="chart-container"><canvas id="c-obj-time"></canvas></div></div>
   `;
 
   const labels = REAL_LEVELS.map(label);
@@ -364,6 +370,46 @@ function renderDiffCharts(timings) {
     }]},
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => v + 's' } } } }
   });
+
+  // Forced eject rate by level (needs sessions data, passed via closure)
+  if (window._realSessions) {
+    const ejectData = REAL_LEVELS.map(l => {
+      const lvs = window._realSessions.filter(s => s.levelName === l);
+      const totalP = lvs.reduce((sum, s) => sum + (s.possessionCount || 0), 0);
+      const totalF = lvs.reduce((sum, s) => sum + (s.forcedEjectCount || 0), 0);
+      return totalP > 0 ? +((totalF / totalP) * 100).toFixed(1) : 0;
+    });
+    make('c-eject-rate', {
+      type: 'bar',
+      data: { labels, datasets: [{
+        label: 'Forced eject %',
+        data: ejectData,
+        backgroundColor: ejectData.map(v => v > 35 ? '#f85149' : v > 15 ? '#d29922' : '#3fb950')
+      }]},
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, annotation: {} }, scales: { y: { beginAtZero: true, max: Math.max(50, ...ejectData) + 10, ticks: { callback: v => v + '%' } } } }
+    });
+  }
+
+  // Avg time per objective step
+  const objLevels = REAL_LEVELS;
+  const maxObjSteps = 4;
+  const objTimeData = objLevels.map(lv => {
+    const lvt = timings.filter(t => t.levelName === lv && t.objectives && t.objectives.length > 0);
+    const steps = [];
+    for (let s = 0; s < maxObjSteps; s++) {
+      const durations = lvt.map(t => (t.objectives[s] && t.objectives[s].durationSeconds) || 0).filter(d => d > 0);
+      steps.push(durations.length > 0 ? +(durations.reduce((a, b) => a + b, 0) / durations.length).toFixed(1) : 0);
+    }
+    return steps;
+  });
+  const objColors = ['#58a6ff', '#58a6ff', '#3fb950', '#d29922', '#bc8cff'];
+  make('c-obj-time', {
+    type: 'bar',
+    data: { labels: ['Step 1', 'Step 2', 'Step 3', 'Step 4'], datasets: objLevels.map((lv, i) => ({
+      label: label(lv), data: objTimeData[i], backgroundColor: objColors[i]
+    }))},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }, scales: { y: { beginAtZero: true, ticks: { callback: v => v + 's' } } } }
+  });
 }
 
 function renderEngageCharts(sessions, timings) {
@@ -397,7 +443,7 @@ function renderEngageCharts(sessions, timings) {
   });
 
   // Objective funnel -- for each level, what % of attempts complete step 1, step 2, step 3...
-  const funnelLevels = ['Level_01', 'Level_02', 'Level_03'];
+  const funnelLevels = REAL_LEVELS;
   const maxSteps = 4;
   const funnelData = funnelLevels.map(lv => {
     const lvt = timings.filter(t => t.levelName === lv && t.objectives && t.objectives.length > 0);
@@ -410,7 +456,7 @@ function renderEngageCharts(sessions, timings) {
     return steps;
   });
   const stepLabels = ['Step 1', 'Step 2', 'Step 3', 'Step 4'];
-  const fColors = ['#58a6ff', '#3fb950', '#d29922'];
+  const fColors = ['#58a6ff', '#58a6ff', '#3fb950', '#d29922', '#bc8cff'];
   make('c-funnel', {
     type: 'bar',
     data: { labels: stepLabels.slice(0, maxSteps), datasets: funnelLevels.map((lv, i) => ({
@@ -487,6 +533,7 @@ async function loadAll() {
     const realTimings = timings.filter(t => isReal(t.levelName));
     renderCards(realSessions, realTimings);
     renderPerfCharts(realSessions);
+    window._realSessions = realSessions;
     renderDiffCharts(realTimings);
     renderEngageCharts(realSessions, realTimings);
     renderSessionTable(sessions);
