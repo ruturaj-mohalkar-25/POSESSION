@@ -12,4 +12,4 @@ The campaign builders apply this presentation through their existing final comba
 
 Unity **6000.3.22f1**: **232/232 full PlayMode tests passed**, no failures or skips. The three new checks cover saved door/target bindings and physical blockers in every campaign stage, target-specific unlocking and lamp feedback, animated full-width clearance, single unlock events, pause and retry reset. Graphic previews capture closed and open doors in all three stages.
 
-Changes remain local; no push or PR was made.
+Review branch: `Omkar/objective-visibility-ui`.

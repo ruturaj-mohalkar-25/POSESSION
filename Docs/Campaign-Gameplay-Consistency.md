@@ -52,4 +52,4 @@ Target-locked doors now share Warehouse's sliding-panel animation, target lamps,
 
 Stop Play Mode, reopen MainMenu, enter Play and click inside Game view. In each stage: jump repeatedly as Spirit, possess a Guard from outside its cone, shoot a target, manually eject and immediately jump. Repeat with Heavy and smash a wall. Let possession expire, check the two-second cyan shield and then restored damage, and try ejection beside a wall. Verify charges, HP, retry and stage progression. Watch the final Level 1 Guard complete a return trip in the right corridor and check that Warehouse patrols circle their rooms, pause and turn smoothly. Hunted's C checkpoint and R restart remain available.
 
-Changes are local on Omkar/objective-visibility-ui. No push or PR update was made.
+Review branch: `Omkar/objective-visibility-ui`, based on integration `f5ee9d3`.

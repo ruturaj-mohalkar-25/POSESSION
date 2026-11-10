@@ -12,4 +12,4 @@ Unity 6000.3.22f1: **232/232 full PlayMode checks pass**, no failures or skips. 
 
 Graphic previews checked all three HUDs, naturally obscured targets/shards and a controlled fully occluded target. With a solid wall in front, its visible red pixels changed from zero to 11,004 when the silhouette was enabled. The independent projectile check confirms the wall still blocks the shot. The current full gameplay validation is documented in [gameplay consistency](Campaign-Gameplay-Consistency.md).
 
-Stop Play Mode and reopen MainMenu or the desired campaign scene before testing saved asset changes. Screenshots and logs are retained in local QA artifacts. No remote push is made for this local work.
+Stop Play Mode and reopen MainMenu or the desired campaign scene before testing saved asset changes. Screenshots and logs are retained in local QA artifacts.

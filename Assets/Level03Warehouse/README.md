@@ -34,4 +34,4 @@ Use **Possession → Level Design → Level 3 Warehouse → Build and Open**. Th
 
 **232/232 full PlayMode checks pass** across the current campaign and tutorial. Checks cover the retained wider dimensions and object counts, physical routes for larger bodies, absence of the removed rooms/objects, both independent wings, all remaining target shots and barriers, original exit conditions, NPC rejection/occupied-body completion, retry, campaign Finish/Play Again, rear-ejection safety, shield duration and current enemy pressure.
 
-This layout change is local only. Human playtesting is still required to judge timing and difficulty.
+Human playtesting is still required to judge timing and difficulty.
