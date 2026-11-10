@@ -1,20 +1,21 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 namespace Possession
 {
     // Cues that sit on the possessed body instead of the screen corners:
     // the body turns white (possession colour) and its name tag hides,
-    // the possession timer floats above it, a short ability hint shows under it,
+    // the circular possession timer and a short ability hint sit below it,
     // and a possessed Guard draws an aim line toward the cursor.
+    [DefaultExecutionOrder(100)] // Position cues after CameraFollow has moved the camera.
     public class PossessionCues : MonoBehaviour
     {
         [Header("Possessed body")]
         [SerializeField] private Material possessedMaterial; // white, like the Spirit; hats and tools keep their colours
 
-        [Header("Timer above the body")]
-        [SerializeField] private RectTransform timerGroup; // HUDManager still drives its fill and text
-        [SerializeField] private float timerHeight = 2.4f;
+        [Header("Timer below the body")]
+        [SerializeField] private RectTransform timerGroup; // HUDManager drives the circular countdown
 
         [Header("Ability hint")]
         [SerializeField] private Text hintText;
@@ -38,11 +39,33 @@ namespace Possession
         private Renderer bodyRenderer;
         private Material bodyMaterial;
         private GameObject hiddenLabel;
+        private CanvasGroup timerVisibility;
+        private Material aimMaterial;
+        private Canvas groundCanvas;
+        private readonly Vector3[] timerCorners = new Vector3[4];
 
         private void Awake()
         {
             canvas = GetComponentInParent<Canvas>();
             aimLine = CreateAimLine();
+            if (timerGroup != null)
+            {
+                timerVisibility = timerGroup.GetComponent<CanvasGroup>();
+                if (timerVisibility == null) timerVisibility = timerGroup.gameObject.AddComponent<CanvasGroup>();
+                var ground = new GameObject("Possession Ground Ring", typeof(RectTransform), typeof(Canvas));
+                SceneManager.MoveGameObjectToScene(ground, gameObject.scene);
+                ground.layer = 2;
+                groundCanvas = ground.GetComponent<Canvas>();
+                groundCanvas.renderMode = RenderMode.WorldSpace;
+                groundCanvas.worldCamera = Camera.main;
+                groundCanvas.GetComponent<RectTransform>().sizeDelta = new Vector2(52f, 52f);
+                ground.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+                ground.transform.localScale = Vector3.one * 0.035f;
+                timerGroup.SetParent(ground.transform, false);
+                timerGroup.anchorMin = timerGroup.anchorMax = new Vector2(0.5f, 0.5f);
+                timerGroup.anchoredPosition3D = Vector3.zero;
+                timerGroup.localRotation = Quaternion.identity;
+            }
         }
 
         private void OnEnable()
@@ -52,6 +75,12 @@ namespace Possession
             EventBus.LevelCompleted += Clear;
             EventBus.LevelFailed += Clear;
             EventBus.SpiritDied += Clear;
+            EventBus.GameComplete += Clear;
+            var hud = GetComponent<HUDManager>();
+            var possession = hud != null ? hud.PlayerPossession : null;
+            if (possession != null && possession.PossessedEnemy != null
+                && (GameManager.Instance == null || GameManager.Instance.CurrentState == LevelState.InProgress))
+                OnPossessed(possession.PossessedEnemy, possession.CurrentState);
         }
 
         private void OnDisable()
@@ -61,6 +90,15 @@ namespace Possession
             EventBus.LevelCompleted -= Clear;
             EventBus.LevelFailed -= Clear;
             EventBus.SpiritDied -= Clear;
+            EventBus.GameComplete -= Clear;
+            Clear();
+        }
+
+        private void OnDestroy()
+        {
+            if (aimLine != null) Destroy(aimLine.gameObject);
+            if (aimMaterial != null) Destroy(aimMaterial);
+            if (groundCanvas != null) Destroy(groundCanvas.gameObject);
         }
 
         private void Start()
@@ -72,6 +110,7 @@ namespace Possession
         {
             Clear();
             possessed = enemy;
+            if (timerVisibility != null) timerVisibility.alpha = enemy != null ? 1f : 0f;
             shoot = enemy != null ? enemy.GetComponent<ShootAbility>() : null;
             if (enemy != null)
             {
@@ -125,6 +164,7 @@ namespace Possession
             hintTimer = 0f;
             if (hintText != null) hintText.gameObject.SetActive(false);
             if (aimLine != null) aimLine.enabled = false;
+            if (timerVisibility != null) timerVisibility.alpha = 0f;
         }
 
         private void LateUpdate()
@@ -132,26 +172,55 @@ namespace Possession
             if (possessed == null || !possessed.isActiveAndEnabled)
             {
                 if (aimLine != null) aimLine.enabled = false;
+                if (timerVisibility != null) timerVisibility.alpha = 0f;
+                if (hintText != null) { var tint = hintText.color; tint.a = 0f; hintText.color = tint; }
                 return;
             }
             if (cam == null) cam = Camera.main;
             if (cam == null) return;
+            if (groundCanvas != null) groundCanvas.worldCamera = cam;
 
-            // Overlay canvas works in screen pixels
-            if (timerGroup != null)
-                PlaceAt(timerGroup, possessed.transform.position + Vector3.up * timerHeight, 0f);
+            Vector3 feet = possessed.transform.position;
+            if (bodyRenderer != null) feet.y = bodyRenderer.bounds.min.y;
+            Vector3 viewport = cam.WorldToViewportPoint(feet);
+            bool visible = viewport.z > 0f && viewport.x >= 0f && viewport.x <= 1f
+                && viewport.y >= 0f && viewport.y <= 1f;
+            if (timerVisibility != null) timerVisibility.alpha = visible ? 1f : 0f;
+
+            // The countdown lies on the floor around the host's feet, like the reference.
+            if (groundCanvas != null)
+            {
+                float floor = float.NegativeInfinity;
+                foreach (var hit in Physics.RaycastAll(feet + Vector3.up * 0.5f, Vector3.down, 3f,
+                    1 << 0, QueryTriggerInteraction.Ignore))
+                    if (hit.normal.y > 0.5f && hit.point.y <= feet.y + 0.1f)
+                    floor = Mathf.Max(floor, hit.point.y);
+                if (float.IsNegativeInfinity(floor)) floor = feet.y;
+                groundCanvas.transform.position = new Vector3(feet.x, floor + 0.04f, feet.z);
+            }
 
             if (hintText != null && hintText.gameObject.activeSelf)
             {
                 hintTimer -= Time.unscaledDeltaTime;
-                PlaceAt(hintText.rectTransform, possessed.transform.position, -hintDrop);
+                float drop = hintDrop;
+                if (timerGroup != null)
+                {
+                    timerGroup.GetWorldCorners(timerCorners);
+                    float bottom = float.PositiveInfinity;
+                    foreach (var corner in timerCorners) bottom = Mathf.Min(bottom, cam.WorldToScreenPoint(corner).y);
+                    float scale = canvas != null ? canvas.scaleFactor : 1f;
+                    drop = Mathf.Max(drop, (cam.WorldToScreenPoint(feet).y - bottom) / scale
+                        + hintText.rectTransform.rect.height * 0.5f + 8f);
+                }
+                PlaceAt(hintText.rectTransform, feet, -drop);
                 var c = hintText.color;
-                c.a = Mathf.Clamp01(hintTimer / hintFadeTime);
+                c.a = visible ? Mathf.Clamp01(hintTimer / hintFadeTime) : 0f;
                 hintText.color = c;
                 if (hintTimer <= 0f) hintText.gameObject.SetActive(false);
             }
 
             UpdateAimLine();
+            if (!visible && aimLine != null) aimLine.enabled = false;
         }
 
         private void PlaceAt(RectTransform rect, Vector3 world, float screenOffsetY)
@@ -159,7 +228,23 @@ namespace Possession
             Vector3 screen = cam.WorldToScreenPoint(world);
             if (screen.z <= 0f) return;
             float scale = canvas != null ? canvas.scaleFactor : 1f;
-            rect.position = new Vector3(screen.x, screen.y + screenOffsetY * scale, 0f);
+            Vector2 point = new Vector2(screen.x, screen.y + screenOffsetY * scale);
+            if (canvas != null && canvas.renderMode == RenderMode.ScreenSpaceCamera)
+            {
+                // Use canvas coordinates: its world plane follows the camera later in the frame.
+                var root = canvas.transform as RectTransform;
+                Rect pixels = canvas.pixelRect;
+                Vector2 normalized = new Vector2((point.x - pixels.x) / pixels.width,
+                    (point.y - pixels.y) / pixels.height);
+                rect.position = root.TransformPoint(root.rect.min + Vector2.Scale(normalized, root.rect.size));
+            }
+            else if (canvas != null && canvas.renderMode == RenderMode.WorldSpace)
+            {
+                if (RectTransformUtility.ScreenPointToWorldPointInRectangle(
+                    canvas.transform as RectTransform, point, canvas.worldCamera, out Vector3 position))
+                    rect.position = position;
+            }
+            else rect.position = new Vector3(point.x, point.y, 0f);
         }
 
         // Same aim as ShootAbility: the point on the ground under the cursor, flattened
@@ -192,13 +277,15 @@ namespace Possession
         private LineRenderer CreateAimLine()
         {
             var go = new GameObject("AimLine");
+            go.transform.SetParent(transform, false);
             var line = go.AddComponent<LineRenderer>();
             line.positionCount = 2;
             line.useWorldSpace = true;
             line.startWidth = aimStartWidth;
             line.endWidth = aimEndWidth;
             line.numCapVertices = 4; // rounded ends read as a beam rather than a hairline
-            line.material = new Material(Shader.Find("Sprites/Default"));
+            aimMaterial = new Material(Shader.Find("Sprites/Default"));
+            line.sharedMaterial = aimMaterial;
             line.startColor = aimColor;
             line.endColor = new Color(aimColor.r, aimColor.g, aimColor.b, aimColor.a * 0.25f);
             line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;

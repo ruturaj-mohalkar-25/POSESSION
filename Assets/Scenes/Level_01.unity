@@ -6643,7 +6643,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Possession.Runtime::Possession.CameraFollow
   target: {fileID: 0}
-  offset: {x: 0, y: 25, z: -13}
+  offset: {x: 0, y: 15, z: -11}
   smoothSpeed: 5
 --- !u!81 &1310986021
 AudioListener:
@@ -12470,9 +12470,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Possession.Runtime::Possession.AmmoDisplay
   pipRow: {fileID: 40200557}
   pipSprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
-  pipSize: 22
-  pipSpacing: 8
-  cursorOffset: {x: 28, y: -28}
+  hammerSprite: {fileID: 21300000, guid: e62741ea7062b47f4846449af52bfa8d, type: 3}
+  bulletSprite: {fileID: 21300000, guid: ac5695de3344a47e2b8642689ff9843a, type: 3}
+  pipSize: 56
+  pipSpacing: 2
+  cursorOffset: {x: 32, y: -32}
   fullColor: {r: 1, g: 0.85, b: 0.3, a: 1}
   spentColor: {r: 1, g: 1, b: 1, a: 0.2}
 --- !u!224 &2118441110

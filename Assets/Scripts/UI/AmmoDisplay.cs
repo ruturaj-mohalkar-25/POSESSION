@@ -19,6 +19,7 @@ namespace Possession
 
         private readonly List<Image> pips = new List<Image>();
         private Canvas canvas;
+        private readonly Vector3[] corners = new Vector3[4];
 
         public void Show(int left, int max)
         {
@@ -74,9 +75,38 @@ namespace Possession
         // Overlay canvas works in screen pixels; the offset is scaled like the rest of the HUD
         private void FollowCursor()
         {
+            PositionPips(Input.mousePosition);
+        }
+
+        private void PositionPips(Vector2 screenPosition)
+        {
             if (canvas == null) canvas = GetComponentInParent<Canvas>();
-            float scale = canvas != null ? canvas.scaleFactor : 1f;
-            transform.position = (Vector2)Input.mousePosition + cursorOffset * scale;
+            if (canvas == null || pipRow == null) return;
+            var root = canvas.rootCanvas.transform as RectTransform;
+            Camera uiCamera = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(root, screenPosition, uiCamera, out Vector2 cursor)) return;
+            transform.position = root.TransformPoint(cursor + cursorOffset);
+
+            // Clamp the visible symbols, rather than the old fixed-size row, inside the canvas.
+            Bounds bounds = new Bounds();
+            bool found = false;
+            foreach (var pip in pips)
+            {
+                if (!pip.gameObject.activeSelf) continue;
+                pip.rectTransform.GetWorldCorners(corners);
+                foreach (var corner in corners)
+                {
+                    Vector3 point = root.InverseTransformPoint(corner);
+                    if (!found) { bounds = new Bounds(point, Vector3.zero); found = true; }
+                    else bounds.Encapsulate(point);
+                }
+            }
+            if (!found) return;
+            Rect safe = root.rect;
+            Vector2 shift = new Vector2(
+                Mathf.Max(0f, safe.xMin + 8f - bounds.min.x) - Mathf.Max(0f, bounds.max.x - safe.xMax + 8f),
+                Mathf.Max(0f, safe.yMin + 8f - bounds.min.y) - Mathf.Max(0f, bounds.max.y - safe.yMax + 8f));
+            transform.position += root.TransformVector(shift);
         }
 
         private Image CreatePip(int index)
@@ -91,6 +121,7 @@ namespace Possession
             var img = go.GetComponent<Image>();
             img.sprite = pipSprite;
             img.raycastTarget = false;
+            img.preserveAspect = true;
             return img;
         }
     }

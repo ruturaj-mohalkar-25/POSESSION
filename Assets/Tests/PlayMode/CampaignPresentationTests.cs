@@ -97,7 +97,11 @@ namespace Possession.Tests
                 yield return Load(scene);
                 var hud = Object.FindFirstObjectByType<HUDManager>();
                 var canvases = Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None);
-                Assert.That(canvases.Length, Is.EqualTo(1), "No separate Hunted or charge canvas.");
+                Assert.That(canvases.Count(c => c.renderMode != RenderMode.WorldSpace), Is.EqualTo(1),
+                    "No separate Hunted or charge HUD canvas.");
+                var groundTimer = Read<GameObject>(hud, "possessTimerGroup").GetComponentInParent<Canvas>();
+                Assert.That(canvases.Where(c => c.renderMode == RenderMode.WorldSpace),
+                    Is.EquivalentTo(new[] { groundTimer }), "Only the owned ground timer uses a world-space canvas.");
                 var charge = Object.FindFirstObjectByType<ChargeHUD>();
                 Assert.That(charge, Is.Not.Null); Assert.That(charge.Label, Is.Not.Null);
                 Assert.That(charge.Label.GetComponentInParent<HUDManager>(), Is.SameAs(hud));

@@ -87,7 +87,7 @@ namespace Possession.Tests
             Physics.SyncTransforms(); yield return null;
             var key = guide.GetComponent<TutorialCoach>().GetComponentsInChildren<Text>(true).Single(t => t.name == "RequiredKey");
             Assert.That(key.text, Is.EqualTo("E"));
-            Invoke(guide.Possession, "Possess", guide.Guard);
+            yield return TutorialTestSupport.Possess(guide, guide.Guard, dismissCoaching: false);
             Assert.That(guide.CoachingFocus, Is.EqualTo(TutorialFocus.GuardAbility));
             float timer = guide.Possession.PossessTimer;
             yield return new WaitForSecondsRealtime(0.15f);
@@ -111,7 +111,7 @@ namespace Possession.Tests
             guide.Guard.MoveSpeed = 0f;
             guide.Spirit.RestoreAt(guide.Guard.transform.position + Vector3.back * 3f);
             yield return new WaitForSeconds(0.25f);
-            Invoke(guide.Possession, "Possess", guide.Guard);
+            yield return TutorialTestSupport.Possess(guide, guide.Guard, dismissCoaching: false);
             yield return new WaitForSecondsRealtime(0.45f);
             Canvas.ForceUpdateCanvases();
             var coach = guide.GetComponent<TutorialCoach>();
@@ -129,7 +129,7 @@ namespace Possession.Tests
         public IEnumerator PossessionClockIsVisibleBeforeThePausedCountdownExplanation()
         {
             Begin(); guide.Progress.Move(TutorialMovement.All);
-            Invoke(guide.Possession, "Possess", guide.Guard); Dismiss();
+            yield return TutorialTestSupport.Possess(guide, guide.Guard);
             Object.FindFirstObjectByType<Target>().OnHit();
             yield return null;
             Assert.That(guide.CoachingFocus, Is.EqualTo(TutorialFocus.PossessionClock));
@@ -147,7 +147,7 @@ namespace Possession.Tests
             var halo = RectTransformUtility.CalculateRelativeRectTransformBounds(root, rects.Single(r => r.name == "SpotlightHalo"));
             Assert.That(new Rect(card.min.x, card.min.y, card.size.x, card.size.y)
                 .Overlaps(new Rect(halo.min.x, halo.min.y, halo.size.x, halo.size.y)), Is.False,
-                "The explanation must leave the shared floating possession bar visible.");
+                "The explanation must leave the shared circular possession timer visible.");
             guide.ContinueCoaching();
             Assert.That(bar.localScale, Is.EqualTo(Vector3.one));
         }
@@ -167,10 +167,10 @@ namespace Possession.Tests
         public IEnumerator EnteringReadyExitFinishesEvenWhenOptionalEjectionLessonsAreIncomplete()
         {
             Begin();
-            Invoke(guide.Possession, "Possess", guide.Guard); Dismiss();
+            yield return TutorialTestSupport.Possess(guide, guide.Guard);
             Object.FindFirstObjectByType<Target>().OnHit();
             Invoke(guide.Possession, "Eject", false);
-            Invoke(guide.Possession, "Possess", guide.Heavy); Dismiss();
+            yield return TutorialTestSupport.Possess(guide, guide.Heavy);
             Object.FindFirstObjectByType<BreakableWall>().TakeDamage(2);
             Invoke(guide.Possession, "Eject", false);
             Assert.That(guide.Progress.ForcedOut, Is.False);
@@ -191,12 +191,11 @@ namespace Possession.Tests
         public IEnumerator WallBreakerPromptsAndRealSmashWorkWithoutTheGuardEjectionChecklist()
         {
             Begin();
-            Invoke(guide.Possession, "Possess", guide.Guard); Dismiss();
+            yield return TutorialTestSupport.Possess(guide, guide.Guard);
             Object.FindFirstObjectByType<Target>().OnHit();
             Invoke(guide.Possession, "Eject", false);
-            guide.Heavy.MoveSpeed = 0f;
-            guide.Spirit.RestoreAt(guide.Heavy.transform.position + Vector3.back * 2.5f);
-            Physics.SyncTransforms(); yield return null;
+            yield return TutorialTestSupport.PreparePossession(guide, guide.Heavy);
+            yield return null;
             Assert.That(guide.Progress.Movement, Is.EqualTo(TutorialMovement.None));
             Assert.That(guide.Progress.Lesson, Is.EqualTo(TutorialLesson.FindHeavy));
             var coach = guide.GetComponent<TutorialCoach>();
@@ -204,7 +203,7 @@ namespace Possession.Tests
             var label = coach.GetComponentsInChildren<Text>(true).Single(t => t.name == "Action");
             Assert.That(key.text, Is.EqualTo("E"));
             Assert.That(label.text, Is.EqualTo("WALL BREAKER"));
-            Invoke(guide.Possession, "Possess", guide.Heavy);
+            yield return TutorialTestSupport.Possess(guide, guide.Heavy, dismissCoaching: false);
             Assert.That(guide.CoachingFocus, Is.EqualTo(TutorialFocus.HeavyAbility));
             var explanation = coach.GetComponentsInChildren<Text>(true).Single(t => t.name == "FeatureExplanation");
             StringAssert.Contains("brick wall", explanation.text);
@@ -226,7 +225,7 @@ namespace Possession.Tests
         public IEnumerator WallBreakerCountdownAndForcedEjectionFollowTheCorrectEnemy()
         {
             Begin(); guide.Progress.Move(TutorialMovement.All);
-            Invoke(guide.Possession, "Possess", guide.Heavy); Dismiss();
+            yield return TutorialTestSupport.Possess(guide, guide.Heavy);
             typeof(PossessionController).GetField("possessTimer", BindingFlags.Instance | BindingFlags.NonPublic)
                 .SetValue(guide.Possession, 2.5f);
             yield return null;

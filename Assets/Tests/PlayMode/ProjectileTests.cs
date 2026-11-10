@@ -126,6 +126,47 @@ namespace Possession.Tests
                 "High-speed projectile should still hit thin wall via raycast");
         }
 
+        [UnityTest]
+        public IEnumerator EnemyShotRaycastDamagesSpiritWithoutATriggerCallback()
+        {
+            var spirit = CreateSpirit(new Vector3(0f, 1f, 3f));
+            // No projectile collider: only Projectile.Update's real raycast can register this hit.
+            var bullet = FireProjectile(new Vector3(0f, 1f, 0f), Vector3.forward);
+            bullet.AddComponent<EnemyShot>().Init(2, 6f);
+            yield return new WaitForSeconds(0.3f);
+            Assert.That(bullet == null, Is.True);
+            Assert.That(spirit.CurrentHP, Is.EqualTo(spirit.MaxHP - 2),
+                "A raycast hit must deliver enemy damage before destroying the bullet.");
+        }
+
+        [UnityTest]
+        public IEnumerator EnemyShotTriggerAndRaycastCallbacksDamageOnlyOnce()
+        {
+            var spirit = CreateSpirit(new Vector3(0f, 1f, 3f));
+            var collider = spirit.GetComponent<Collider>();
+            var bullet = FireProjectile(new Vector3(0f, 1f, 0f), Vector3.forward);
+            var shot = bullet.AddComponent<EnemyShot>(); shot.Init(1, 6f);
+            var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            typeof(EnemyShot).GetMethod("OnTriggerEnter", flags).Invoke(shot, new object[] { collider });
+            typeof(Projectile).GetMethod("HandleHit", flags).Invoke(bullet.GetComponent<Projectile>(), new object[] { collider });
+            typeof(EnemyShot).GetMethod("OnTriggerEnter", flags).Invoke(shot, new object[] { collider });
+            Assert.That(spirit.CurrentHP, Is.EqualTo(spirit.MaxHP - 1),
+                "Callbacks arriving before deferred destruction must not stack damage.");
+            yield return null;
+            Assert.That(bullet == null, Is.True);
+        }
+
+        private SpiritController CreateSpirit(Vector3 position)
+        {
+            var go = Create("Spirit", position);
+            var body = go.AddComponent<Rigidbody>();
+            body.useGravity = false; body.constraints = RigidbodyConstraints.FreezeAll;
+            go.AddComponent<CapsuleCollider>();
+            var spirit = go.AddComponent<SpiritController>();
+            Physics.SyncTransforms();
+            return spirit;
+        }
+
         private GameObject FireProjectile(Vector3 origin, Vector3 direction, float lifetime = 3f)
         {
             var go = Create("Projectile", origin);
