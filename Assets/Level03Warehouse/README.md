@@ -32,6 +32,6 @@ Warehouse NPCs retain their home-room bounds for autonomous pursuit; possessed b
 
 Use **Possession → Level Design → Level 3 Warehouse → Build and Open**. The builder copies the shared shell/actors, reads `Data/warehouse-layout.json`, then applies the current campaign character/combat profile. Durable layout edits belong in the JSON, because rebuilding replaces scene-only edits.
 
-**232/232 full PlayMode checks pass** across the current campaign and tutorial. Checks cover the retained wider dimensions and object counts, physical routes for larger bodies, absence of the removed rooms/objects, both independent wings, all remaining target shots and barriers, original exit conditions, NPC rejection/occupied-body completion, retry, campaign Finish/Play Again, rear-ejection safety, shield duration and current enemy pressure.
+**253/253 full PlayMode checks pass** across the current campaign and tutorial. Checks cover the retained wider dimensions and object counts, physical routes for larger bodies, absence of the removed rooms/objects, both independent wings, all remaining target shots and barriers, original exit conditions, NPC rejection/occupied-body completion, retry, campaign Finish/Play Again, rear-ejection safety, shield duration and current enemy pressure.
 
 Human playtesting is still required to judge timing and difficulty.

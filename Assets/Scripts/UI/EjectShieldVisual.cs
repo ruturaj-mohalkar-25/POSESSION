@@ -8,46 +8,30 @@ namespace Possession
     {
         private SpiritController spirit;
         private PossessionController possession;
-        private LineRenderer ring, arc;
         private Renderer bubble;
-        private Material lineMaterial, bubbleMaterial;
+        private Material bubbleMaterial;
         public float ProtectionSeconds => possession != null ? possession.EjectProtectionSeconds : 2f;
-        public bool IsVisible => ring != null && ring.enabled;
+        public bool IsVisible => bubble != null && bubble.enabled;
 
         private void Awake()
         {
             spirit = GetComponent<SpiritController>();
             possession = GetComponent<PossessionController>();
-            lineMaterial = new Material(Shader.Find("Sprites/Default"));
-            ring = MakeLine("Eject shield countdown", .12f);
-            arc = MakeLine("Eject shield arch", .085f);
             var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             sphere.name = "EjectShield";
+            sphere.layer = 2;
             sphere.transform.SetParent(transform, false);
-            sphere.transform.localPosition = Vector3.up * .1f;
-            sphere.transform.localScale = new Vector3(1.75f, 2.35f, 1.75f);
+            sphere.transform.localScale = Vector3.one * 1.8f;
             var collider = sphere.GetComponent<Collider>();
             collider.enabled = false;
             Destroy(collider);
             bubble = sphere.GetComponent<Renderer>();
             bubbleMaterial = new Material(Shader.Find("Sprites/Default"));
-            bubbleMaterial.color = new Color(.25f, .8f, 1f, .13f);
+            bubbleMaterial.color = new Color(.3f, .85f, 1f, .25f);
             bubble.sharedMaterial = bubbleMaterial;
             bubble.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             bubble.receiveShadows = false;
             bubble.enabled = false;
-        }
-        private LineRenderer MakeLine(string name, float width)
-        {
-            var visual = new GameObject(name);
-            visual.transform.SetParent(transform, false);
-            var line = visual.AddComponent<LineRenderer>();
-            line.useWorldSpace = false;
-            line.positionCount = 49;
-            line.widthMultiplier = width;
-            line.sharedMaterial = lineMaterial;
-            line.enabled = false;
-            return line;
         }
         private void OnEnable()
         {
@@ -58,8 +42,6 @@ namespace Possession
         {
             EventBus.Possessed -= OnPossessed;
             EventBus.Ejected -= OnEjected;
-            if (ring != null) ring.enabled = false;
-            if (arc != null) arc.enabled = false;
             if (bubble != null) bubble.enabled = false;
         }
         // Protection is granted atomically by PossessionController, before any eject callbacks.
@@ -68,26 +50,18 @@ namespace Possession
         private void LateUpdate() => Refresh();
         public void Refresh()
         {
-            if (ring == null) return;
+            if (bubble == null) return;
             bool visible = possession.CurrentState == PlayerState.Spirit && spirit.CurrentHP > 0 && spirit.IsDamageProtected
                 && (GameManager.Instance == null || GameManager.Instance.CurrentState == LevelState.InProgress);
-            ring.enabled = arc.enabled = visible;
             bubble.enabled = visible;
             if (!visible) return;
-            float remaining = Mathf.Clamp01(spirit.DamageProtectionRemaining / ProtectionSeconds);
-            var color = new Color(.35f, .9f, 1f, .65f + remaining * .35f);
-            ring.startColor = ring.endColor = arc.startColor = arc.endColor = color;
-            for (int i = 0; i < ring.positionCount; i++)
-            {
-                float angle = i * Mathf.PI * 2f * remaining / (ring.positionCount - 1);
-                ring.SetPosition(i, new Vector3(Mathf.Cos(angle) * .95f, -.9f, Mathf.Sin(angle) * .95f));
-                float arch = i * Mathf.PI / (ring.positionCount - 1);
-                arc.SetPosition(i, new Vector3(Mathf.Cos(arch) * .9f, -.85f + Mathf.Sin(arch) * 2.15f, 0f));
-            }
+            // Original ejection bubble: cyan sphere with a smooth pulse, while the real shield is active.
+            var color = bubbleMaterial.color;
+            color.a = .15f + .15f * Mathf.Sin(Time.time * 6f);
+            bubbleMaterial.color = color;
         }
         private void OnDestroy()
         {
-            if (lineMaterial != null) Destroy(lineMaterial);
             if (bubbleMaterial != null) Destroy(bubbleMaterial);
         }
     }

@@ -22,4 +22,4 @@ The wider vision mesh follows the real detection angle and range and stops at so
 
 Use **Possession → Level Design → Tune Campaign Characters and Enemy Cones** to reapply. Campaign builders use this same final authoring pass. The wider first two stages and original ten-room Warehouse route at 0.65 scale are retained without the removed extension.
 
-**232/232 full PlayMode tests pass**, with no failures or skips. All three stages were also visually checked for jumping, shield/eject behavior and native completion/replay. See [gameplay consistency](Campaign-Gameplay-Consistency.md) for the full rules, fixes, test scope and local playtest steps.
+**253/253 full PlayMode tests pass**, with no failures or skips. All three stages were also visually checked for jumping, shield/eject behavior and native completion/replay. See [gameplay consistency](Campaign-Gameplay-Consistency.md) for the full rules, fixes, test scope and local playtest steps.
