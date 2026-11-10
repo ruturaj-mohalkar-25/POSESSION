@@ -87,6 +87,9 @@ namespace Possession
 
         private void SetVisible(int index, bool visible)
         {
+            if (moteParts == null || index < 0 || index >= moteParts.Length || moteParts[index] == null)
+                return;
+
             foreach (var r in moteParts[index])
                 if (r != null) r.enabled = visible;
         }

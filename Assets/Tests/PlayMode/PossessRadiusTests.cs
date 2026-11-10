@@ -75,6 +75,17 @@ namespace Possession.Tests
         }
 
         [UnityTest]
+        public IEnumerator ColliderOverlapBeyond5fDoesNotShowAsPossessable()
+        {
+            CreateEnemy(new Vector3(5.1f, 1f, 0f));
+            Physics.SyncTransforms();
+            yield return null;
+
+            Assert.That(CallFindNearest(), Is.Null,
+                "The prompt must use the same centre-distance limit as the possession action.");
+        }
+
+        [UnityTest]
         public IEnumerator EnemyAt8fIsNotDetected()
         {
             CreateEnemy(new Vector3(8f, 1f, 0f));
@@ -83,7 +94,7 @@ namespace Possession.Tests
 
             var nearest = CallFindNearest();
             Assert.That(nearest, Is.Null,
-                "Enemy at 8f should be outside the 7f possess range");
+                "Enemy at 8f should be outside the 5f possess range");
         }
 
         [UnityTest]
