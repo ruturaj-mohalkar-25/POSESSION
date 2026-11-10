@@ -13,11 +13,10 @@ namespace Possession.Tests
         private Level02Director level;
         private PossessionController pc;
         private PossessionCharge charge;
-        private int savedStartingCharges;
         [UnitySetUp] public IEnumerator Setup()
         {
             Time.timeScale=1f;EventBus.Clear();yield return SceneManager.LoadSceneAsync("Level_02");yield return null;
-            Bind();savedStartingCharges=charge.Count;charge.Clear();Freeze();
+            Bind();Freeze();
         }
         private void Bind(){level=Object.FindFirstObjectByType<Level02Director>();pc=level.Possession;charge=level.Charge;}
         private static void Freeze()
@@ -37,12 +36,12 @@ namespace Possession.Tests
             Assert.That(Object.FindObjectsByType<HeavyEnemy>(FindObjectsSortMode.None).Length,Is.EqualTo(3));
             Assert.That(Object.FindObjectsByType<PossessionChargePickup>(FindObjectsSortMode.None).Length,Is.EqualTo(8));
             foreach(string room in new[]{"R1","R2","R3","R4","R5","R6","R7","D1","D2","D3"})Assert.That(GameObject.Find(room),Is.Not.Null);
-            Assert.That(savedStartingCharges,Is.EqualTo(1),"The beta scene must provide its intended starting charge.");
-            Assert.That(charge.Count,Is.Zero);Assert.That(pc.CanStartPossession,Is.False);Assert.That(level.CanExit,Is.False);
+            Assert.That(charge.Count,Is.EqualTo(1));Assert.That(pc.CanStartPossession,Is.True);Assert.That(level.CanExit,Is.False);
             Assert.That(Object.FindObjectsByType<HUDManager>(FindObjectsSortMode.None).Length,Is.EqualTo(1));
         }
         [Test] public void EmptySpiritCannotPossessAndInvalidAttemptsNeverSpendACollectedCharge()
         {
+            charge.Clear();
             var host=Host("Guard_Courtyard");Approach(host);Invoke(pc,"Possess",host);
             Assert.That(pc.CurrentState,Is.EqualTo(PlayerState.Spirit));
             Collect("C1");Approach(host);Set(pc,"ejectCooldownTimer",1f);Invoke(pc,"Possess",host);
@@ -55,13 +54,15 @@ namespace Possession.Tests
         }
         [Test] public void WallBlockedPossessionDoesNotSpendTheCharge()
         {
-            Collect("C1");level.Spirit.RestoreAt(Map(14.3f,11));
-            var host=Host("Guard_Courtyard");Move(host,Map(16,11),Vector3.forward);Physics.SyncTransforms();
+            Collect("C1");level.Spirit.RestoreAt(Map(14.5f,11));
+            var host=Host("Guard_Courtyard");Move(host,Map(15.7f,11),Vector3.forward);Physics.SyncTransforms();
+            float range=(float)typeof(PossessionController).GetField("possessRange",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(pc);
+            Assert.That(Vector3.Distance(host.transform.position,level.Spirit.transform.position),Is.LessThan(range),"This must test the wall rather than an out-of-range attempt.");
             Invoke(pc,"Possess",host);Assert.That(pc.CurrentState,Is.EqualTo(PlayerState.Spirit));Assert.That(charge.HasCharge,Is.True);
         }
         [Test] public void GuardVisionBlocksChargedPossessionWithoutSpendingTheShard()
         {
-            Collect("C1");var host=Host("Guard_Courtyard");Approach(host);
+            charge.Clear();Collect("C1");var host=Host("Guard_Courtyard");Approach(host);
             Vector3 towardSpirit=level.Spirit.transform.position-host.transform.position;towardSpirit.y=0f;
             host.transform.rotation=Quaternion.LookRotation(towardSpirit);Physics.SyncTransforms();
             Assert.That(host.CanSee(level.Spirit.transform),Is.True);
@@ -79,11 +80,11 @@ namespace Possession.Tests
         }
         [UnityTest] public IEnumerator FullCapacityAndOccupiedBodiesCannotWastePickups()
         {
-            Collect("C1");Collect("C2");Collect("C3");Assert.That(charge.Count,Is.EqualTo(3));
-            var optional=Pickup("C4");level.Spirit.RestoreAt(optional.transform.position+Vector3.up*1.05f);
+            Collect("C1");Collect("C2");Assert.That(charge.Count,Is.EqualTo(3));
+            var optional=Pickup("C4");level.Spirit.RestoreAt(optional.transform.position+Vector3.up*1.3f);
             Assert.That(optional.TryCollect(charge),Is.False);Assert.That(optional.IsReady,Is.True);
             var host=Host("Guard_Courtyard");Approach(host);Invoke(pc,"Possess",host);
-            level.Spirit.transform.position=optional.transform.position+Vector3.up*1.05f;
+            level.Spirit.transform.position=optional.transform.position+Vector3.up*1.3f;
             Assert.That(optional.TryCollect(charge),Is.False);Assert.That(optional.IsReady,Is.True);
             Assert.That(pc.TryEject(false),Is.True);Assert.That(charge.Count,Is.EqualTo(2));
             yield return null;
@@ -98,10 +99,10 @@ namespace Possession.Tests
         }
         [UnityTest] public IEnumerator NaturalExpiryAndHostDefeatBothReturnAnEmptyVisibleSpirit()
         {
-            Collect("C1");var host=Host("Guard_Courtyard");Approach(host);Set(pc,"possessDuration",0.05f);Invoke(pc,"Possess",host);
+            charge.Clear();Collect("C1");var host=Host("Guard_Courtyard");Approach(host);Set(pc,"possessDuration",0.05f);Invoke(pc,"Possess",host);
             yield return new WaitForSeconds(.1f);Assert.That(pc.CurrentState,Is.EqualTo(PlayerState.Spirit));Assert.That(charge.Count,Is.Zero);
             Assert.That(host.IsHostile,Is.True);
-            Collect("C2");yield return WaitForPossessionReady();var heavy=Host("Heavy_North");Approach(heavy);Set(pc,"possessDuration",10f);Invoke(pc,"Possess",heavy);
+            yield return new WaitForSeconds(2.05f);Collect("C2");var heavy=Host("Heavy_North");Approach(heavy);Set(pc,"possessDuration",10f);Invoke(pc,"Possess",heavy);
             Assert.That(pc.PossessedEnemy,Is.SameAs(heavy));heavy.TakeDamage(999);
             yield return new WaitForSeconds(.1f);
             Assert.That(pc.CurrentState,Is.EqualTo(PlayerState.Spirit));Assert.That(charge.Count,Is.Zero);Assert.That(level.Spirit.enabled,Is.True);
@@ -130,12 +131,12 @@ namespace Possession.Tests
         }
         [UnityTest] public IEnumerator NorthSolutionUsesGuardThenRechargeThenRealHeavySmash()
         {
-            Collect("C1");var guard=Host("Guard_Courtyard");Approach(guard);Invoke(pc,"Possess",guard);
+            var guard=Host("Guard_Courtyard");Approach(guard);Invoke(pc,"Possess",guard);
             yield return Walk(guard,Map(12,8),Map(12,5),Map(12.5f,4.5f));
             yield return Shoot(guard,GameObject.Find("TN").GetComponent<Target>());
             yield return Walk(guard,Map(15,3),Map(20.3f,3));
             Assert.That(pc.TryEject(false),Is.True);Assert.That(charge.HasCharge,Is.False);
-            Collect("C2");yield return WaitForPossessionReady();var heavy=Host("Heavy_North");Approach(heavy);Invoke(pc,"Possess",heavy);
+            Collect("C2");yield return new WaitForSeconds(2.05f);var heavy=Host("Heavy_North");Approach(heavy);Invoke(pc,"Possess",heavy);
             yield return Walk(heavy,Map(26,5.5f),Map(26,6));Smash(heavy,GameObject.Find("BN").GetComponent<BreakableWall>(),Vector3.back);
             Assert.That(level.NorthReady,Is.True);Assert.That(level.SouthReady,Is.False);
             Assert.That(charge.SuccessfulPossessions,Is.EqualTo(2));
@@ -144,17 +145,17 @@ namespace Possession.Tests
         }
         [UnityTest] public IEnumerator SouthSolutionUsesHeavyThenRechargeThenGuardAndAcceptsSpiritAtExit()
         {
-            Collect("C1");var heavy=Host("Heavy_Courtyard");Approach(heavy);Invoke(pc,"Possess",heavy);
+            var heavy=Host("Heavy_Courtyard");Approach(heavy);Invoke(pc,"Possess",heavy);
             yield return Walk(heavy,Map(12,16));Smash(heavy,GameObject.Find("BS").GetComponent<BreakableWall>(),Vector3.back);
             yield return Walk(heavy,Map(12,19.5f));Assert.That(pc.TryEject(false),Is.True);
-            Collect("C3");yield return WaitForPossessionReady();var guard=Host("Guard_South");Approach(guard);Invoke(pc,"Possess",guard);
+            Collect("C3");yield return new WaitForSeconds(2.05f);var guard=Host("Guard_South");Approach(guard);Invoke(pc,"Possess",guard);
             yield return Walk(guard,Map(13.3f,21));yield return Shoot(guard,GameObject.Find("TS").GetComponent<Target>());
             yield return Walk(guard,Map(16.5f,21),Map(20.3f,21));
             Assert.That(level.SouthReady,Is.True);Assert.That(level.NorthReady,Is.False);Assert.That(charge.SuccessfulPossessions,Is.EqualTo(2));
             Assert.That(pc.TryEject(false),Is.True);var exit=Object.FindFirstObjectByType<Level02Exit>();level.Spirit.RestoreAt(exit.transform.position);Physics.SyncTransforms();
             Assert.That(exit.TryFinish(level.Spirit.GetComponent<Collider>()),Is.True);
         }
-        [UnityTest] public IEnumerator CourtyardRetryResetsPuzzleHostsSourcesAndRestoresStartingChargeBeforeC1()
+        [UnityTest] public IEnumerator CourtyardRetryResetsPuzzleHostsSourcesAndRestoresStartingCharge()
         {
             level.MarkCheckpoint();Collect("C1");GameObject.Find("TN").GetComponent<Target>().OnHit();GameObject.Find("BN").GetComponent<BreakableWall>().TakeDamage(2);
             Assert.That(level.NorthReady,Is.True);Host("Guard_Courtyard").TakeDamage(999);
@@ -171,18 +172,9 @@ namespace Possession.Tests
             GameObject.Find("TN").GetComponent<Target>().OnHit();GameObject.Find("BN").GetComponent<BreakableWall>().TakeDamage(2);
             Assert.That(exit.TryFinish(Host("Heavy_Exit").GetComponent<Collider>()),Is.False);
         }
-        private IEnumerator WaitForPossessionReady()
-        {
-            float deadline = Time.realtimeSinceStartup + 3f;
-            while (!pc.CanStartPossession && Time.realtimeSinceStartup < deadline)
-                yield return null;
-            Assert.That(pc.CanStartPossession, Is.True,
-                "The real ejection cooldown must expire before the next charged possession.");
-        }
-
         private void Collect(string name)
         {
-            var p=Pickup(name);level.Spirit.RestoreAt(p.transform.position+Vector3.up*1.05f);Physics.SyncTransforms();
+            var p=Pickup(name);level.Spirit.RestoreAt(p.transform.position+Vector3.up*1.3f);Physics.SyncTransforms();
             Assert.That(p.TryCollect(charge),Is.True,name+" could not be collected");
         }
         private void Approach(EnemyBase host)
@@ -190,7 +182,7 @@ namespace Possession.Tests
             var options=new[]{-host.transform.forward,Vector3.right,Vector3.back,Vector3.left,Vector3.forward};
             foreach(var dir in options)
             {
-                var p=host.transform.position+dir*1.8f;p.y=1.15f;
+                var p=host.transform.position+dir*1.8f;p.y=level.Spirit.GetComponent<Collider>().bounds.extents.y+.15f;
                 if(Physics.OverlapCapsule(p+Vector3.up*.45f,p-Vector3.up*.45f,.5f,1<<0,QueryTriggerInteraction.Ignore)
                     .Any(c => !c.transform.IsChildOf(level.Spirit.transform)))continue;
                 level.Spirit.RestoreAt(p);Physics.SyncTransforms();
@@ -224,10 +216,11 @@ namespace Possession.Tests
             Assert.That(target.IsHit,Is.True,"The actual shared projectile did not reach "+target.name);
         }
         private static void Smash(EnemyBase body,BreakableWall wall,Vector3 forward)
-        {body.transform.rotation=Quaternion.LookRotation(forward);Physics.SyncTransforms();body.GetComponent<SmashAbility>().TryExecute();Assert.That(wall.CurrentHP,Is.LessThanOrEqualTo(0));}
+        {Move(body,wall.transform.position-forward*1.6f,forward);Physics.SyncTransforms();body.GetComponent<SmashAbility>().TryExecute();Assert.That(wall.CurrentHP,Is.LessThanOrEqualTo(0));}
         private static void Move(EnemyBase body,Vector3 at,Vector3 forward)
         {var cc=body.GetComponent<CharacterController>();cc.enabled=false;at.y=body.transform.position.y;body.transform.SetPositionAndRotation(at,Quaternion.LookRotation(forward));cc.enabled=true;Physics.SyncTransforms();}
-        private static Vector3 Map(float x,float y)=>new((x-17f)*1.6f,1.15f,(12f-y)*1.6f);
+        private static Vector3 Map(float x,float y)=>CampaignLayoutScale.FromOriginal(
+            SceneManager.GetSceneByName("Level_02"),new Vector3((x-17f)*1.6f,1.15f,(12f-y)*1.6f));
         private static EnemyBase Host(string name)=>GameObject.Find(name).GetComponent<EnemyBase>();
         private static PossessionChargePickup Pickup(string name)=>GameObject.Find(name).GetComponent<PossessionChargePickup>();
         private static void Invoke(object obj,string method,params object[] args)=>obj.GetType().GetMethod(method,BindingFlags.NonPublic|BindingFlags.Instance).Invoke(obj,args);

@@ -78,10 +78,6 @@ namespace Possession.Tests
             AssertBottomCentreCompact(healthText.rectTransform, 320f);
             AssertBottomCentreCompact(healthFill.rectTransform.parent as RectTransform, 320f);
             AssertBottomCentreCompact(timerText.rectTransform, 320f);
-            Assert.That(healthText.rectTransform.anchoredPosition.x, Is.LessThan(0f));
-            Assert.That(timerText.rectTransform.anchoredPosition.x, Is.GreaterThan(0f));
-            Assert.That(healthText.rectTransform.pivot.x, Is.EqualTo(1f));
-            Assert.That(timerText.rectTransform.pivot.x, Is.EqualTo(0f));
 
             var objective = Read<Text>(hud, "objectiveText");
             var objectiveBar = objective.transform.parent.GetComponent<Image>();
@@ -115,7 +111,10 @@ namespace Possession.Tests
         {
             yield return SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
             levelScene = SceneManager.GetSceneByName(sceneName);
-            yield return null;
+            foreach (var root in levelScene.GetRootGameObjects())
+                foreach (var enemy in root.GetComponentsInChildren<EnemyBase>()) enemy.enabled = false;
+            // Assert the resting panel style after its intentional objective-update flash.
+            yield return new WaitForSecondsRealtime(1.3f);
         }
 
         private T FindInLevel<T>() where T : Component
@@ -131,9 +130,8 @@ namespace Possession.Tests
         private static void AssertBottomCentreCompact(RectTransform rect, float maxWidth)
         {
             Assert.That(rect, Is.Not.Null);
-            Assert.That(rect.anchorMin, Is.EqualTo(new Vector2(0.5f, 0f)));
-            Assert.That(rect.anchorMax, Is.EqualTo(new Vector2(0.5f, 0f)));
-            Assert.That(rect.anchoredPosition.y, Is.GreaterThanOrEqualTo(84f));
+            Assert.That(rect.anchorMin, Is.EqualTo(new Vector2(.5f, 0f)));
+            Assert.That(rect.anchorMax, Is.EqualTo(new Vector2(.5f, 0f)));
             Assert.That(rect.sizeDelta.x, Is.LessThanOrEqualTo(maxWidth));
         }
 

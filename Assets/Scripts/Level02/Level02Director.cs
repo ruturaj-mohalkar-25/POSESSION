@@ -11,6 +11,7 @@ namespace Possession
         [SerializeField] private Vector3 courtyard;
         private static bool resumeCourtyard;
         private float nextContactHit;
+        private HUDManager hud;
         public bool CheckpointReached { get; private set; }
         public SpiritController Spirit => spirit;
         public PossessionController Possession => spirit.GetComponent<PossessionController>();
@@ -22,11 +23,8 @@ namespace Possession
         private static void ResetSession() => resumeCourtyard = false;
         private void Start()
         {
-            HUDManager hud = null;
             foreach (var root in gameObject.scene.GetRootGameObjects())
                 if (root.GetComponentInChildren<HUDManager>(true) is HUDManager found) { hud = found; break; }
-            if (hud != null && hud.transform.Find("ObjectiveBar") is Transform objectives)
-                objectives.gameObject.SetActive(false);
             if (resumeCourtyard)
             {
                 Vector3 delta = courtyard - spirit.transform.position;
@@ -34,15 +32,26 @@ namespace Possession
                 if (Camera.main != null) Camera.main.transform.position += delta;
             }
             resumeCourtyard = false;
-            gameObject.AddComponent<Level02ChargeHUD>().Initialize(this);
+            UpdateObjective();
         }
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.C) && CheckpointReached) RetryCourtyard();
             else if (Input.GetKeyDown(KeyCode.R)) FullRestart();
         }
+        private void LateUpdate() => UpdateObjective();
+        private void UpdateObjective()
+        {
+            if (hud == null) return;
+            string text = CanExit ? "ROUTE CLEAR  •  REACH THE EXIT"
+                : northDoor.IsOpen || southDoor.IsOpen ? "POSSESS HEAVY  •  BREAK A ROUTE WALL"
+                : "CHOOSE A ROUTE  •  HIT ITS TARGET";
+            if (CheckpointReached && !CanExit) text += "  •  C: RETRY";
+            hud.SetLevelObjective(text);
+        }
         public bool TryContactDamage()
         {
+            if (Time.timeScale <= 0f || GameManager.Instance != null && GameManager.Instance.CurrentState != LevelState.InProgress) return false;
             if (Time.time < nextContactHit || spirit.CurrentHP <= 0 || Possession.CurrentState != PlayerState.Spirit) return false;
             nextContactHit = Time.time + 3f;
             spirit.TakeDamage(1);

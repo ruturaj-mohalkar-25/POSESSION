@@ -11,6 +11,14 @@ namespace Possession
         [SerializeField] protected int maxHP = 3;
         [SerializeField] protected Transform[] waypoints;
 
+        [Header("Patrol feel")]
+        [SerializeField, Range(.1f, 1f)] private float patrolSpeedMultiplier = 1f;
+        [SerializeField, Min(1f)] private float turnSpeed = 720f;
+        private Quaternion idleFacing;
+        private float idleDuration;
+        private int patrolVisits;
+        public float PatrolSpeed => moveSpeed * patrolSpeedMultiplier;
+
         [Header("Shared AI")]
         [SerializeField, Min(0f)] protected float detectionRange = 5f;
         [SerializeField] protected LayerMask spiritLayer = ~0;
@@ -29,6 +37,23 @@ namespace Possession
         // and can only be possessed when it cannot see the Spirit (e.g. from behind).
         [SerializeField, Range(1f, 360f)] protected float visionAngle = 45f;
 
+        [Header("Room containment (optional)")]
+        [SerializeField] private bool useHomeBounds;
+        [SerializeField] private Bounds homeBounds;
+
+        public bool HasHomeBounds => useHomeBounds;
+        public Bounds HomeBounds => homeBounds;
+        public void ConfigureHomeBounds(Bounds bounds)
+        {
+            homeBounds = bounds;
+            useHomeBounds = true;
+        }
+        public bool IsInsideHome(Vector3 position) => !useHomeBounds
+            || position.x >= homeBounds.min.x && position.x <= homeBounds.max.x
+            && position.z >= homeBounds.min.z && position.z <= homeBounds.max.z;
+        public bool CanPursue(Transform target) => target != null
+            && (!useHomeBounds || IsInsideHome(transform.position) && IsInsideHome(target.position));
+
         protected int currentHP;
         protected bool isPossessed;
         protected bool isHostile;
@@ -45,7 +70,7 @@ namespace Possession
         public bool CanBePossessed => !isPossessed && !isHostile && currentHP > 0;
         public int CurrentHP => currentHP;
         public bool IsChasing => !isPossessed && chaseTarget != null
-            && chaseTarget.isActiveAndEnabled;
+            && chaseTarget.isActiveAndEnabled && CanPursue(chaseTarget.transform);
         public bool IsIdle => !isPossessed && !IsChasing && !IsSearching && waypointWaitTimer > 0f;
         // True while the enemy checks the Spirit's last seen position after losing sight of it.
         public bool IsSearching => !isPossessed && !isHostile && searchTimer > 0f;
@@ -68,7 +93,8 @@ namespace Possession
         {
             currentHP = maxHP;
             controller = GetComponent<CharacterController>();
-            waypointWaitTimer = patrolStartDelay;
+            waypointWaitTimer = idleDuration = patrolStartDelay;
+            idleFacing = transform.rotation;
 
             // CharacterController handles collision for both AI and possessed movement.
             var legacyCollider = GetComponent<CapsuleCollider>();
@@ -81,6 +107,13 @@ namespace Possession
             if (Time.timeScale <= 0f || (GameManager.Instance != null
                 && GameManager.Instance.CurrentState != LevelState.InProgress))
                 return;
+
+            if (!isPossessed && chaseTarget != null && !CanPursue(chaseTarget.transform))
+            {
+                chaseTarget = null;
+                searchTimer = 0f;
+                ResumePatrolAtNearestWaypoint();
+            }
 
             if (isPossessed)
             {
@@ -141,6 +174,11 @@ namespace Possession
             if (waypointWaitTimer > 0f)
             {
                 waypointWaitTimer -= Time.deltaTime;
+                if (idleDuration > .01f)
+                {
+                    float progress = Mathf.Clamp01(1f - waypointWaitTimer / idleDuration);
+                    transform.rotation = idleFacing * Quaternion.Euler(0, Mathf.Sin(progress * Mathf.PI * 2f) * 15f, 0);
+                }
                 return;
             }
 
@@ -151,7 +189,10 @@ namespace Possession
             if (delta.magnitude <= waypointArrivalDistance)
             {
                 currentWaypointIndex = (currentWaypointIndex + 1) % waypoints.Length;
-                waypointWaitTimer = waypointWaitTime;
+                // Slightly varied pauses avoid every patrol repeating a metronomic turn.
+                float variation = .85f + .3f * Mathf.PingPong(++patrolVisits * .618f, 1f);
+                waypointWaitTimer = idleDuration = waypointWaitTime * variation;
+                idleFacing = transform.rotation;
                 return;
             }
 
@@ -217,7 +258,7 @@ namespace Possession
         // True when the target is inside the vision cone and nothing solid blocks the view.
         public bool CanSee(Transform target)
         {
-            if (target == null) return false;
+            if (target == null || !CanPursue(target)) return false;
             Vector3 toTarget = target.position - transform.position;
             toTarget.y = 0f;
             float distance = toTarget.magnitude;
@@ -324,14 +365,35 @@ namespace Possession
             float distance = delta.magnitude;
             if (distance <= stopDistance) return;
 
-            Move(delta.normalized * Mathf.Min(moveSpeed * Time.deltaTime,
-                distance - stopDistance));
+            float speed = isHostile || IsChasing ? moveSpeed : PatrolSpeed;
+            Move(delta.normalized * Mathf.Min(speed * Time.deltaTime, distance - stopDistance));
         }
 
         private void Move(Vector3 displacement)
         {
+            // Only autonomous movement is contained. A possessed body may cross a doorway.
+            if (!isPossessed && useHomeBounds && IsInsideHome(transform.position))
+            {
+                float inset = controller.radius * Mathf.Max(Mathf.Abs(transform.lossyScale.x), Mathf.Abs(transform.lossyScale.z)) + .05f;
+                Vector3 next = transform.position + displacement;
+                next.x = Mathf.Clamp(next.x, homeBounds.min.x + inset, homeBounds.max.x - inset);
+                next.z = Mathf.Clamp(next.z, homeBounds.min.z + inset, homeBounds.max.z - inset);
+                displacement = next - transform.position;
+            }
             if (displacement.sqrMagnitude <= 0f) return;
-            transform.rotation = Quaternion.LookRotation(displacement);
+            // Keep tiny high-frame-rate movement steps; normalize facing without Vector3's cutoff.
+            Vector3 facing = displacement / displacement.magnitude;
+            if (facing.sqrMagnitude > .5f)
+            {
+                var desired = Quaternion.LookRotation(facing);
+                if (isPossessed) transform.rotation = desired;
+                else
+                {
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, desired, turnSpeed * Time.deltaTime);
+                    // Calm patrols turn before walking; chasing and player input stay responsive.
+                    if (!isHostile && !IsChasing && Quaternion.Angle(transform.rotation, desired) > 45f) return;
+                }
+            }
             controller.Move(displacement);
         }
 

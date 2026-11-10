@@ -53,7 +53,7 @@ namespace Possession
         [SerializeField] private GameObject gameOverPanel;
         [SerializeField] private GameObject gameCompletePanel; // after Next Level on the last level
         [SerializeField] private Text nextButtonLabel;
-        [SerializeField] private string firstLevelScene = "Level_01";
+        private string firstLevelScene => CampaignLevels.FirstScene;
 
         private float healthPct = 1f;
         private EnemyBase[] enemies;
@@ -65,6 +65,7 @@ namespace Possession
         private Coroutine objectiveRoutine;
         private Color? objectiveBarColor;
         private int objectiveStep;
+        private string levelObjective;
         private ResultsView activeResults;
         private int stars;
         private AnalyticsData? analytics;
@@ -395,6 +396,17 @@ namespace Possession
 
         // ---------------- Objective ----------------
 
+        // Branching levels supply their actual route state while using the same objective bar.
+        public void SetLevelObjective(string text)
+        {
+            if (levelEnded || objectiveText == null || levelObjective == text) return;
+            levelObjective = text;
+            objectiveText.transform.parent.gameObject.SetActive(true);
+            objectiveText.text = text;
+            if (objectiveRoutine != null) StopCoroutine(objectiveRoutine);
+            objectiveRoutine = StartCoroutine(FlashObjective());
+        }
+
         private void OnDoorOpened(Door door)
         {
             SetObjectiveStep(objectiveStep + 1);
@@ -410,7 +422,7 @@ namespace Possession
         // Every objective change flashes the bar so it's noticed even while watching the character
         private void SetObjectiveStep(int step)
         {
-            if (objectiveText == null || objectives == null || objectives.Length == 0) return;
+            if (levelObjective != null || objectiveText == null || objectives == null || objectives.Length == 0) return;
             objectiveStep = Mathf.Min(step, objectives.Length - 1);
             objectiveText.text = CompactObjective(objectives[objectiveStep]);
             if (objectiveRoutine != null) StopCoroutine(objectiveRoutine);

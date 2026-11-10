@@ -222,7 +222,7 @@ namespace Possession
 
         public void Replay() => LevelFlow.Load(TutorialScene.Name);
         public void MainMenu() => LevelFlow.Load("MainMenu");
-        public void PlayLevelOne() => LevelFlow.Load("Level_01");
+        public void PlayLevelOne() => LevelFlow.Load(CampaignLevels.FirstScene);
 
         public string Title => Progress.Lesson switch
         {

@@ -1,0 +1,7 @@
+{
+  "name": "Possession.Warehouse.Runtime",
+  "references": [
+    "Possession.Runtime"
+  ],
+  "rootNamespace": "Possession.Warehouse"
+}

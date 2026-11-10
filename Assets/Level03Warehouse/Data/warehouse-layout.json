@@ -1,0 +1,562 @@
+{
+  "unitSize": 0.65,
+  "levelSeconds": 420,
+  "possessionSeconds": 12,
+  "start": {
+    "x": 70,
+    "y": 88
+  },
+  "exit": {
+    "x": 70,
+    "y": 9
+  },
+  "rooms": [
+    {
+      "x": 57,
+      "y": 78,
+      "width": 26,
+      "depth": 18,
+      "name": "Entry"
+    },
+    {
+      "x": 57,
+      "y": 56,
+      "width": 26,
+      "depth": 20,
+      "name": "Sorting hall"
+    },
+    {
+      "x": 8,
+      "y": 53,
+      "width": 34,
+      "depth": 22,
+      "name": "Guard room"
+    },
+    {
+      "x": 8,
+      "y": 17,
+      "width": 34,
+      "depth": 24,
+      "name": "Inspection"
+    },
+    {
+      "x": 98,
+      "y": 53,
+      "width": 34,
+      "depth": 22,
+      "name": "Cargo room"
+    },
+    {
+      "x": 98,
+      "y": 17,
+      "width": 34,
+      "depth": 24,
+      "name": "Loading room"
+    },
+    {
+      "x": 57,
+      "y": 20,
+      "width": 26,
+      "depth": 18,
+      "name": "Exit hall"
+    },
+    {
+      "x": 58,
+      "y": 2,
+      "width": 24,
+      "depth": 12,
+      "name": "Exit"
+    },
+    {
+      "x": 35,
+      "y": 40,
+      "width": 17,
+      "depth": 12,
+      "name": "Service lobby"
+    },
+    {
+      "x": 52,
+      "y": 40,
+      "width": 36,
+      "depth": 12,
+      "name": "Recovery passage"
+    }
+  ],
+  "halls": [
+    {
+      "x": 64,
+      "y": 74,
+      "width": 12,
+      "depth": 6,
+      "name": ""
+    },
+    {
+      "x": 42,
+      "y": 60,
+      "width": 15,
+      "depth": 10,
+      "name": ""
+    },
+    {
+      "x": 83,
+      "y": 60,
+      "width": 15,
+      "depth": 10,
+      "name": ""
+    },
+    {
+      "x": 19,
+      "y": 41,
+      "width": 12,
+      "depth": 12,
+      "name": ""
+    },
+    {
+      "x": 109,
+      "y": 41,
+      "width": 12,
+      "depth": 12,
+      "name": ""
+    },
+    {
+      "x": 42,
+      "y": 23,
+      "width": 15,
+      "depth": 10,
+      "name": ""
+    },
+    {
+      "x": 83,
+      "y": 23,
+      "width": 15,
+      "depth": 10,
+      "name": ""
+    },
+    {
+      "x": 64,
+      "y": 14,
+      "width": 12,
+      "depth": 6,
+      "name": ""
+    },
+    {
+      "x": 25,
+      "y": 42,
+      "width": 10,
+      "depth": 10,
+      "name": ""
+    },
+    {
+      "x": 88,
+      "y": 42,
+      "width": 27,
+      "depth": 10,
+      "name": ""
+    }
+  ],
+  "covers": [
+    {
+      "x": 12,
+      "y": 60,
+      "width": 5,
+      "depth": 4,
+      "name": ""
+    },
+    {
+      "x": 32,
+      "y": 66,
+      "width": 5,
+      "depth": 4,
+      "name": ""
+    },
+    {
+      "x": 12,
+      "y": 26,
+      "width": 5,
+      "depth": 4,
+      "name": ""
+    },
+    {
+      "x": 32,
+      "y": 32,
+      "width": 5,
+      "depth": 4,
+      "name": ""
+    },
+    {
+      "x": 102,
+      "y": 60,
+      "width": 5,
+      "depth": 4,
+      "name": ""
+    },
+    {
+      "x": 122,
+      "y": 66,
+      "width": 5,
+      "depth": 4,
+      "name": ""
+    },
+    {
+      "x": 102,
+      "y": 32,
+      "width": 5,
+      "depth": 4,
+      "name": ""
+    },
+    {
+      "x": 122,
+      "y": 32,
+      "width": 5,
+      "depth": 4,
+      "name": ""
+    },
+    {
+      "x": 60,
+      "y": 59,
+      "width": 4,
+      "depth": 3,
+      "name": ""
+    },
+    {
+      "x": 76,
+      "y": 68,
+      "width": 4,
+      "depth": 3,
+      "name": ""
+    },
+    {
+      "x": 60,
+      "y": 32,
+      "width": 4,
+      "depth": 3,
+      "name": ""
+    },
+    {
+      "x": 76,
+      "y": 24,
+      "width": 4,
+      "depth": 3,
+      "name": ""
+    },
+    {
+      "x": 66,
+      "y": 43,
+      "width": 8,
+      "depth": 2,
+      "name": ""
+    }
+  ],
+  "sources": [
+    {
+      "x": 67,
+      "y": 84
+    },
+    {
+      "x": 60,
+      "y": 70
+    },
+    {
+      "x": 12,
+      "y": 57
+    },
+    {
+      "x": 12,
+      "y": 37
+    },
+    {
+      "x": 102,
+      "y": 57
+    },
+    {
+      "x": 102,
+      "y": 37
+    },
+    {
+      "x": 38,
+      "y": 49
+    },
+    {
+      "x": 59,
+      "y": 48
+    },
+    {
+      "x": 99,
+      "y": 47
+    }
+  ],
+  "actors": [
+    {
+      "kind": "Guard",
+      "name": "Sorting_hall_Guard",
+      "x": 72,
+      "y": 69,
+      "patrol": [
+        {
+          "x": 69,
+          "y": 69
+        },
+        {
+          "x": 69,
+          "y": 64
+        },
+        {
+          "x": 74,
+          "y": 64
+        },
+        {
+          "x": 74,
+          "y": 69
+        }
+      ]
+    },
+    {
+      "kind": "Guard",
+      "name": "Guard_room_Guard",
+      "x": 23,
+      "y": 66,
+      "patrol": [
+        {
+          "x": 19,
+          "y": 63
+        },
+        {
+          "x": 26,
+          "y": 63
+        },
+        {
+          "x": 26,
+          "y": 70
+        },
+        {
+          "x": 19,
+          "y": 70
+        }
+      ]
+    },
+    {
+      "kind": "Guard",
+      "name": "Inspection_Guard",
+      "x": 34,
+      "y": 28,
+      "patrol": [
+        {
+          "x": 29,
+          "y": 23
+        },
+        {
+          "x": 37,
+          "y": 23
+        },
+        {
+          "x": 37,
+          "y": 30
+        },
+        {
+          "x": 29,
+          "y": 30
+        }
+      ]
+    },
+    {
+      "kind": "Guard",
+      "name": "Cargo_room_Guard",
+      "x": 126,
+      "y": 62,
+      "patrol": [
+        {
+          "x": 121,
+          "y": 58
+        },
+        {
+          "x": 128,
+          "y": 58
+        },
+        {
+          "x": 128,
+          "y": 64
+        },
+        {
+          "x": 121,
+          "y": 64
+        }
+      ]
+    },
+    {
+      "kind": "Wall Breaker",
+      "name": "Service_lobby_Heavy",
+      "x": 45,
+      "y": 48,
+      "patrol": [
+        {
+          "x": 42,
+          "y": 48
+        },
+        {
+          "x": 42,
+          "y": 44
+        },
+        {
+          "x": 47,
+          "y": 44
+        },
+        {
+          "x": 47,
+          "y": 48
+        }
+      ]
+    },
+    {
+      "kind": "Wall Breaker",
+      "name": "Right_junction_Heavy",
+      "x": 109,
+      "y": 47,
+      "patrol": [
+        {
+          "x": 105,
+          "y": 44
+        },
+        {
+          "x": 113,
+          "y": 44
+        },
+        {
+          "x": 113,
+          "y": 50
+        },
+        {
+          "x": 105,
+          "y": 50
+        }
+      ]
+    }
+  ],
+  "barriers": [
+    {
+      "x1": 98,
+      "y1": 23,
+      "x2": 98,
+      "y2": 33,
+      "name": "Loading wall",
+      "transparent": false
+    },
+    {
+      "x1": 52,
+      "y1": 42,
+      "x2": 52,
+      "y2": 52,
+      "name": "Left recovery wall",
+      "transparent": true
+    },
+    {
+      "x1": 88,
+      "y1": 42,
+      "x2": 88,
+      "y2": 52,
+      "name": "Right recovery wall",
+      "transparent": true
+    }
+  ],
+  "partitions": [
+    {
+      "x1": 52,
+      "y1": 40,
+      "x2": 52,
+      "y2": 42
+    }
+  ],
+  "doors": [
+    {
+      "x1": 19,
+      "y1": 53,
+      "x2": 31,
+      "y2": 53,
+      "key": "inspection",
+      "name": "Inspection door",
+      "targets": [
+        {
+          "x": 10,
+          "y": 68
+        },
+        {
+          "x": 40,
+          "y": 60
+        },
+        {
+          "x": 30,
+          "y": 73
+        }
+      ]
+    },
+    {
+      "x1": 109,
+      "y1": 53,
+      "x2": 121,
+      "y2": 53,
+      "key": "cargo",
+      "name": "Cargo door",
+      "targets": [
+        {
+          "x": 100,
+          "y": 70
+        },
+        {
+          "x": 130,
+          "y": 72
+        },
+        {
+          "x": 130,
+          "y": 56
+        }
+      ]
+    },
+    {
+      "x1": 83,
+      "y1": 60,
+      "x2": 83,
+      "y2": 70,
+      "key": "cargo-entry",
+      "name": "Cargo entry door",
+      "targets": [
+        {
+          "x": 59,
+          "y": 60
+        },
+        {
+          "x": 81,
+          "y": 60
+        },
+        {
+          "x": 81,
+          "y": 72
+        }
+      ]
+    },
+    {
+      "x1": 42,
+      "y1": 23,
+      "x2": 42,
+      "y2": 33,
+      "key": "exit-passage",
+      "name": "Exit passage door",
+      "targets": [
+        {
+          "x": 10,
+          "y": 20
+        },
+        {
+          "x": 40,
+          "y": 19
+        },
+        {
+          "x": 40,
+          "y": 39
+        }
+      ]
+    }
+  ],
+  "health": {
+    "x": 70,
+    "y": 49
+  }
+}

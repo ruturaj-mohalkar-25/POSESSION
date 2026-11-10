@@ -24,7 +24,7 @@ namespace Possession.Tests
         [UnityTest]
         public IEnumerator EverySavedLevelUsesTypedAmmoAndTheBetaCamera()
         {
-            foreach (string name in new[] { "Level_01", "Level_02", "Level_03", "Tutorial" })
+            foreach (string name in CampaignLevels.SceneNames.Concat(new[] { "Level_01", "Tutorial" }))
             {
                 if (level.IsValid() && level.isLoaded) yield return SceneManager.UnloadSceneAsync(level);
                 yield return Load(name);
@@ -32,7 +32,9 @@ namespace Possession.Tests
                 Assert.That(Read<Sprite>(ammo, "bulletSprite").name, Is.EqualTo("BulletPip"), name);
                 Assert.That(Read<Sprite>(ammo, "hammerSprite").name, Is.EqualTo("HammerPip"), name);
                 Assert.That(Read<float>(ammo, "pipSpacing"), Is.EqualTo(2f), name);
-                Assert.That(Read<Vector3>(Find<CameraFollow>(), "offset"), Is.EqualTo(new Vector3(0f, 15f, -11f)), name);
+                var cameraOffset = CampaignLevels.NumberFor(name) > 0
+                    ? new Vector3(0f, 25f, -18f) : new Vector3(0f, 15f, -11f);
+                Assert.That(Read<Vector3>(Find<CameraFollow>(), "offset"), Is.EqualTo(cameraOffset), name);
                 ammo.UseBulletSprite(); ammo.Show(2, 3);
                 AssertPips(ammo, "BulletPip", 48f, 3, 2);
                 ammo.UseHammerSprite(); ammo.Show(0, 1);

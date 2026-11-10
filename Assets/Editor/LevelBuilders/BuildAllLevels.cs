@@ -11,7 +11,8 @@ namespace Possession.Editor
             LevelConfigAssets.CreateAll();
             BuildLevel02.Build();
             BuildLevel03.Build();
-            Debug.Log("P4: built all levels (configs + Level_02 + Level_03).");
+            WarehouseCampaignSetup.Build();
+            Debug.Log("Built all campaign levels, including Warehouse as Level 3.");
         }
     }
 }

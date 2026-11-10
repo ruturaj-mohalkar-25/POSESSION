@@ -2,28 +2,28 @@
 
 Verified November 9, 2026, using Unity **6000.3.22f1**.
 
-This branch combines the circular countdown from PR #65 (`bb55e2a`) with the latest beta HUD, ammo and camera changes from PR #68 (`46d5967`).
+PR #65 is synced with integration `f56fb49`, including the expanded campaign, Warehouse, shared presentation and sliding-door updates from PRs #67, #69 and #71.
 
 ## Results
 
-- Final full PlayMode suite: **181 passed, 0 failed, 0 skipped**.
-- Fresh original PR #65 run: 154 passed out of 172, with 18 failures. The existing integration report at `78dd0f5` has the same 18 failing cases.
-- Two new hostile-projectile regressions failed before the production fix: a raycast hit removed no HP, and duplicate callbacks removed two HP. Both now pass; the focused five-case verification also covers real tutorial damage, eject protection, target-puzzle exclusion and HUD cleanup.
-- A separate native rendering check passed for Guard and Heavy in Levels 1–3, including movement, manual ejection and natural expiry, plus the paused tutorial clock spotlight. NPC combat was disabled during these staged captures; real attacks are covered by the PlayMode suite.
+- Final full PlayMode suite: **251 passed, 0 failed, 0 skipped**.
+- All countdown, HUD and hostile-projectile regressions pass alongside the latest campaign, tutorial, movement, combat, charge, shield, patrol and door checks.
+- Cross-level countdown and typed-ammunition checks include the current Warehouse scene, all campaign stages, the legacy Level_01 scene and Tutorial.
+- Current campaign scenes and both projectile implementations match integration exactly. Existing gameplay fixes and layouts are retained.
 
 ## Behavior covered
 
-The ring lies flat on the floor around the white possessed body’s feet, retains equipment colours, and changes from green through amber to red without flashing. Its hint keeps a gap during tutorial zoom. Pause/re-enable, missed level-end events, offscreen hosts, material restoration and aim-line disposal have regression coverage.
+The text-free ring lies flat on the floor around the white possessed body's feet, retains equipment colours, and changes from green through amber to red without flashing. Its hint keeps a gap during tutorial zoom. Pause/re-enable, level-end events, offscreen hosts, material restoration and aim-line disposal have regression coverage.
 
-Every saved level and Tutorial now uses the beta bullet/hammer sprites and camera offset. Ammo stays inside all screen edges on overlay and camera canvases. Level 3 uses the intended Heavy_03 spawn at z=7.
-
-Tests retain the current five-metre ranges, two-second eject protection, five-second hostility, twelve-second tutorial possession, one starting Level 2 charge and three-charge capacity. Pickup tests explicitly start empty to isolate collection behavior; saved starting charges and retry restoration are checked separately. No tests are ignored or skipped.
+The campaign keeps one shared screen HUD and its owned world-space countdown canvas. Checks distinguish the latest campaign camera from the legacy/tutorial camera and respect paused and level-end action blocking. Ammo stays inside screen edges on overlay and camera canvases. No tests are ignored or skipped.
 
 ## Reproduce
 
 Open the project in Unity 6000.3.22f1, then use **Window → General → Test Runner → PlayMode → Run All**.
 
-## Native previews
+## Native previews from the earlier ring build
+
+These staged captures demonstrate the ring's presentation before the latest campaign integration. They do not show the current expanded layouts or movement tuning. The current integration sync was checked with the full PlayMode suite above.
 
 Guard with the ground-level circular timer, typed ammunition and bottom-centre status row:
 

@@ -69,6 +69,11 @@ namespace Possession.Editor
             Debug.Log("Step 10/10: Building Tutorial practice level...");
             TutorialBuilder.Build();
 
+            WarehouseCampaignSetup.Build();
+
+            Debug.Log("Step 11: Tuning campaign character speeds and combat...");
+            CampaignCombatSetup.TuneLevels();
+
             UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/Scenes/MainMenu.unity");
             Debug.Log("=== Full Build All Levels: complete ===");
         }

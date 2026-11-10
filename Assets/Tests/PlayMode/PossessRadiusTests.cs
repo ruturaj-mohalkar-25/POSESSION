@@ -71,26 +71,26 @@ namespace Possession.Tests
 
             var nearest = CallFindNearest();
             Assert.That(nearest, Is.Not.Null,
-                "Enemy at 4f should be within the 5f possess range");
+                "Enemy at 4f should be within the shared 5f possess range");
         }
 
         [UnityTest]
-        public IEnumerator EnemyAt6fIsNotDetected()
+        public IEnumerator EnemyAt8fIsNotDetected()
         {
-            CreateEnemy(new Vector3(6f, 1f, 0f));
+            CreateEnemy(new Vector3(8f, 1f, 0f));
             Physics.SyncTransforms();
             yield return null;
 
             var nearest = CallFindNearest();
             Assert.That(nearest, Is.Null,
-                "Enemy at 6f should be outside the 5f possess range");
+                "Enemy at 8f should be outside the 7f possess range");
         }
 
         [UnityTest]
         public IEnumerator NearestOfTwoEnemiesIsSelected()
         {
-            var near = CreateEnemy(new Vector3(3f, 1f, 0f));
-            CreateEnemy(new Vector3(4.5f, 1f, 0f));
+            var near = CreateEnemy(new Vector3(4f, 1f, 0f));
+            CreateEnemy(new Vector3(6.5f, 1f, 0f));
             Physics.SyncTransforms();
             yield return null;
 
@@ -128,16 +128,16 @@ namespace Possession.Tests
         }
 
         [UnityTest]
-        public IEnumerator ReadabilityCueAbsentAt6f()
+        public IEnumerator ReadabilityCueAbsentAt8f()
         {
-            var enemy = CreateEnemy(new Vector3(6f, 1f, 0f));
+            var enemy = CreateEnemy(new Vector3(20f, 1f, 0f));
             var cue = enemy.GetComponent<EnemyReadability>();
             Physics.SyncTransforms();
             yield return new WaitForSeconds(0.2f);
 
             var mode = Read<EnemyReadability.Mode>(cue, "mode");
             Assert.That(mode, Is.EqualTo(EnemyReadability.Mode.None),
-                "No cue should show on enemy beyond 5f range");
+                "No cue should show on enemy well beyond 5f range");
         }
 
         private GuardEnemy CreateEnemy(Vector3 position)

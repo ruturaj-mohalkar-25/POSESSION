@@ -4,7 +4,7 @@ namespace Possession
     {
         private void Reset()
         {
-            moveSpeed = 3f;
+            moveSpeed = 5f;
             maxHP = 3;
         }
     }

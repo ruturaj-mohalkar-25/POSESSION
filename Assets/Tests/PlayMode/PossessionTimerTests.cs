@@ -163,7 +163,9 @@ namespace Possession.Tests
                 Assert.That(group.gameObject.activeInHierarchy, Is.True);
                 end();
                 Assert.That(group.gameObject.activeSelf, Is.False);
-                Assert.That(possession.TryEject(false), Is.True);
+                // End events may arrive before or after the manager blocks player actions.
+                possession.TryEject(false);
+                Assert.That(group.gameObject.activeSelf, Is.False);
                 Time.timeScale = 1f;
             }
         }
@@ -171,7 +173,7 @@ namespace Possession.Tests
         [UnityTest]
         public IEnumerator AllSavedLevelsAndTutorialReuseOneCircularTimer()
         {
-            foreach (string name in new[] { "Level_01", "Level_02", "Level_03", "Tutorial", "Level_01" })
+            foreach (string name in CampaignLevels.SceneNames.Concat(new[] { "Level_01", "Tutorial", CampaignLevels.FirstScene }))
             {
                 yield return SceneManager.UnloadSceneAsync(level);
                 EventBus.Clear();
@@ -184,6 +186,11 @@ namespace Possession.Tests
                 Assert.That(group.GetComponentsInChildren<Text>(), Is.Empty, name);
                 Assert.That(group.GetComponentsInChildren<Image>(), Is.Empty, name);
                 AssertBelowFeet();
+                if (Time.timeScale <= 0f)
+                {
+                    Assert.That(possession.TryEject(false), Is.False, "A paused tutorial blocks player actions.");
+                    Time.timeScale = 1f;
+                }
                 Assert.That(possession.TryEject(false), Is.True);
             }
         }

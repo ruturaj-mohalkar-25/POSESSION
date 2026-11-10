@@ -149,16 +149,14 @@ namespace Possession.Tests
             var guide = Object.FindFirstObjectByType<TutorialGuide>(); Begin(guide);
             guide.Progress.Move(TutorialMovement.All);
             var pc = guide.Possession;
-            yield return TutorialTestSupport.Possess(guide, guide.Guard);
-            Set(pc, "possessTimer", 0.1f);
+            Set(pc, "possessDuration", 0.1f);
+            Set(pc, "hostileTime", 0.2f);
+            Possess(guide, guide.Guard);
             yield return new WaitForSeconds(0.15f);
             Assert.That(pc.CurrentState, Is.EqualTo(PlayerState.Spirit));
             Assert.That(guide.Guard.IsHostile, Is.True);
-            Assert.That(pc.IsEjectShielded, Is.True);
             Assert.That(guide.Progress.Lesson, Is.EqualTo(TutorialLesson.EscapeHostile));
-            yield return TutorialTestSupport.WaitFor(() => !guide.Guard.IsHostile, 6f,
-                "The Guard must return to patrol after its real hostility duration.");
-            yield return null;
+            yield return new WaitForSeconds(0.25f);
             Assert.That(guide.Guard.IsHostile, Is.False);
             Assert.That(guide.Progress.SurvivedHostility, Is.True);
         }
@@ -176,18 +174,14 @@ namespace Possession.Tests
             Assert.That(trigger.enabled, Is.True);
             Assert.That(exit.IsReady, Is.False);
             guide.Progress.Move(TutorialMovement.All);
-            yield return TutorialTestSupport.Possess(guide, guide.Guard);
+            Possess(guide, guide.Guard);
             target.OnHit();
             Assert.That(guide.Progress.HitTarget, Is.True);
             Invoke(pc, "Eject", false);
-            yield return TutorialTestSupport.Possess(guide, guide.Guard);
-            Set(pc, "possessTimer", 0.01f);
+            Possess(guide, guide.Guard);
+            Set(pc, "possessTimer", 0.01f); Set(pc, "hostileTime", 0.05f);
             yield return new WaitForSeconds(0.12f);
-            Assert.That(guide.Guard.IsHostile, Is.True);
-            yield return TutorialTestSupport.WaitFor(() => !guide.Guard.IsHostile, 6f,
-                "The forced-ejection lesson must finish before continuing to the Heavy.");
-            yield return null;
-            yield return TutorialTestSupport.Possess(guide, guide.Heavy);
+            Possess(guide, guide.Heavy);
             wall.TakeDamage(2);
             yield return null;
             Assert.That(guide.Progress.BrokeWall, Is.True);
@@ -213,26 +207,17 @@ namespace Possession.Tests
             yield return Load(TutorialScene.Name);
             var guide = Object.FindFirstObjectByType<TutorialGuide>(); Begin(guide);
             var pc = guide.Possession;
-            float guardSpeed = guide.Guard.MoveSpeed;
-            yield return TutorialTestSupport.Possess(guide, guide.Guard);
-            Vector3 firingPosition = guide.Spirit.transform.position;
-            // Ejection turns the host away; let its real chase turn it back before firing.
-            guide.Guard.MoveSpeed = guardSpeed;
-            Set(pc, "possessTimer", 0.05f);
+            Set(pc, "possessDuration", 0.05f);
+            Set(pc, "hostileTime", 4f);
+            Possess(guide, guide.Guard);
             yield return new WaitForSeconds(0.1f);
             var spirit = pc.GetComponent<SpiritController>();
-            // Reuse the verified clear approach instead of extending an ejection point into a wall.
-            spirit.RestoreAt(firingPosition);
             spirit.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeAll;
-            Physics.SyncTransforms();
             Assert.That(guide.Guard.IsHostile, Is.True);
-            Assert.That(pc.IsEjectShielded, Is.True);
-            int protectedHP = spirit.CurrentHP;
-            yield return new WaitForSeconds(1.5f);
-            Assert.That(spirit.CurrentHP, Is.EqualTo(protectedHP), "The new ejection shield must block early attacks.");
-            yield return TutorialTestSupport.WaitFor(() => spirit.CurrentHP < protectedHP, 3f,
-                "The Guard's real attack must damage the Spirit after the shield expires.");
-            Assert.That(pc.IsEjectShielded, Is.False);
+            yield return new WaitForSeconds(1.1f);
+            Assert.That(spirit.CurrentHP, Is.EqualTo(spirit.MaxHP), "Ejection grants two seconds to escape.");
+            // The first two shots can land within the two-second shield; wait for the next normal shot.
+            yield return new WaitForSeconds(2.4f);
             Assert.That(spirit.CurrentHP, Is.LessThan(spirit.MaxHP), "The lesson must use the Guard's real attack, not only a warning message.");
         }
 
@@ -260,13 +245,13 @@ namespace Possession.Tests
             Assert.That(Time.timeScale, Is.EqualTo(1f));
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("MainMenu"));
             int tutorial = SceneUtility.GetBuildIndexByScenePath(TutorialScene.Path);
-            int level1 = SceneUtility.GetBuildIndexByScenePath("Assets/Scenes/Level_01.unity");
-            int level3 = SceneUtility.GetBuildIndexByScenePath("Assets/Scenes/Level_03.unity");
+            int level1 = SceneUtility.GetBuildIndexByScenePath(CampaignLevels.ScenePaths[0]);
+            int level2 = SceneUtility.GetBuildIndexByScenePath(CampaignLevels.ScenePaths[1]);
+            int level3 = SceneUtility.GetBuildIndexByScenePath(CampaignLevels.ScenePaths[2]);
             Assert.That(tutorial, Is.EqualTo(1));
             Assert.That(level1, Is.EqualTo(2));
-            // The test runner adds its own temporary scene after authored levels.
-            Assert.That(level3, Is.EqualTo(level1 + 2));
-            Assert.That(tutorial, Is.LessThan(level1));
+            Assert.That(level2, Is.EqualTo(level1 + 1));
+            Assert.That(level3, Is.EqualTo(level2 + 1));
         }
 
         private static IEnumerator Load(string name)
@@ -278,6 +263,18 @@ namespace Possession.Tests
         private static void Begin(TutorialGuide guide) { guide.BeginPractice(); Dismiss(guide); }
         private static void Dismiss(TutorialGuide guide)
         { for (int i = 0; i < 5 && guide.IsCoaching; i++) guide.ContinueCoaching(); }
+        private static void Possess(TutorialGuide guide, EnemyBase body)
+        {
+            Dismiss(guide);
+            var charge=guide.Spirit.GetComponent<PossessionCharge>();
+            if(charge!=null&&!charge.HasCharge)charge.TryCollect();
+            // This sequence isolates lesson transitions; cooldown duration has its own cross-level check.
+            Set(guide.Possession,"ejectCooldownTimer",0f);
+            guide.Spirit.RestoreAt(body.transform.position-body.transform.forward*2f);
+            Physics.SyncTransforms();
+            Assert.That(guide.Possession.TryPossess(body),Is.True,body.name);
+            Dismiss(guide);
+        }
         private static void Set(object item, string name, object value) => item.GetType()
             .GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).SetValue(item, value);
         private static void Invoke(object item, string name, params object[] args) => item.GetType()

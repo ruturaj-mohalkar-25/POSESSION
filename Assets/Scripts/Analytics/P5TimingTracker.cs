@@ -57,7 +57,7 @@ namespace Possession
         private void LateUpdate()
         {
             // GameManager's countdown calls its own failure method without raising LevelFailed.
-            if (manager == null || session.Finished) return;
+            if (manager == null || session == null || session.Finished) return;
             if (manager.CurrentState == LevelState.Failed) Finish("Failed", Elapsed);
             else if (manager.CurrentState == LevelState.Complete) Finish("Completed", Elapsed);
         }

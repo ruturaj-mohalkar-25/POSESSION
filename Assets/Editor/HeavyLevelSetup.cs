@@ -98,11 +98,12 @@ namespace Possession.Editor
             ConfigureHeavy(scene, group, prefab, "Heavy_01", spawn1.transform.position,
                 levelTwo ? 2f : 2.2f,
                 spawn1.transform.position,
-                spawn1.transform.position + (levelTwo ? new Vector3(1.4f, 0f, 2f) : new Vector3(2f, 0f, -1f)));
+                spawn1.transform.position + CampaignLayoutScale.FromOriginal(scene,
+                    levelTwo ? new Vector3(1.4f, 0f, 2f) : new Vector3(2f, 0f, -1f)));
             if (!levelTwo && spawn3 != null)
                 ConfigureHeavy(scene, group, prefab, "Heavy_03", spawn3.transform.position, 2.2f,
-                    new Vector3(0f, spawn3.transform.position.y, 10f),
-                    new Vector3(0f, spawn3.transform.position.y, 7f));
+                    CampaignLayoutScale.FromOriginal(scene, new Vector3(0f, spawn3.transform.position.y, 10f)),
+                    CampaignLayoutScale.FromOriginal(scene, new Vector3(0f, spawn3.transform.position.y, 7f)));
             EditorSceneManager.MarkSceneDirty(scene);
         }
 

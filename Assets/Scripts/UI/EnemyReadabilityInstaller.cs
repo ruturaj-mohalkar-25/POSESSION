@@ -53,6 +53,7 @@ namespace Possession
         {
             cues = FindObjectsByType<EnemyReadability>(FindObjectsSortMode.None);
             possession = FindFirstObjectByType<PossessionController>();
+            if (possession != null) possessRange = possession.PossessRange;
             var spiritController = FindFirstObjectByType<SpiritController>();
             spirit = spiritController != null ? spiritController.transform : null;
         }
@@ -91,6 +92,14 @@ namespace Possession
 
         private EnemyReadability PickPossessTarget()
         {
+            // Use the actual possession pick, including its range, cone and wall checks.
+            if (possession != null)
+            {
+                var selected = possession.FindPossessableEnemy();
+                foreach (var cue in cues)
+                    if (cue != null && cue.GetComponent<EnemyBase>() == selected) return cue;
+                return null;
+            }
             EnemyReadability best = null;
             float bestDist = possessRange;
             foreach (var cue in cues)

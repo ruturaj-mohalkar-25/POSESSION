@@ -67,8 +67,8 @@ namespace Possession.Editor
             camera.backgroundColor=new Color(.08f,.08f,.1f);
             camera.fieldOfView=40f;
             camera.transform.rotation=Quaternion.Euler(55,0,0);
-            camera.transform.position=spirit.transform.position+new Vector3(0,15,-11);
-            Set(camera.GetComponent<CameraFollow>(),"offset",new Vector3(0,15,-11));
+            camera.transform.position=spirit.transform.position+new Vector3(0,25,-18);
+            Set(camera.GetComponent<CameraFollow>(),"offset",new Vector3(0,25,-18));
             Set(camera.GetComponent<CameraFollow>(),"target",spirit.transform);
             var world=new GameObject("Level02_ChargeMaze").transform;
             var floor=Material("CourtyardStone",new Color(.33f,.42f,.36f));
@@ -171,10 +171,12 @@ namespace Possession.Editor
             var objective=hud.transform.Find("ObjectiveBar");
             if(objective!=null)
             {
-                objective.gameObject.SetActive(false);
+                objective.gameObject.SetActive(true);
                 Set(hud,"objectiveText",objective.GetComponentInChildren<UnityEngine.UI.Text>(true));
             }
             foreach(var t in world.GetComponentsInChildren<WorldLabel>())Object.DestroyImmediate(t.gameObject);
+            CampaignSpaceSetup.Apply(scene);
+            CampaignCombatSetup.Apply(scene);
             EditorSceneManager.MarkSceneDirty(scene);EditorSceneManager.SaveScene(scene,Path);
             LevelBuildKit.RegisterScene(Path);AssetDatabase.SaveAssets();
             Debug.Log("Level 2 Hunted built: 7 rooms, 3 dead ends, 8 enemies, 8 shards, 2 independent routes.");
@@ -218,7 +220,7 @@ namespace Possession.Editor
         {
             var go=Object.Instantiate(template,parent);go.name=name;go.SetActive(true);go.transform.position=Map(x,y,template.GetComponent<HeavyEnemy>()!=null?1.45f:1.15f);go.layer=LevelBuildKit.EnemyLayer;
             go.GetComponent<CharacterController>().minMoveDistance=0f;
-            var enemy=go.GetComponent<EnemyBase>();Set(enemy,"moveSpeed",enemy is HeavyEnemy?2f:3f);Set(enemy,"detectionRange",detect);Set(enemy,"patrolStartDelay",((int)x%4)*.25f);
+            var enemy=go.GetComponent<EnemyBase>();Set(enemy,"moveSpeed",enemy is HeavyEnemy?4f:5f);Set(enemy,"detectionRange",detect);Set(enemy,"patrolStartDelay",((int)x%4)*.25f);
             var marker=new GameObject("SpawnPoint_"+name);marker.transform.SetParent(parent);marker.transform.position=go.transform.position;
             var so=new SerializedObject(enemy);var array=so.FindProperty("waypoints");array.arraySize=2;
             for(int i=0;i<2;i++){var p=new GameObject(name+"_WP"+i);p.transform.SetParent(parent);p.transform.position=i==0?go.transform.position:Map(endX,endY,go.transform.position.y);array.GetArrayElementAtIndex(i).objectReferenceValue=p.transform;}

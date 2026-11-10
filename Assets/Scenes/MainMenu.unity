@@ -690,10 +690,6 @@ MonoBehaviour:
   - {fileID: 1694730248}
   - {fileID: 1278402978}
   - {fileID: 1646562300}
-  levelScenes:
-  - Level_01
-  - Level_03
-  - Level_02
 --- !u!1 &668499143
 GameObject:
   m_ObjectHideFlags: 0

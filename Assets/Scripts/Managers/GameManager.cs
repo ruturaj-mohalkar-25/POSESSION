@@ -16,7 +16,6 @@ namespace Possession
 
         [SerializeField] private float levelTime = 300f;
         [SerializeField] private float[] starThresholds = { 60f, 90f, 180f };
-        [SerializeField] private string[] levelOrder = { "Level_01", "Level_03", "Level_02" };
 
         private LevelState currentState = LevelState.InProgress;
         private float levelTimer;
@@ -107,21 +106,16 @@ namespace Possession
         {
             get
             {
-                string current = SceneManager.GetActiveScene().name;
-                int idx = System.Array.IndexOf(levelOrder, current);
-                return idx < 0 || idx + 1 >= levelOrder.Length;
+                return CampaignLevels.NextScene(SceneManager.GetActiveScene().name) == null;
             }
         }
 
         public void LoadNextLevel()
         {
-            string current = SceneManager.GetActiveScene().name;
-            int idx = System.Array.IndexOf(levelOrder, current);
-            if (idx >= 0 && idx + 1 < levelOrder.Length)
+            string next = CampaignLevels.NextScene(SceneManager.GetActiveScene().name);
+            if (next != null)
             {
-                Time.timeScale = 1f;
-                EventBus.Clear();
-                SceneManager.LoadScene(levelOrder[idx + 1]);
+                LevelFlow.Load(next);
             }
             else
             {

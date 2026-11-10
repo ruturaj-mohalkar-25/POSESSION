@@ -8,11 +8,12 @@ namespace Possession
         private int damage = 1;
         private float maxDistance = 6f;
         private Vector3 start;
-        private bool resolved;
+        private bool hitSpirit;
 
         public void Init(int damage, float maxDistance)
         {
             this.damage = damage;
+            hitSpirit = false;
             this.maxDistance = maxDistance;
             start = transform.position;
         }
@@ -24,20 +25,23 @@ namespace Possession
                 Destroy(gameObject);
         }
 
-        private void OnTriggerEnter(Collider other)
-        {
-            TryHitSpirit(other);
-        }
-
-        internal bool TryHitSpirit(Collider other)
+        // Both the shared projectile raycast and the physics trigger use this path.
+        // Guard against both arriving before Destroy is processed at the end of the frame.
+        public bool TryHitSpirit(Collider other)
         {
             var spirit = other.GetComponentInParent<SpiritController>();
             if (spirit == null) return false;
-            if (resolved) return true;
-            resolved = true;
-            spirit.TakeDamage(damage);
-            Destroy(gameObject);
+            if (!hitSpirit)
+            {
+                hitSpirit = true;
+                spirit.TakeDamage(damage);
+            }
             return true;
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (TryHitSpirit(other)) Destroy(gameObject);
         }
     }
 }
