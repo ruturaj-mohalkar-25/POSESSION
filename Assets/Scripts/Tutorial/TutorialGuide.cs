@@ -24,24 +24,28 @@ namespace Possession
 
         private bool restartQueued;
         private EnemyBase hostileEnemy;
-        private Vector3 movementOrigin;
-        private float coneLessonUntil = -1f;
+        private bool introShown, guardPopupShown, heavyPopupShown;
+        private float guardRoomZ = 12f;
+        private float heavyRoomZ = 24f;
+
+        public enum PopupState { None, SpiritIntro, HudIntro, Guard, Heavy }
+        public PopupState ActivePopup { get; private set; } = PopupState.None;
 
         public TutorialProgress Progress { get; } = new();
         public GuardEnemy Guard => guard;
         public HeavyEnemy Heavy => heavy;
         public PossessionController Possession => possession;
         public SpiritController Spirit => spirit;
-        public float LevelSeconds => manager != null ? manager.LevelTimer : 150f;
+        public float LevelSeconds => manager != null ? manager.LevelTimer : 300f;
         public EnemyBase HostileEnemy => hostileEnemy != null ? hostileEnemy : guard;
         public string HostileName => HostileEnemy == heavy ? "HEAVY" : "GUARD";
         public Transform TargetBody => target.transform;
         public Transform WallBody => wall.transform;
         public Transform ExitBody => exitTrigger.transform;
         public TutorialFocus CoachingFocus => TutorialFocus.None;
-        public bool IsCoaching => false;
+        public bool IsCoaching => ActivePopup != PopupState.None;
         public int Charges => spirit != null && spirit.TryGetComponent(out PossessionCharge charge) ? charge.Count : 0;
-        public string FailureMessage { get; private set; } = "CAUGHT — WATCH THE RED CONE";
+        public string FailureMessage { get; private set; } = "CAUGHT -- WATCH THE RED CONE";
 
         public int Step
         {
@@ -80,11 +84,43 @@ namespace Possession
         private void Start()
         {
             if (exitTrigger != null) exitTrigger.enabled = true;
-            movementOrigin = spirit != null ? spirit.transform.position : Vector3.zero;
             gameObject.AddComponent<TutorialOverlay>().Initialize(this);
-            BeginPractice();
             ChargeHUDInstaller.Install(gameObject.scene);
-            UpdateObjective();
+            ShowPopup(PopupState.SpiritIntro);
+        }
+
+        public void ShowPopup(PopupState popup)
+        {
+            ActivePopup = popup;
+            if (popup != PopupState.None)
+            {
+                Time.timeScale = 0f;
+                if (spirit != null) spirit.enabled = false;
+                if (possession != null) possession.enabled = false;
+            }
+        }
+
+        public void DismissPopup()
+        {
+            var previous = ActivePopup;
+            ActivePopup = PopupState.None;
+
+            if (previous == PopupState.SpiritIntro)
+            {
+                ShowPopup(PopupState.HudIntro);
+                return;
+            }
+
+            Time.timeScale = 1f;
+            if (spirit != null) spirit.enabled = true;
+            if (possession != null) possession.enabled = true;
+
+            if (!introShown)
+            {
+                introShown = true;
+                if (!Progress.Started) Progress.Begin();
+                UpdateObjective();
+            }
         }
 
         public void BeginPractice()
@@ -95,24 +131,31 @@ namespace Possession
 
         private void Update()
         {
-            TrackFirstMovement();
+            if (ActivePopup != PopupState.None) return;
             UpdateObjective();
+            CheckRoomEntry();
             if (!Progress.Started || Progress.Completed || Progress.Failed) return;
             if (spirit.CurrentHP <= 0 || manager != null && manager.CurrentState == LevelState.Failed)
-                QueueFailure(spirit.CurrentHP <= 0 ? "CAUGHT — WATCH THE RED CONE" : "TIME UP — MOVE WITH PURPOSE");
+                QueueFailure(spirit.CurrentHP <= 0 ? "CAUGHT -- WATCH THE RED CONE" : "TIME UP -- MOVE WITH PURPOSE");
         }
 
-        private void TrackFirstMovement()
+        private void CheckRoomEntry()
         {
-            if (!Progress.Started || Progress.UsedGuard || Progress.Movement == TutorialMovement.All
-                || spirit == null || possession.CurrentState != PlayerState.Spirit)
-                return;
+            if (spirit == null || ActivePopup != PopupState.None
+                || Progress.Completed || Progress.Failed
+                || possession.CurrentState != PlayerState.Spirit) return;
 
-            Vector3 travelled = spirit.transform.position - movementOrigin;
-            travelled.y = 0f;
-            if (travelled.sqrMagnitude < 1.25f * 1.25f) return;
-            Progress.Move(TutorialMovement.All);
-            coneLessonUntil = Time.unscaledTime + 3f;
+            float z = spirit.transform.position.z;
+            if (!guardPopupShown && z >= guardRoomZ)
+            {
+                guardPopupShown = true;
+                ShowPopup(PopupState.Guard);
+            }
+            else if (!heavyPopupShown && z >= heavyRoomZ)
+            {
+                heavyPopupShown = true;
+                ShowPopup(PopupState.Heavy);
+            }
         }
 
         private void UpdateObjective()
@@ -144,9 +187,9 @@ namespace Possession
         }
 
         private void Completed() => Progress.Finish();
-        private void SpiritDied() => QueueFailure("CAUGHT — WATCH THE RED CONE");
+        private void SpiritDied() => QueueFailure("CAUGHT -- WATCH THE RED CONE");
         private void LevelFailed() => QueueFailure(spirit != null && spirit.CurrentHP <= 0
-            ? "CAUGHT — WATCH THE RED CONE" : "TIME UP — MOVE WITH PURPOSE");
+            ? "CAUGHT -- WATCH THE RED CONE" : "TIME UP -- MOVE WITH PURPOSE");
 
         private void QueueFailure(string message)
         {
@@ -171,32 +214,40 @@ namespace Possession
                 if (Progress.Failed) return FailureMessage;
                 if (!Progress.HitTarget)
                 {
-                    if (possession.CurrentState == PlayerState.Possessed_Guard) return "LMB · HIT THE TARGET";
-                    if (!Progress.UsedGuard && Progress.Movement != TutorialMovement.All)
-                        return "WHITE SPIRIT · WASD TO MOVE";
-                    if (!Progress.UsedGuard && Time.unscaledTime < coneLessonUntil)
-                        return "RED CONE = ENEMY VISION · STAY OUT";
-                    if (Charges == 0) return "COLLECT WHITE SOUL · +1 CHARGE";
-                    return "GREEN = SAFE TO POSSESS · E · COSTS 1 CHARGE";
+                    if (possession.CurrentState == PlayerState.Possessed_Guard) return "LMB - HIT THE TARGET";
+                    if (Charges == 0) return "COLLECT WHITE SOUL - +1 CHARGE";
+                    return "POSSESS THE GUARD - PRESS E";
                 }
-                if (possession.CurrentState == PlayerState.Possessed_Guard) return "E · RETURN TO SPIRIT";
+                if (possession.CurrentState == PlayerState.Possessed_Guard) return "E - RETURN TO SPIRIT";
                 if (!Progress.UsedHeavy)
                 {
-                    if (Charges == 0) return "COLLECT WHITE SOUL · +1 CHARGE";
-                    return "GREEN = SAFE TO POSSESS HEAVY · E";
+                    if (Charges == 0) return "COLLECT WHITE SOUL - +1 CHARGE";
+                    return "POSSESS THE HEAVY - PRESS E";
                 }
                 if (!Progress.BrokeWall)
                 {
                     if (possession.CurrentState == PlayerState.Possessed_Heavy)
-                        return "LMB · SMASH THE CRACKED WALL";
-                    if (Charges == 0) return "COLLECT WHITE SOUL · +1 CHARGE";
-                    return "GREEN = SAFE TO POSSESS HEAVY · E";
+                        return "LMB - SMASH THE CRACKED WALL";
+                    if (Charges == 0) return "COLLECT WHITE SOUL - +1 CHARGE";
+                    return "POSSESS THE HEAVY - PRESS E";
                 }
-                return possession.CurrentState == PlayerState.Spirit ? "ENTER THE GREEN EXIT" : "E · RETURN TO SPIRIT";
+                return possession.CurrentState == PlayerState.Spirit ? "ENTER THE GREEN EXIT" : "E - RETURN TO SPIRIT";
             }
         }
 
         public string Instruction => Title;
+
+        public string ControlsLegend
+        {
+            get
+            {
+                if (possession.CurrentState == PlayerState.Possessed_Guard)
+                    return "WASD  Move\nLMB  Shoot\nE  Eject";
+                if (possession.CurrentState == PlayerState.Possessed_Heavy)
+                    return "WASD  Move\nLMB  Smash\nE  Eject";
+                return "WASD  Move\nE  Possess";
+            }
+        }
 
         public bool Nearby(out Transform body, out string text, out bool danger)
         {
@@ -222,8 +273,7 @@ namespace Possession
             return true;
         }
 
-        // Compatibility points for the previous optional coach component.
-        public void ContinueCoaching() { }
+        public void ContinueCoaching() => DismissPopup();
         public RectTransform[] FocusWidgets(TutorialFocus focus) => focus switch
         {
             TutorialFocus.LevelClock => new[] { levelClock },
