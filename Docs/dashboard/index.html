@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POSSESSION Analytics</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg: #0e1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --fg: #e6edf3;
+    --fg-muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --orange: #d29922;
+    --red: #f85149;
+    --purple: #bc8cff;
+    --cyan: #39d2c0;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    padding: 24px max(24px, env(safe-area-inset-left, 0px)) 48px;
+    line-height: 1.5;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+  h2 { font-size: 1.1rem; font-weight: 600; color: var(--fg-muted); margin: 32px 0 16px; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.75rem; }
+
+  .subtitle { color: var(--fg-muted); font-size: 0.875rem; margin-bottom: 24px; }
+
+  .status {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.75rem; color: var(--fg-muted); margin-bottom: 24px;
+  }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+  .status-dot.error { background: var(--red); }
+  .status-dot.loading { background: var(--orange); animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity: 0.4; } }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+    gap: 12px; margin-bottom: 8px;
+  }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px;
+  }
+  .card-label {
+    font-size: 0.68rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--fg-muted); margin-bottom: 6px;
+  }
+  .card-value { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 700; }
+  .card-detail { font-size: 0.7rem; color: var(--fg-muted); margin-top: 3px; }
+
+  .charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 20px; margin-bottom: 8px;
+  }
+  .chart-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 20px;
+  }
+  .chart-title { font-size: 0.85rem; font-weight: 600; margin-bottom: 12px; }
+  .chart-subtitle { font-size: 0.7rem; color: var(--fg-muted); margin-top: -8px; margin-bottom: 12px; }
+  .chart-container { position: relative; height: 250px; }
+  .chart-container.tall { height: 300px; }
+
+  .collapsible { margin-bottom: 20px; }
+  .collapsible summary {
+    cursor: pointer; font-size: 0.85rem; font-weight: 600;
+    padding: 12px 16px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; list-style: none;
+  }
+  .collapsible summary::before { content: '+ '; color: var(--fg-muted); }
+  .collapsible[open] summary::before { content: '- '; }
+  .collapsible[open] summary { border-radius: 10px 10px 0 0; }
+  .collapsible .table-wrap {
+    background: var(--surface); border: 1px solid var(--border); border-top: none;
+    border-radius: 0 0 10px 10px; overflow-x: auto;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  th {
+    text-align: left; font-weight: 600; font-size: 0.7rem; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--fg-muted); padding: 8px 12px;
+    border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface);
+  }
+  td { padding: 7px 12px; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+  tr:last-child td { border-bottom: none; }
+  .table-wrap { max-height: 400px; overflow-y: auto; }
+
+  .header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
+  .refresh-btn {
+    background: var(--surface); border: 1px solid var(--border); color: var(--fg);
+    padding: 8px 16px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; font-family: inherit;
+  }
+  .refresh-btn:hover { border-color: var(--accent); }
+
+  .full-width { grid-column: 1 / -1; }
+
+  @media (max-width: 500px) {
+    .charts { grid-template-columns: 1fr; }
+    .cards { grid-template-columns: repeat(2, 1fr); }
+    h1 { font-size: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>POSSESSION Analytics</h1>
+    <div class="subtitle">Live playtest data from Firebase</div>
+  </div>
+  <button class="refresh-btn" onclick="loadAll()">Refresh</button>
+</div>
+<div class="status" id="status">
+  <span class="status-dot loading"></span>
+  <span>Loading...</span>
+</div>
+
+<div class="cards" id="cards"></div>
+
+<h2>Player Performance</h2>
+<div class="charts" id="perf-charts"></div>
+
+<h2>Difficulty Analysis</h2>
+<div class="charts" id="diff-charts"></div>
+
+<h2>Engagement</h2>
+<div class="charts" id="engage-charts"></div>
+
+<h2>Raw Data</h2>
+<details class="collapsible">
+  <summary>Session Log</summary>
+  <div class="table-wrap"><table><thead><tr>
+    <th>Level</th><th>Time</th><th>Possessions</th><th>Forced</th><th>Deaths</th><th>Stars</th><th>Played</th>
+  </tr></thead><tbody id="session-body"></tbody></table></div>
+</details>
+<details class="collapsible">
+  <summary>Timing Attempts</summary>
+  <div class="table-wrap"><table><thead><tr>
+    <th>Level</th><th>Outcome</th><th>Duration</th><th>1st Possess</th><th>Form</th><th>Objectives</th><th>Started</th>
+  </tr></thead><tbody id="timing-body"></tbody></table></div>
+</details>
+
+<script>
+const PROJECT = 'possession-analytics';
+const BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/`;
+const REAL_LEVELS = ['Tutorial', 'Level_01', 'Level_02', 'Level_03', 'Level_03_Warehouse'];
+const LEVEL_LABELS = { 'Tutorial': 'Tutorial', 'Level_01': 'Level 1', 'Level_02': 'Level 2', 'Level_03': 'Level 3', 'Level_03_Warehouse': 'Warehouse' };
+
+function isReal(name) { return REAL_LEVELS.includes(name); }
+function label(name) { return LEVEL_LABELS[name] || name; }
+
+function val(field) {
+  if (!field) return null;
+  if ('stringValue' in field) return field.stringValue;
+  if ('integerValue' in field) return parseInt(field.integerValue);
+  if ('doubleValue' in field) return field.doubleValue;
+  if ('booleanValue' in field) return field.booleanValue;
+  if ('arrayValue' in field) return (field.arrayValue.values || []).map(v => {
+    if (v.mapValue) {
+      const out = {};
+      for (const [k, f] of Object.entries(v.mapValue.fields || {})) out[k] = val(f);
+      return out;
+    }
+    return val(v);
+  });
+  return null;
+}
+
+function parse(doc) {
+  const out = {};
+  for (const [k, f] of Object.entries(doc.fields || {})) out[k] = val(f);
+  return out;
+}
+
+async function fetchCollection(name) {
+  const all = [];
+  let pageToken = null;
+  do {
+    let url = BASE + name + '?pageSize=300';
+    if (pageToken) url += '&pageToken=' + encodeURIComponent(pageToken);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`${name}: ${res.status}`);
+    const data = await res.json();
+    (data.documents || []).forEach(d => all.push(parse(d)));
+    pageToken = data.nextPageToken || null;
+  } while (pageToken);
+  return all;
+}
+
+function fmt(seconds) {
+  if (seconds == null || seconds < 0) return '--';
+  const m = Math.floor(seconds / 60);
+  const s = Math.round(seconds % 60);
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+function fmtDate(str) {
+  if (!str) return '--';
+  try { return new Date(str).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+  catch { return str; }
+}
+
+const charts = {};
+function make(id, config) {
+  if (charts[id]) charts[id].destroy();
+  charts[id] = new Chart(document.getElementById(id), config);
+}
+
+function renderCards(sessions, timings) {
+  const el = document.getElementById('cards');
+  if (!sessions.length) { el.innerHTML = ''; return; }
+
+  const total = sessions.length;
+  const totalTimings = timings.length;
+  const avgTime = sessions.reduce((s, d) => s + (d.completionTime || 0), 0) / total;
+  const avgPoss = sessions.reduce((s, d) => s + (d.possessionCount || 0), 0) / total;
+  const avgStars = sessions.reduce((s, d) => s + (d.stars || 0), 0) / total;
+  const totalDeaths = timings.filter(t => t.outcome === 'Died').length;
+  const completions = timings.filter(t => t.outcome === 'Completed').length;
+  const completionRate = totalTimings > 0 ? ((completions / totalTimings) * 100).toFixed(0) : '0';
+  const uniqueDays = new Set(sessions.map(s => (s.timestamp || '').slice(0, 10)).filter(Boolean)).size;
+
+  el.innerHTML = `
+    <div class="card"><div class="card-label">Completions</div><div class="card-value">${total}</div><div class="card-detail">successful runs</div></div>
+    <div class="card"><div class="card-label">Total Attempts</div><div class="card-value">${totalTimings}</div><div class="card-detail">${uniqueDays} days of testing</div></div>
+    <div class="card"><div class="card-label">Completion Rate</div><div class="card-value" style="color:${parseInt(completionRate) < 30 ? 'var(--red)' : parseInt(completionRate) < 60 ? 'var(--orange)' : 'var(--green)'}">${completionRate}%</div><div class="card-detail">${completions} of ${totalTimings} attempts</div></div>
+    <div class="card"><div class="card-label">Avg Completion</div><div class="card-value">${fmt(avgTime)}</div></div>
+    <div class="card"><div class="card-label">Avg Possessions</div><div class="card-value">${avgPoss.toFixed(1)}</div><div class="card-detail">per completed level</div></div>
+    <div class="card"><div class="card-label">Avg Stars</div><div class="card-value" style="color:var(--orange)">${avgStars.toFixed(1)}</div><div class="card-detail">out of 3</div></div>
+    <div class="card"><div class="card-label">Deaths</div><div class="card-value" style="color:var(--red)">${totalDeaths}</div></div>
+  `;
+}
+
+function renderPerfCharts(sessions) {
+  const el = document.getElementById('perf-charts');
+  if (!sessions.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <div class="chart-box"><div class="chart-title">Star Distribution by Level</div><div class="chart-container"><canvas id="c-stars"></canvas></div></div>
+    <div class="chart-box"><div class="chart-title">Avg Completion Time by Level</div><div class="chart-subtitle">Seconds to finish (completed runs only)</div><div class="chart-container"><canvas id="c-time"></canvas></div></div>
+    <div class="chart-box"><div class="chart-title">Avg Possession Duration by Type</div><div class="chart-subtitle">How long players hold each body (seconds)</div><div class="chart-container"><canvas id="c-possess-dur"></canvas></div></div>
+  `;
+
+  Chart.defaults.color = '#8b949e';
+  Chart.defaults.borderColor = '#30363d';
+  const labels = REAL_LEVELS.map(label);
+
+  // Stars
+  const starData = {};
+  REAL_LEVELS.forEach(lv => { starData[lv] = [0, 0, 0]; });
+  sessions.forEach(s => { if (starData[s.levelName] && s.stars >= 1 && s.stars <= 3) starData[s.levelName][s.stars - 1]++; });
+  make('c-stars', {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label: '1 Star', data: REAL_LEVELS.map(l => starData[l][0]), backgroundColor: '#f85149' },
+      { label: '2 Stars', data: REAL_LEVELS.map(l => starData[l][1]), backgroundColor: '#d29922' },
+      { label: '3 Stars', data: REAL_LEVELS.map(l => starData[l][2]), backgroundColor: '#3fb950' }
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 5 } } } }
+  });
+
+  // Completion time
+  make('c-time', {
+    type: 'bar',
+    data: { labels, datasets: [{
+      label: 'Avg seconds',
+      data: REAL_LEVELS.map(l => {
+        const lv = sessions.filter(s => s.levelName === l);
+        return lv.length > 0 ? +(lv.reduce((sum, s) => sum + (s.completionTime || 0), 0) / lv.length).toFixed(1) : 0;
+      }),
+      backgroundColor: ['#58a6ff', '#58a6ff', '#3fb950', '#d29922', '#bc8cff']
+    }]},
+    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { callback: v => v + 's' } } } }
+  });
+
+  // Possession duration by type
+  let guardDur = 0, guardN = 0, heavyDur = 0, heavyN = 0;
+  sessions.forEach(s => {
+    if (!s.possessions) return;
+    s.possessions.forEach(p => {
+      if (p.enemyType === 'Guard') { guardDur += p.duration || 0; guardN++; }
+      else if (p.enemyType === 'Heavy') { heavyDur += p.duration || 0; heavyN++; }
+    });
+  });
+  make('c-possess-dur', {
+    type: 'bar',
+    data: { labels: ['Guard', 'Heavy'], datasets: [{
+      label: 'Avg duration (s)',
+      data: [guardN > 0 ? +(guardDur / guardN).toFixed(1) : 0, heavyN > 0 ? +(heavyDur / heavyN).toFixed(1) : 0],
+      backgroundColor: ['#58a6ff', '#d29922']
+    }]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => v + 's' } } } }
+  });
+}
+
+function renderDiffCharts(timings) {
+  const el = document.getElementById('diff-charts');
+  if (!timings.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <div class="chart-box full-width"><div class="chart-title">Attempt Outcomes by Level</div><div class="chart-subtitle">How attempts end: completed, died, failed, or abandoned</div><div class="chart-container tall"><canvas id="c-outcomes"></canvas></div></div>
+    <div class="chart-box"><div class="chart-title">Deaths by Level</div><div class="chart-container"><canvas id="c-deaths"></canvas></div></div>
+    <div class="chart-box"><div class="chart-title">Time to First Possession</div><div class="chart-subtitle">Seconds before the player possesses for the first time</div><div class="chart-container"><canvas id="c-first-possess"></canvas></div></div>
+  `;
+
+  const labels = REAL_LEVELS.map(label);
+  const outcomes = { Completed: [], Died: [], Failed: [], Abandoned: [] };
+  REAL_LEVELS.forEach(lv => {
+    const lvt = timings.filter(t => t.levelName === lv);
+    const total = lvt.length || 1;
+    outcomes.Completed.push(+(lvt.filter(t => t.outcome === 'Completed').length / total * 100).toFixed(1));
+    outcomes.Died.push(+(lvt.filter(t => t.outcome === 'Died').length / total * 100).toFixed(1));
+    outcomes.Failed.push(+(lvt.filter(t => t.outcome === 'Failed').length / total * 100).toFixed(1));
+    outcomes.Abandoned.push(+(lvt.filter(t => t.outcome === 'Abandoned').length / total * 100).toFixed(1));
+  });
+
+  make('c-outcomes', {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label: 'Completed', data: outcomes.Completed, backgroundColor: '#3fb950' },
+      { label: 'Died', data: outcomes.Died, backgroundColor: '#f85149' },
+      { label: 'Failed', data: outcomes.Failed, backgroundColor: '#d29922' },
+      { label: 'Abandoned', data: outcomes.Abandoned, backgroundColor: '#484f58' }
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } }, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.raw + '%' } } }, scales: { x: { stacked: true }, y: { stacked: true, max: 100, ticks: { callback: v => v + '%' } } } }
+  });
+
+  // Deaths
+  make('c-deaths', {
+    type: 'bar',
+    data: { labels, datasets: [{
+      label: 'Deaths',
+      data: REAL_LEVELS.map(l => timings.filter(t => t.levelName === l && t.outcome === 'Died').length),
+      backgroundColor: '#f85149'
+    }]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 5 } } } }
+  });
+
+  // First possession time
+  make('c-first-possess', {
+    type: 'bar',
+    data: { labels, datasets: [{
+      label: 'Avg seconds',
+      data: REAL_LEVELS.map(l => {
+        const valid = timings.filter(t => t.levelName === l && t.firstPossessionSeconds > 0);
+        return valid.length > 0 ? +(valid.reduce((s, t) => s + t.firstPossessionSeconds, 0) / valid.length).toFixed(1) : 0;
+      }),
+      backgroundColor: ['#58a6ff', '#58a6ff', '#3fb950', '#d29922', '#bc8cff']
+    }]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => v + 's' } } } }
+  });
+}
+
+function renderEngageCharts(sessions, timings) {
+  const el = document.getElementById('engage-charts');
+  if (!timings.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <div class="chart-box full-width"><div class="chart-title">Playtest Activity Over Time</div><div class="chart-subtitle">Sessions per day across all levels</div><div class="chart-container"><canvas id="c-activity"></canvas></div></div>
+    <div class="chart-box"><div class="chart-title">Objective Completion Funnel</div><div class="chart-subtitle">How far players get in each level (% completing each step)</div><div class="chart-container tall"><canvas id="c-funnel"></canvas></div></div>
+    <div class="chart-box"><div class="chart-title">Attempts per Completion</div><div class="chart-subtitle">How many tries before a level is completed</div><div class="chart-container"><canvas id="c-attempts"></canvas></div></div>
+  `;
+
+  // Activity over time
+  const dayMap = {};
+  const allDates = [];
+  timings.forEach(t => {
+    const d = (t.startedUtc || '').slice(0, 10);
+    if (!d || d.length !== 10) return;
+    dayMap[d] = (dayMap[d] || 0) + 1;
+  });
+  sessions.forEach(s => {
+    const d = (s.timestamp || '').slice(0, 10);
+    if (d && d.length === 10 && !dayMap[d]) dayMap[d] = 0;
+  });
+  const days = Object.keys(dayMap).sort();
+  make('c-activity', {
+    type: 'line',
+    data: { labels: days.map(d => { const dt = new Date(d + 'T12:00:00'); return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }),
+      datasets: [{ label: 'Attempts', data: days.map(d => dayMap[d]), borderColor: '#58a6ff', backgroundColor: 'rgba(88,166,255,0.1)', fill: true, tension: 0.3, pointRadius: 3 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 10 } } } }
+  });
+
+  // Objective funnel -- for each level, what % of attempts complete step 1, step 2, step 3...
+  const funnelLevels = ['Level_01', 'Level_02', 'Level_03'];
+  const maxSteps = 4;
+  const funnelData = funnelLevels.map(lv => {
+    const lvt = timings.filter(t => t.levelName === lv && t.objectives && t.objectives.length > 0);
+    if (lvt.length === 0) return Array(maxSteps).fill(0);
+    const steps = [];
+    for (let s = 0; s < maxSteps; s++) {
+      const reached = lvt.filter(t => t.objectives.filter(o => o.completed).length > s).length;
+      steps.push(+(reached / lvt.length * 100).toFixed(1));
+    }
+    return steps;
+  });
+  const stepLabels = ['Step 1', 'Step 2', 'Step 3', 'Step 4'];
+  const fColors = ['#58a6ff', '#3fb950', '#d29922'];
+  make('c-funnel', {
+    type: 'bar',
+    data: { labels: stepLabels.slice(0, maxSteps), datasets: funnelLevels.map((lv, i) => ({
+      label: label(lv), data: funnelData[i], backgroundColor: fColors[i]
+    }))},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }, scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } } }
+  });
+
+  // Attempts per completion
+  const labels2 = REAL_LEVELS.map(label);
+  make('c-attempts', {
+    type: 'bar',
+    data: { labels: labels2, datasets: [{
+      label: 'Attempts per completion',
+      data: REAL_LEVELS.map(l => {
+        const total = timings.filter(t => t.levelName === l).length;
+        const completed = timings.filter(t => t.levelName === l && t.outcome === 'Completed').length;
+        return completed > 0 ? +(total / completed).toFixed(1) : 0;
+      }),
+      backgroundColor: ['#58a6ff', '#58a6ff', '#3fb950', '#d29922', '#bc8cff']
+    }]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+  });
+}
+
+function renderSessionTable(sessions) {
+  const body = document.getElementById('session-body');
+  if (!sessions.length) { body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--fg-muted)">No data</td></tr>'; return; }
+  const sorted = [...sessions].sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+  body.innerHTML = sorted.map(s => `<tr>
+    <td>${s.levelName || '--'}</td>
+    <td>${fmt(s.completionTime)}</td>
+    <td>${s.possessionCount ?? '--'}</td>
+    <td>${s.forcedEjectCount ?? '--'}</td>
+    <td>${s.deathCount ?? '--'}</td>
+    <td style="color:var(--orange)">${s.stars ?? '--'}</td>
+    <td style="color:var(--fg-muted)">${fmtDate(s.timestamp)}</td>
+  </tr>`).join('');
+}
+
+function renderTimingTable(timings) {
+  const body = document.getElementById('timing-body');
+  if (!timings.length) { body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--fg-muted)">No data</td></tr>'; return; }
+  const sorted = [...timings].sort((a, b) => (b.startedUtc || '').localeCompare(a.startedUtc || ''));
+  body.innerHTML = sorted.map(t => {
+    const outcomeColor = t.outcome === 'Completed' ? 'var(--green)' : t.outcome === 'Died' ? 'var(--red)' : t.outcome === 'Failed' ? 'var(--orange)' : 'var(--fg-muted)';
+    const objCount = t.objectives ? t.objectives.filter(o => o.completed).length + '/' + t.objectives.length : '--';
+    return `<tr>
+      <td>${t.levelName || '--'}</td>
+      <td style="color:${outcomeColor}">${t.outcome || '--'}</td>
+      <td>${fmt(t.elapsedSeconds)}</td>
+      <td>${fmt(t.firstPossessionSeconds)}</td>
+      <td>${(t.firstPossessedForm || '--').replace('Possessed_', '')}</td>
+      <td>${objCount}</td>
+      <td style="color:var(--fg-muted)">${fmtDate(t.startedUtc)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function setStatus(state, text) {
+  const el = document.getElementById('status');
+  el.querySelector('.status-dot').className = 'status-dot ' + state;
+  el.querySelector('span:last-child').textContent = text;
+}
+
+async function loadAll() {
+  setStatus('loading', 'Fetching from Firestore...');
+  try {
+    const [sessions, timings] = await Promise.all([
+      fetchCollection('sessions'),
+      fetchCollection('timings')
+    ]);
+    const realSessions = sessions.filter(s => isReal(s.levelName));
+    const realTimings = timings.filter(t => isReal(t.levelName));
+    renderCards(realSessions, realTimings);
+    renderPerfCharts(realSessions);
+    renderDiffCharts(realTimings);
+    renderEngageCharts(realSessions, realTimings);
+    renderSessionTable(sessions);
+    renderTimingTable(timings);
+    setStatus('', `${sessions.length} sessions, ${timings.length} timings loaded (${sessions.length - realSessions.length} test runs filtered)`);
+  } catch (err) {
+    setStatus('error', 'Error: ' + err.message);
+    console.error(err);
+  }
+}
+
+loadAll();
+</script>
+</body>
+</html>
