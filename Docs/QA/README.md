@@ -1,5 +1,7 @@
 # C3 possession and beta HUD validation
 
+For the low-time body blink added after the ring merge, see [C3 body-blink validation](c3-body-blink.md).
+
 Verified November 9, 2026, using Unity **6000.3.22f1**.
 
 PR #65 is synced with integration `f56fb49`, including the expanded campaign, Warehouse, shared presentation and sliding-door updates from PRs #67, #69 and #71.
