@@ -27,9 +27,12 @@ namespace Possession
     [RequireComponent(typeof(PossessionController))]
     public sealed class PossessedBodyBlink : MonoBehaviour
     {
-        [SerializeField, Range(0.01f, 1f)] private float orangeThreshold = 0.35f;
-        [SerializeField, Min(0.1f)] private float minBlinkRate = 2f;
-        [SerializeField, Min(0.1f)] private float maxBlinkRate = 9f;
+        [SerializeField, Range(0.01f, 1f)] private float warningThreshold = 0.65f;
+        [SerializeField, Min(0.1f)] private float minBlinkRate = 1f;
+        [SerializeField, Min(0.1f)] private float maxBlinkRate = 6f;
+
+        private const float InitialHiddenFraction = 0.12f;
+        private const float FinalHiddenFraction = 0.4f;
 
         private PossessionController player;
         private EnemyBase host;
@@ -93,7 +96,7 @@ namespace Possession
         {
             if (host == null) return;
             fraction = max > 0f ? Mathf.Clamp01(current / max) : 0f;
-            if (fraction <= 0f || fraction > orangeThreshold)
+            if (fraction <= 0f || fraction > warningThreshold)
             {
                 phase = 0f;
                 RestoreVisibility();
@@ -116,13 +119,15 @@ namespace Possession
                 return;
             }
             if (body == null || Time.timeScale <= 0f) return;
-            if (fraction <= 0f || fraction > orangeThreshold) return;
+            if (fraction <= 0f || fraction > warningThreshold) return;
 
-            float urgency = 1f - fraction / orangeThreshold;
-            float rate = Mathf.Lerp(minBlinkRate, maxBlinkRate, urgency);
+            float urgency = 1f - fraction / warningThreshold;
+            float rate = Mathf.SmoothStep(minBlinkRate, maxBlinkRate, urgency);
+            float hiddenFraction = Mathf.SmoothStep(InitialHiddenFraction, FinalHiddenFraction, urgency);
             // Integrate cycles so changing the rate never jumps the blink phase.
             phase = Mathf.Repeat(phase + Time.deltaTime * rate, 1f);
-            body.forceRenderingOff = originalForceRenderingOff || phase >= 0.5f;
+            // Start with a brief pulse immediately, then leave the body mostly visible.
+            body.forceRenderingOff = originalForceRenderingOff || phase < hiddenFraction;
         }
 
         private void RestoreVisibility()

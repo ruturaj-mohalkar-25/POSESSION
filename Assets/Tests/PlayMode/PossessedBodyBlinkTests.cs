@@ -29,6 +29,7 @@ namespace Possession.Tests
         [UnityTearDown]
         public IEnumerator TearDown()
         {
+            Time.captureFramerate = 0;
             Time.timeScale = 1f;
             if (level.IsValid() && level.isLoaded) yield return SceneManager.UnloadSceneAsync(level);
             EventBus.Clear();
@@ -53,7 +54,7 @@ namespace Possession.Tests
             yield return new WaitForSeconds(0.2f);
             Assert.That(body.forceRenderingOff, Is.False);
             Possess(host);
-            foreach (float fraction in new[] { 1f, 0.5f, 0.36f })
+            foreach (float fraction in new[] { 1f, 0.8f, 0.66f })
             {
                 EventBus.PossessTimerUpdated?.Invoke(fraction * 10f, 10f);
                 float until = Time.time + 0.3f;
@@ -84,7 +85,7 @@ namespace Possession.Tests
                 int slow = 0, fast = 0;
                 for (int pass = 0; pass < 2; pass++)
                 {
-                    EventBus.PossessTimerUpdated?.Invoke(pass == 0 ? 3.5f : 0.1f, 10f);
+                    EventBus.PossessTimerUpdated?.Invoke(pass == 0 ? 6.5f : 0.1f, 10f);
                     int transitions = 0;
                     bool previous = body.forceRenderingOff;
                     float until = Time.time + 1.1f;
@@ -113,6 +114,58 @@ namespace Possession.Tests
                 Assert.That(player.TryEject(false), Is.True);
                 Assert.That(body.forceRenderingOff, Is.False);
                 Assert.That(body.sharedMaterial, Is.SameAs(normal));
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator RealCountdownWarnsWithMoreThanHalfTheTimeLeftForBothBodies()
+        {
+            Time.captureFramerate = 60;
+            foreach (var enemy in new EnemyBase[] { Find<GuardEnemy>(), Find<HeavyEnemy>() })
+            {
+                host = enemy;
+                body = host.GetComponent<Renderer>();
+                player.enabled = false;
+                Possess(host);
+                player.enabled = true;
+                float firstBlinkRemaining = -1f;
+                int frames = Mathf.CeilToInt((player.PossessDuration + 0.5f) * 60f);
+                for (int frame = 0; frame < frames; frame++)
+                {
+                    yield return null;
+                    if (firstBlinkRemaining < 0f && body.forceRenderingOff)
+                        firstBlinkRemaining = player.PossessTimer;
+                }
+                Assert.That(firstBlinkRemaining / player.PossessDuration, Is.InRange(0.55f, 0.66f),
+                    enemy.name + " needs a visible warning before half the possession time remains.");
+                Assert.That(player.PossessedEnemy, Is.Null);
+                Assert.That(body.forceRenderingOff, Is.False);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator EarlyMiddleAndUrgentWarningsGetFasterWhileKeepingTheBodyTrackable()
+        {
+            Time.captureFramerate = 60;
+            Possess(host);
+            int previousPulses = 0;
+            foreach (float remaining in new[] { 6.5f, 3.25f, 0.2f })
+            {
+                EventBus.PossessTimerUpdated?.Invoke(remaining, 10f);
+                int pulses = 0, visibleFrames = 0;
+                bool wasHidden = body.forceRenderingOff;
+                for (int frame = 0; frame < 120; frame++)
+                {
+                    yield return null;
+                    bool hidden = body.forceRenderingOff;
+                    if (hidden && !wasHidden) pulses++;
+                    if (!hidden) visibleFrames++;
+                    wasHidden = hidden;
+                }
+                Assert.That(pulses, Is.GreaterThan(previousPulses), "Each warning band must be more urgent.");
+                Assert.That(visibleFrames, Is.GreaterThanOrEqualTo(remaining == 6.5f ? 90 : 65),
+                    "Brief blinks must leave the white body easy to follow.");
+                previousPulses = pulses;
             }
         }
 
