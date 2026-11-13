@@ -1,6 +1,6 @@
 # C3 possession and beta HUD validation
 
-For the low-time body blink added after the ring merge, see [C3 body-blink validation](c3-body-blink.md).
+For the earlier, progressive body warning added after the ring merge, see [C3 body-blink validation](c3-body-blink.md).
 
 Verified November 9, 2026, using Unity **6000.3.22f1**.
 

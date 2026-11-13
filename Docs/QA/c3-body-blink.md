@@ -1,10 +1,12 @@
-# C3 low-time body blink
+# C3 earlier, progressive possession blink
 
 This follow-up restores the warning requested in closed PRs #63 and #64 on top of the ground countdown merged in #65. It starts from integration `6b87fb0`, including the tutorial changes from #76.
 
 ## Behavior
 
-- At 35% possession time or below, the possessed body blinks. The rate increases from 2 to 9 cycles per second as the timer approaches zero.
+- The warning starts at **65% remaining**, giving the player time to react before the final seconds. For a 10-second possession the warning window is now about **6.5 seconds**, compared with 3.5 seconds before; for 12 seconds it is 7.8 seconds instead of 4.2 seconds.
+- Brief **1 Hz** pulses grow smoothly toward **6 Hz** as time runs out. The first pulse arrives when the warning band is entered, without waiting through a full slow cycle. Cadence remains continuous as urgency changes.
+- The body stays visible for about **88% of each early cycle**, gradually reducing to **60% near expiry**. This keeps the early warning gentle and the white body easy to track.
 - The body keeps its white possession material. Hats, tools, ammunition, the aim line and the ground countdown keep their existing presentation.
 - The warning changes only the body renderer's visibility flag. It does not replace materials, write material property blocks, disable the renderer component or touch colliders.
 - Pause freezes the blink. Ejection, expiry, death, a disabled host, a disabled warning and level-end events restore the original visibility state.
@@ -14,13 +16,15 @@ The old blink selected only child meshes, skipping the root body used by the sav
 
 ## Validation
 
-Verified November 11, 2026, with Unity **6000.3.22f1**:
+Verified November 12, 2026, with Unity **6000.3.22f1**:
 
-- Focused warning and countdown checks: **28/28 passed** (13 new blink checks and 15 existing countdown checks).
-- Remaining PlayMode suite, excluding the two obsolete tutorial fixtures described below: **246/246 passed, 0 failed, 0 skipped**.
+- Focused warning and countdown checks: **30/30 passed** (15 blink checks and 15 existing countdown checks).
+- PlayMode regression suite, excluding the two obsolete tutorial fixtures described below: **248/248 passed, 0 failed, 0 skipped**.
 - Native Guard and Heavy capture check: **1/1 passed**, recorded alongside that suite.
 
-The warning checks cover Guard and Heavy acceleration, material and property-block preservation, equipment visibility, both ejection types, real expiry, invalid and replenished timers, pause, disable/re-enable, death, level end, unrelated enemy events, runtime-spawned hosts and installation across every saved level and Tutorial.
+Both new reaction-time and progression checks fail against the previous runtime and pass after this update. In the native 10-second recordings, the first visible blink moved from **3.27 seconds remaining to 6.47 seconds remaining**, giving about **3.2 seconds of additional notice**. The clips use the same timer and frame rate in both builds.
+
+The warning checks cover visible notice before half the timer remains for both Guard and Heavy, progressively faster early/middle/urgent bands, body visibility between pulses, material and property-block preservation, equipment visibility, both ejection types, real expiry, invalid and replenished timers, pause, disable/re-enable, death, level end, unrelated enemy events, runtime-spawned hosts and installation across every saved level and Tutorial.
 
 To reproduce, open **Window → General → Test Runner → PlayMode** and run `PossessedBodyBlinkTests` together with `PossessionTimerTests`.
 
@@ -34,7 +38,7 @@ The unfiltered suite currently stalls in `TutorialEffectsTests.CompactTutorialNe
 
 ## Native previews
 
-Captured from Unity's gameplay camera with the possession timer held at two seconds to show the warning. The clips retain the captured frame timing; the ground ring remains steady while only the body blinks.
+Captured from Unity's gameplay camera while the real 10-second possession timer counts down and forces ejection. The clips show normal possession, earlier brief pulses, increasing urgency and restored visibility after eject. Enemy movement and attacks are held still to make the warning readable. The ground countdown keeps its existing colours and only the body blinks. GIF previews are sampled at 15 fps from the native 30 fps capture.
 
 Guard:
 
