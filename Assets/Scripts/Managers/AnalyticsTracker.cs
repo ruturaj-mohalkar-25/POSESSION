@@ -52,7 +52,7 @@ namespace Possession
         {
             possessionCount++;
             possessionStartTime = Time.time;
-            currentEnemyType = enemy is HeavyEnemy ? "Heavy" : "Guard";
+            currentEnemyType = enemy is HeavyEnemy ? "Heavy" : enemy is EngineerEnemy ? "Engineer" : "Guard";
         }
 
         private void OnEjected(EnemyBase enemy, bool forced)
