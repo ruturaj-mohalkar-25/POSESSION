@@ -136,6 +136,7 @@ namespace Possession
             {
                 PlayerState.Possessed_Guard => "Shoot",
                 PlayerState.Possessed_Heavy => "Smash",
+                PlayerState.Possessed_Engineer => "F · Use engineering panel",
                 _ => ""
             };
             if (hintText != null && hint.Length > 0)

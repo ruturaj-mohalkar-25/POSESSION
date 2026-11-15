@@ -7,7 +7,8 @@ namespace Possession
         Spirit,
         Possessed_Guard,
         Possessed_Heavy,
-        Possessed_Drone
+        Possessed_Drone,
+        Possessed_Engineer = 5
     }
 
     public enum PossessionBlockReason
@@ -178,6 +179,7 @@ namespace Possession
             {
                 GuardEnemy => PlayerState.Possessed_Guard,
                 HeavyEnemy => PlayerState.Possessed_Heavy,
+                EngineerEnemy => PlayerState.Possessed_Engineer,
                 _ => PlayerState.Possessed_Guard
             };
 
