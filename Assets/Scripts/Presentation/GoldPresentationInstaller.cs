@@ -27,6 +27,9 @@ namespace Possession
             foreach (var player in roots.SelectMany(r => r.GetComponentsInChildren<PossessionController>(true)))
                 if (player.GetComponent<PlayerIdentityView>() == null)
                     player.gameObject.AddComponent<PlayerIdentityView>();
+            foreach (var door in roots.SelectMany(r => r.GetComponentsInChildren<SlidingDoorView>(true)))
+                if (door.GetComponent<GoldDoorPresentation>() == null)
+                    door.gameObject.AddComponent<GoldDoorPresentation>().Build();
         }
     }
 }

@@ -32,6 +32,7 @@ namespace Possession
                 floor.SetPropertyBlock(block);
             }
             foreach (var renderer in renderers.Where(IsWall)) renderer.sharedMaterial = wall;
+            gameObject.AddComponent<GoldFloorSurface>().Build(floors);
 
             // A few low corner landmarks; none have colliders or occupy a doorway/objective.
             int placed = 0;

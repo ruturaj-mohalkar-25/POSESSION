@@ -10,8 +10,55 @@ namespace Possession.Editor
 {
     public static class GoldPart1Tools
     {
+        public static void Prepare()
+        {
+            foreach (var spec in new[] { ("DoorFace", new Color(.57f,.37f,.22f)),
+                ("DoorFrame", new Color(.17f,.20f,.22f)), ("DoorBrass", new Color(.72f,.57f,.27f)) })
+            {
+                string path = "Assets/Resources/Gold/" + spec.Item1 + ".mat";
+                var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+                if (material == null) { material = new Material(Shader.Find("Standard")); AssetDatabase.CreateAsset(material, path); }
+                material.color = spec.Item2; material.SetFloat("_Glossiness", .08f); EditorUtility.SetDirty(material);
+            }
+            AssetDatabase.SaveAssets();
+        }
         public static void CaptureBefore() => Capture("Before");
-        public static void CaptureAfter() => Capture("After");
+        public static void CaptureAfter() { Prepare(); Capture("After"); }
+        public static void BuildWebGL()
+        {
+            Prepare();
+            var compression = PlayerSettings.WebGL.compressionFormat;
+            bool fallback = PlayerSettings.WebGL.decompressionFallback, hashes = PlayerSettings.WebGL.nameFilesAsHashes;
+            try
+            {
+                PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+                PlayerSettings.WebGL.decompressionFallback = true; PlayerSettings.WebGL.nameFilesAsHashes = true;
+                var report = BuildPipeline.BuildPlayer(EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray(),
+                    "Builds/Gold-Part1", BuildTarget.WebGL, BuildOptions.None);
+                if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
+                    throw new InvalidOperationException("Part 1 browser build failed.");
+            }
+            finally
+            {
+                PlayerSettings.WebGL.compressionFormat = compression;
+                PlayerSettings.WebGL.decompressionFallback = fallback; PlayerSettings.WebGL.nameFilesAsHashes = hashes;
+            }
+        }
+        public static void ValidateGeometry()
+        {
+            Prepare();
+            foreach (string path in CampaignLevels.ScenePaths)
+            {
+                var scene = EditorSceneManager.OpenScene(path);
+                Func<string> signature = () => string.Join("\n", scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<Collider>(true))
+                    .OrderBy(c => c.GetInstanceID()).Select(c => c.GetInstanceID() + "|" + EditorJsonUtility.ToJson(c)
+                        + "|" + c.transform.position.ToString("R") + "|" + c.transform.rotation.ToString("R") + "|" + c.transform.lossyScale.ToString("R")));
+                string before = signature(); GoldPresentationInstaller.Install(scene);
+                if (signature() != before) throw new InvalidOperationException("Original colliders changed: " + scene.name);
+                Debug.Log("GOLD_COLLIDERS_UNCHANGED " + scene.name);
+            }
+            EditorSceneManager.OpenScene("Assets/Scenes/MainMenu.unity");
+        }
         private static void Capture(string prefix)
         {
             Directory.CreateDirectory("Docs/GoldPart1");
