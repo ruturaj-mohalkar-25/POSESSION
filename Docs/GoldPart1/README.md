@@ -19,6 +19,9 @@ Unity **6000.3.22f1**, 15 November 2026:
 - **9/9 focused Part 1 and existing door tests passed**. Coverage includes disjoint floor rendering and union coverage in all three scenes, real possession/ejection without an overhead symbol, actual target-based door unlocking and clear openings, and duplicate-installation safety.
 - Independent editor comparison confirms every original collider's serialized data, transform and scale is unchanged by installation in all three campaign scenes.
 - Source comparison confirms no edits to campaign scene assets, shared prefabs, existing menu/HUD/core code or tutorial files.
+- Release WebGL build succeeded. Browser smoke check loaded and moved in all three campaign levels and verified guard possession/ejection in Hunted. Floors stayed stable on those checked paths; this was not a full level walkthrough.
+
+[Play the Part 1 review build](https://utkarsh-landge.github.io/posession-gold-playtest-2026/part1/). Only compiled browser files are published in the personal preview repository; the source branch belongs to the original team repository. This build retains integration's existing menus and HUD.
 
 Tutorial-specific `TutorialTests` and `TutorialEffectsTests` are excluded from the campaign run. Current integration restores a popup that pauses time, while old tutorial fixtures include a scaled wait that expects no coaching. That baseline mismatch is outside Part 1; the tutorial is not changed to satisfy it.
 
