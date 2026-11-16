@@ -12,8 +12,11 @@ namespace Possession.Tests
         public void TearDown()
         {
             Time.timeScale = 1f;
+            var roots = new System.Collections.Generic.List<GameObject>();
             foreach (var go in Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None))
-                if (go.name.StartsWith("GoldPart2Test")) Object.DestroyImmediate(go);
+                if (go != null && go.name.StartsWith("GoldPart2Test")) roots.Add(go);
+            foreach (var root in roots)
+                if (root != null) Object.DestroyImmediate(root);
         }
 
         [UnityTest]
