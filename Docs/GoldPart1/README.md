@@ -11,15 +11,27 @@ Branch `codex/gold-ui-part1` belongs to the original `ruturaj-mohalkar-25/POSESS
 - Actual wood panels and handles replace the lock emblem on all seven campaign doors. Both faces are styled. The existing `SlidingDoorView`, target lamps, unlock requirements, animation and blocker remain in control. When the leaves retract completely, all added panel/handle renderers hide so the opening stays clear.
 - Empty layer names are explicitly quoted in `TagManager.asset` to resolve Unity's native YAML parse error. Layer names and indices are retained.
 
+## Approved visual additions
+
+- Small charcoal room boards with a teal edge identify primary areas such as Entry, Courtyard, East Wing, Inspection and Cargo Room. They mount on existing solid walls, stay away from puzzle objects and use depth-tested text so labels do not show through other walls. Boards hide while the existing camera system fades their wall, then return with it. Maximum eight boards per scene; no new colliders.
+- Soft contact shadows ground the controlled player and the existing corner cabinets. One small feathered mesh is shared by at most four stamps per scene. The player stamp follows the possessed body and returns to the spirit on eject. Stamps sit above the original floor height and fade if the body rises; no extra lights or post-processing are added.
+- Real possession/ejection produces one **0.55-second** teal collar pulse, then settles. Pause freezes the pulse; disabling the player or ending the level clears it. The effect changes only the collar's size/tint, preserving the body's existing white possession colour and warning flashes.
+
+| Actual-scene detail | Preview |
+| --- | --- |
+| Hunted room board | ![Entry board](Polish_Level_02_sign.png) |
+| Player contact shadow | ![Soft shadow](Polish_Level_03_shadow.png) |
+| Warehouse room board | ![Warehouse board](Polish_Level_03_Warehouse_sign.png) |
+
 ## Validation
 
 Unity **6000.3.22f1**, 15 November 2026:
 
-- **237/237 campaign/shared PlayMode checks passed**, zero failures or skips in that selection.
-- **9/9 focused Part 1 and existing door tests passed**. Coverage includes disjoint floor rendering and union coverage in all three scenes, real possession/ejection without an overhead symbol, actual target-based door unlocking and clear openings, and duplicate-installation safety.
+- **238/238 campaign/shared PlayMode checks passed**, zero failures or skips in that selection.
+- That run includes all **10 Part 1 and existing door checks**: disjoint floor rendering and union coverage in all three scenes, real possession/ejection without an overhead symbol, finite collar pulse and immediate pause/resume, grounded shadows, wall-board placement/fading visibility, actual target-based door unlocking and clear openings, and duplicate-installation safety.
 - Independent editor comparison confirms every original collider's serialized data, transform and scale is unchanged by installation in all three campaign scenes.
 - Source comparison confirms no edits to campaign scene assets, shared prefabs, existing menu/HUD/core code or tutorial files.
-- Release WebGL build succeeded. Browser smoke check loaded and moved in all three campaign levels and verified guard possession/ejection in Hunted. Floors stayed stable on those checked paths; this was not a full level walkthrough.
+- Release WebGL build succeeded. Browser smoke check loaded and moved in all three campaign levels and verified guard possession/ejection, collar pulses, room boards and grounded shadow tracking in Hunted. No browser console errors were captured. Floors stayed stable on those checked paths; this was not a full level walkthrough.
 
 [Play the Part 1 review build](https://utkarsh-landge.github.io/posession-gold-playtest-2026/part1/). Only compiled browser files are published in the personal preview repository; the source branch belongs to the original team repository. This build retains integration's existing menus and HUD.
 
@@ -42,11 +54,14 @@ These are rendered from the actual scenes using the same before/after camera pos
 
 Open MainMenu and enter each campaign level. Cross the fork/right-wing and top/right-wing joins in Level 1, the R7/corridor joins in Hunted, and the entry/sorting/service joins in Warehouse. Check floor stability while moving, possessing and ejecting. Hit each door's real targets: the same original blocker should unlock while both wood leaves retract. Nothing appears above the player to imply health.
 
+For the visual additions, enter Hunted and look at the Entry wall board, approach a guard from behind and possess/eject it. The collar should pulse once on each transition, and the floor shadow should follow the current body. Boards should disappear behind solid walls rather than act as floating UI.
+
 Batch entry points:
 
 - `Possession.Editor.GoldPart1Tools.Diagnose`: log original coplanar floor pairs.
 - `Possession.Editor.GoldPart1Tools.ValidateGeometry`: compare original colliders before/after installation.
 - `Possession.Editor.GoldPart1Tools.CaptureAfter`: capture actual-scene reference images without saving scenes.
+- `Possession.Editor.GoldPart1Tools.CapturePolish`: capture boards and contact shadows, then compare original colliders in every campaign scene.
 - `Possession.Editor.GoldPart1Tools.BuildWebGL`: release browser player in `Builds/Gold-Part1`, with gzip fallback and hashed assets.
 
 The generated build is ignored by Git. Ruturaj reviews/merges into integration; Ansh can review this branch independently of Part 2.

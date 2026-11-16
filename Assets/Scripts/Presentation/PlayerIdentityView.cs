@@ -13,6 +13,11 @@ namespace Possession
         private GameObject visuals;
         private Transform collar;
         private Mesh collarMesh;
+        private MeshRenderer collarRenderer;
+        private MaterialPropertyBlock tint;
+        private float pulseRemaining;
+        private const float PulseDuration = .55f;
+        public float PulseAmount { get; private set; }
         public Transform TrackedBody { get; private set; }
         public bool IsShowing => visuals != null && visuals.activeSelf;
 
@@ -21,12 +26,14 @@ namespace Possession
         private void EnsureVisuals()
         {
             if (visuals != null) return;
+            tint = new MaterialPropertyBlock();
             possession = GetComponent<PossessionController>();
             spirit = GetComponent<SpiritController>();
             visuals = new GameObject("Gold_PlayerIdentity") { layer = 2 };
             SceneManager.MoveGameObjectToScene(visuals, gameObject.scene);
             collarMesh = RingMesh();
             collar = MeshPart("Teal collar", collarMesh, Resources.Load<Material>("Gold/Teal"));
+            collarRenderer = collar.GetComponent<MeshRenderer>();
         }
 
         private Transform MeshPart(string name, Mesh mesh, Material material)
@@ -46,8 +53,10 @@ namespace Possession
         public void Refresh()
         {
             EnsureVisuals();
-            TrackedBody = possession != null && possession.PossessedEnemy != null
+            var nextBody = possession != null && possession.PossessedEnemy != null
                 ? possession.PossessedEnemy.transform : transform;
+            if (TrackedBody != null && nextBody != TrackedBody) pulseRemaining = PulseDuration;
+            TrackedBody = nextBody;
             var renderer = TrackedBody.GetComponent<Renderer>();
             bool alive = spirit != null && (!Application.isPlaying || spirit.CurrentHP > 0);
             if (possession != null && possession.PossessedEnemy != null)
@@ -55,14 +64,24 @@ namespace Possession
             bool showing = alive && renderer != null && renderer.enabled && TrackedBody.gameObject.activeInHierarchy
                 && (GameManager.Instance == null || GameManager.Instance.CurrentState == LevelState.InProgress);
             visuals.SetActive(showing);
-            if (!showing) return;
+            if (!showing) { pulseRemaining = 0; PulseAmount = 0; return; }
+            if (Application.isPlaying && Time.timeScale > 0)
+                pulseRemaining = Mathf.Max(0, pulseRemaining - Time.deltaTime);
+            PulseAmount = pulseRemaining > 0 ? Mathf.Sin(Mathf.PI * (1f - pulseRemaining / PulseDuration)) : 0;
             var bounds = renderer.bounds;
             float radius = Mathf.Max(bounds.extents.x, bounds.extents.z);
             collar.position = new Vector3(bounds.center.x, bounds.center.y + bounds.extents.y * .32f, bounds.center.z);
-            collar.localScale = new Vector3(radius * 2.1f, .20f, radius * 2.1f);
+            float diameter = radius * 2.1f * (1f + .12f * PulseAmount);
+            collar.localScale = new Vector3(diameter, .20f + .10f * PulseAmount, diameter);
+            tint.SetColor("_Color", Color.Lerp(GoldTheme.Teal, new Color(.40f, .85f, .77f), PulseAmount));
+            collarRenderer.SetPropertyBlock(tint);
         }
 
-        private void OnDisable() { if (visuals != null) visuals.SetActive(false); }
+        private void OnDisable()
+        {
+            if (visuals != null) visuals.SetActive(false);
+            pulseRemaining = 0; PulseAmount = 0;
+        }
         private void OnDestroy()
         {
             Release(visuals);

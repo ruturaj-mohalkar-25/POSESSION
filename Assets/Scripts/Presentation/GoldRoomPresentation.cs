@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 
 namespace Possession
 {
-    // Changes renderer materials only. Existing collision, gates, routes and actor poses are retained.
+    // Campaign presentation only. Existing collision, gates, routes and actor poses are retained.
     public sealed class GoldRoomPresentation : MonoBehaviour
     {
         public void Apply(Scene scene)
@@ -48,6 +48,7 @@ namespace Possession
                     new Vector3(1.2f, .08f, .8f), Resources.Load<Material>("Gold/Wood"));
                 placed++;
             }
+            gameObject.AddComponent<GoldRoomSigns>().Build(scene, floors, renderers.Where(IsWall).ToArray());
         }
 
         public static bool IsFloor(MeshRenderer r) => r.GetComponent<Collider>() != null

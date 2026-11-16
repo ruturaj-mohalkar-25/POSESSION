@@ -20,10 +20,42 @@ namespace Possession.Editor
                 if (material == null) { material = new Material(Shader.Find("Standard")); AssetDatabase.CreateAsset(material, path); }
                 material.color = spec.Item2; material.SetFloat("_Glossiness", .08f); EditorUtility.SetDirty(material);
             }
+            const string shadowPath = "Assets/Resources/Gold/ContactShadow.mat";
+            if (AssetDatabase.LoadAssetAtPath<Material>(shadowPath) == null)
+                AssetDatabase.CreateAsset(new Material(Shader.Find("Possession/ContactShadow")), shadowPath);
+            const string textPath = "Assets/Resources/Gold/RoomSignText.mat";
+            if (AssetDatabase.LoadAssetAtPath<Material>(textPath) == null)
+                AssetDatabase.CreateAsset(new Material(Shader.Find("Possession/RoomSignText")), textPath);
             AssetDatabase.SaveAssets();
         }
         public static void CaptureBefore() => Capture("Before");
         public static void CaptureAfter() { Prepare(); Capture("After"); }
+        public static void CapturePolish()
+        {
+            Prepare(); Capture("Polish");
+            foreach (string path in CampaignLevels.ScenePaths)
+            {
+                var scene = EditorSceneManager.OpenScene(path);
+                GoldPresentationInstaller.Install(scene);
+                var player = UnityEngine.Object.FindFirstObjectByType<PlayerIdentityView>(); player.Refresh();
+                UnityEngine.Object.FindFirstObjectByType<GoldContactShadows>().Refresh();
+                var signs = UnityEngine.Object.FindObjectsByType<TextMesh>(FindObjectsSortMode.None)
+                    .Where(t => t.transform.parent != null && t.transform.parent.name == "Gold_RoomSign").OrderBy(t => t.text).ToArray();
+                Debug.Log("GOLD_ROOM_SIGNS " + scene.name + ": " + string.Join(", ", signs.Select(s => s.text)));
+                if (signs.Length == 0) throw new InvalidOperationException("No room boards in " + scene.name);
+                var board = signs.FirstOrDefault(t => t.text == "ENTRY") ?? signs[0];
+                var camera = Camera.main; camera.cullingMask &= ~(1 << 5);
+                camera.transform.position = board.transform.position + new Vector3(0, 4, -10);
+                camera.transform.LookAt(board.transform.position);
+                Save(camera, $"Polish_{scene.name}_sign");
+                var body = player.GetComponent<Renderer>().bounds;
+                camera.transform.position = body.center + new Vector3(3, 4, -5);
+                camera.transform.LookAt(body.center);
+                Save(camera, $"Polish_{scene.name}_shadow");
+            }
+            EditorSceneManager.OpenScene("Assets/Scenes/MainMenu.unity");
+            ValidateGeometry();
+        }
         public static void BuildWebGL()
         {
             Prepare();
@@ -68,6 +100,7 @@ namespace Possession.Editor
                 GoldPresentationInstaller.Install(scene);
                 var player = UnityEngine.Object.FindFirstObjectByType<PlayerIdentityView>();
                 player.Refresh();
+                UnityEngine.Object.FindFirstObjectByType<GoldContactShadows>().Refresh();
                 var camera = Camera.main;
                 camera.cullingMask &= ~(1 << 5);
                 Vector3 at = player.transform.position;
