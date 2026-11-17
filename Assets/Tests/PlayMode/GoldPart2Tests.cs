@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -45,6 +46,53 @@ namespace Possession.Tests
             Assert.That(heavy.transform.Find("Heavy Left Shoulder"), Is.Not.Null);
             Assert.That(heavy.transform.Find("Heavy Right Shoulder"), Is.Not.Null);
             Assert.That(heavy.GetComponentsInChildren<Collider>(true).Length, Is.EqualTo(before));
+        }
+
+        [UnityTest]
+        public IEnumerator GuardAndHeavyPiecesFollowBodyCutawaysAndBlinkVisibilityThenRestore()
+        {
+            foreach (bool heavy in new[] { false, true })
+            {
+                var root = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                root.name = "GoldPart2Test " + (heavy ? "Heavy Visibility" : "Guard Visibility");
+                root.AddComponent<CharacterController>();
+                EnemyBase enemy = heavy ? (EnemyBase)root.AddComponent<HeavyEnemy>() : root.AddComponent<GuardEnemy>();
+                enemy.enabled = false;
+                var body = root.GetComponent<Renderer>();
+                var material = body.sharedMaterial;
+                var position = root.transform.position;
+                var rotation = root.transform.rotation;
+                int colliders = root.GetComponentsInChildren<Collider>(true).Length;
+                body.forceRenderingOff = true;
+                var look = root.AddComponent<GoldEnemyPresentation>();
+                yield return null;
+                var pieces = root.GetComponentsInChildren<Renderer>(true).Where(r => r != body).ToArray();
+                Assert.That(pieces.Length, Is.EqualTo(look.VisualPieceCount));
+                Assert.That(pieces, Is.Not.Empty);
+                Assert.That(pieces.All(p => p.forceRenderingOff), Is.True,
+                    "A hidden body must not leave its cap or armour floating in view.");
+
+                body.forceRenderingOff = false;
+                yield return null;
+                Assert.That(pieces.All(p => !p.forceRenderingOff), Is.True,
+                    "Ending a cutaway or blink must restore every owned piece.");
+                body.forceRenderingOff = true;
+                yield return null;
+                Assert.That(pieces.All(p => p.forceRenderingOff), Is.True);
+                body.forceRenderingOff = false;
+                body.enabled = false;
+                yield return null;
+                Assert.That(pieces.All(p => p.forceRenderingOff), Is.True,
+                    "Disabling the body renderer must also hide its attached visual pieces.");
+                body.enabled = true;
+                yield return null;
+                Assert.That(pieces.All(p => p.enabled && !p.forceRenderingOff), Is.True);
+                Assert.That(body.sharedMaterial, Is.SameAs(material));
+                Assert.That(root.transform.position, Is.EqualTo(position));
+                Assert.That(root.transform.rotation, Is.EqualTo(rotation));
+                Assert.That(root.GetComponentsInChildren<Collider>(true).Length, Is.EqualTo(colliders));
+                Assert.That(enemy.enabled, Is.False, "Presentation must leave the AI controller alone.");
+            }
         }
 
         [UnityTest]
