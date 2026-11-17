@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
@@ -92,14 +93,28 @@ namespace Possession.Tests
         }
 
         [UnityTest]
-        public IEnumerator Level02HasFiveConfiguredStaggeredGuardPatrols()
+        public IEnumerator Level02HasSevenConfiguredStaggeredGuardPatrols()
         {
             yield return SceneManager.LoadSceneAsync("Level_02", LoadSceneMode.Additive);
             levelScene = SceneManager.GetSceneByName("Level_02");
             var guards = FindLevelGuards(levelScene);
 
-            Assert.That(guards, Has.Count.EqualTo(5));
-            AssertConfiguredRoutes(guards);
+            Assert.That(guards, Has.Count.EqualTo(7));
+            var pressureNames = new[] { "Guard_NorthStorage_Pressure", "Guard_GateChamber_Pressure" };
+            var pressureGuards = guards.Where(g => pressureNames.Contains(g.name)).ToArray();
+            var originalGuards = guards.Where(g => !pressureNames.Contains(g.name)).ToArray();
+            Assert.That(originalGuards, Has.Length.EqualTo(5));
+            AssertConfiguredRoutes(originalGuards);
+            Assert.That(pressureGuards.Select(g => g.name), Is.EquivalentTo(pressureNames));
+            foreach (var pressure in pressureGuards)
+            {
+                var route = GetRoute(pressure);
+                Assert.That(route, Has.Length.EqualTo(4));
+                Assert.That(route.All(point => point != null), Is.True);
+                Assert.That(Vector3.Cross(route[1].position - route[0].position,
+                    route[2].position - route[1].position).magnitude, Is.GreaterThan(1f),
+                    pressure.name + " must use a four-corner loop, not a collinear patrol.");
+            }
             Assert.That(guards[0].PatrolStartDelay, Is.Not.EqualTo(guards[1].PatrolStartDelay),
                 "Level 2 Guard patrols should start at different times.");
             foreach (GuardEnemy levelGuard in guards)
