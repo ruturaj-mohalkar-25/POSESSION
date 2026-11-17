@@ -40,7 +40,7 @@ namespace Possession
         public void OnLevelButton(int index)
         {
             if (index < 0 || index >= levelScenes.Length) return;
-            if (!LevelFlow.IsInBuild(levelScenes[index])) return;
+            if (!IsAvailable(index)) return;
             LevelFlow.Load(levelScenes[index]);
         }
 
@@ -59,14 +59,17 @@ namespace Possession
             if (mainButtons != null) mainButtons.SetActive(!show);
         }
 
-        // Levels that aren't built yet stay visible but locked
+        private bool IsAvailable(int i) =>
+            i >= 0 && i < levelScenes.Length && CampaignProgress.IsUnlocked(i) && LevelFlow.IsInBuild(levelScenes[i]);
+
+        // Levels not yet reached (or not built) stay visible but locked
         private void RefreshLevelButtons()
         {
             if (levelButtons == null) return;
             for (int i = 0; i < levelButtons.Length; i++)
             {
                 if (levelButtons[i] == null) continue;
-                bool available = i < levelScenes.Length && LevelFlow.IsInBuild(levelScenes[i]);
+                bool available = IsAvailable(i);
                 levelButtons[i].interactable = available;
 
                 var label = levelButtons[i].GetComponentInChildren<Text>();
