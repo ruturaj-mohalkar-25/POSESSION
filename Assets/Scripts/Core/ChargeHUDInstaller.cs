@@ -6,6 +6,10 @@ namespace Possession
 {
     public static class ChargeHUDInstaller
     {
+        // The tutorial already says which key to press in its objective bar, so it turns off the
+        // key reminders here to avoid saying the same thing twice on screen.
+        public static bool ShowKeyHints = true;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
         {
@@ -90,17 +94,17 @@ namespace Possession
             if (!playing) return;
             if (possession.CurrentState != PlayerState.Spirit)
             {
-                label.text = "POSSESSING · E to eject";
+                label.text = ChargeHUDInstaller.ShowKeyHints ? "POSSESSING · E to eject" : "POSSESSING";
                 label.color = new Color(.85f, .65f, .2f);
             }
             else if (charge.HasCharge)
             {
-                label.text = "CHARGES " + charge.Count + "/" + charge.MaxCharges + " · E near a body";
+                label.text = "CHARGES " + charge.Count + "/" + charge.MaxCharges + (ChargeHUDInstaller.ShowKeyHints ? " · E near a body" : "");
                 label.color = new Color(.45f, 1f, .7f);
             }
             else
             {
-                label.text = "Find an energy shard";
+                label.text = ChargeHUDInstaller.ShowKeyHints ? "Find an energy shard" : "CHARGES 0/" + charge.MaxCharges;
                 label.color = Color.white;
             }
         }
