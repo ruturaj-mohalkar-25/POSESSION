@@ -1,16 +1,25 @@
 # Level 4 — The Split Vault
 
-Level 4 review prototype: two floors, guarded archive access, a recoverable vault cipher, and an Engineer vault finale. Open the scene directly to playtest the layout and mechanics before campaign integration.
+Level 4: two floors, guarded archive access, a recoverable vault cipher, and an Engineer vault finale. Available as the fourth stage in the local campaign.
 
 ## Open and play
 
 Use **Unity 6000.3.22f1** in this checkout.
 
 - Open `Assets/Level04Gold/Scenes/Level_04_Gold.unity`, then press **Play**.
+- From `Assets/Scenes/MainMenu.unity`, press **Play → LEVEL 4**. Completing Level 3 also continues here; opening the vault is the campaign finale.
 - Editor shortcut: **Possession → Level 4 Gold → Open Local Level**.
 - To regenerate the blockout, stop Play Mode and choose **Possession → Level 4 Gold → Build and Open**. This replaces the local Level 4 scene; preserve manual edits separately.
 
-Registered in local Build Settings for Retry. The existing campaign menu, campaign order and tutorial are unchanged; test Level 4 directly.
+Registered in local Build Settings for menu selection, progression and Retry. The existing first three stages and tutorial retain their authored layouts and gameplay.
+
+## Campaign presentation
+
+The level uses the same shared HUD, textured floors, wall palette, paneled target doors, possession collar and contact shadows as Levels 1–3. Floor surfaces are resolved separately on each storey so the upper-floor cutaway still works. Engineer access doors keep their amber interaction cues and their existing unlock rules.
+
+Floor and recovered-cipher information sits in a compact top-right badge. Short action prompts stay above the shared health, time and objective row; the vault controls use the campaign typography and colors. The possession warning remains visible on either floor and while operating the vault.
+
+Use **Possession → Level 4 Gold → Match Campaign Presentation** to refresh the presentation on the saved scene without rebuilding the layout. The ordinary builder also applies this setup.
 
 ## Layout
 
@@ -33,6 +42,8 @@ From the gallery, walk east into the flat stair foyer and follow the north-point
 | R | Retry the whole level. |
 
 Engineer has no shooting or smashing ability. Its tools unlock **Maintenance Access**, **Archive Entry** and **Archive Clue** doors, copy the cipher and operate the vault. Unlocked doors stay open for other forms.
+
+Both Engineers patrol four-point loops inside their own rooms, using the Guards' walking pace, turns and short lookout pauses. Possession switches to WASD; operating the vault holds the body still until you leave its controls. **Possession → Level 4 Gold → Update Engineer Patrols** refreshes these routes without rebuilding the level.
 
 ## Routes
 

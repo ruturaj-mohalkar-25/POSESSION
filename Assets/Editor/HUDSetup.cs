@@ -545,7 +545,7 @@ namespace Possession.Editor
             EditorBuildSettings.scenes = scenes.ToArray();
         }
 
-        static void SetupMainMenu()
+        public static void SetupMainMenu()
         {
             var menuScene = EditorSceneManager.OpenScene(MainMenuPath, OpenSceneMode.Additive);
 
@@ -606,17 +606,19 @@ namespace Possession.Editor
                 select.anchorMax = Vector2.one;
                 select.offsetMin = select.offsetMax = Vector2.zero;
                 var buttonsProp = cso.FindProperty("levelButtons");
-                buttonsProp.arraySize = 3;
-                for (int i = 0; i < 3; i++)
+                int levelCount = CampaignLevels.PlayableSceneNames.Length;
+                float firstButtonY = levelCount > 3 ? 125f : 80f;
+                buttonsProp.arraySize = levelCount;
+                for (int i = 0; i < levelCount; i++)
                 {
                     var btn = StyleButton(FindOrCreateRect(select, $"Level{i + 1}Button"), $"LEVEL {i + 1}",
-                        new Vector2(0, 80 - i * 105), new Color(0.3f, 0.45f, 0.85f), new Vector2(480, 85));
+                        new Vector2(0, firstButtonY - i * 105), new Color(0.3f, 0.45f, 0.85f), new Vector2(480, 85));
                     ClearListeners(btn.onClick);
                     UnityEventTools.AddIntPersistentListener(btn.onClick, controller.OnLevelButton, i);
                     buttonsProp.GetArrayElementAtIndex(i).objectReferenceValue = btn;
                 }
                 var back = StyleButton(FindOrCreateRect(select, "BackButton"), "BACK",
-                    new Vector2(0, -260), new Color(0.22f, 0.22f, 0.26f), new Vector2(300, 75));
+                    new Vector2(0, firstButtonY - levelCount * 105 - 25), new Color(0.22f, 0.22f, 0.26f), new Vector2(300, 75));
                 SetSingleListener(back.onClick, controller.OnBackButton);
                 cso.FindProperty("levelSelectPanel").objectReferenceValue = select.gameObject;
                 select.gameObject.SetActive(false);

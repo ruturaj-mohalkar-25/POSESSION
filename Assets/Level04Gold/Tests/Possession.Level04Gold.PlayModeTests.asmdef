@@ -3,7 +3,8 @@
   "rootNamespace": "Possession.Level04Gold.Tests",
   "references": [
     "Possession.Runtime",
-    "Possession.Level04Gold.Runtime"
+    "Possession.Level04Gold.Runtime",
+    "Unity.ugui"
   ],
   "optionalUnityReferences": [
     "TestAssemblies"

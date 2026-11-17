@@ -110,7 +110,7 @@ namespace Possession.Level04Gold.Tests
             foreach (var engineer in All<EngineerEnemy>())
             {
                 var body = engineer.GetComponent<CharacterController>();
-                Assert.That(engineer.transform.lossyScale, Is.EqualTo(Vector3.one * 1.25f));
+                Assert.That(Vector3.Distance(engineer.transform.lossyScale, Vector3.one * 1.25f), Is.LessThan(.0001f));
                 Assert.That(body.height, Is.EqualTo(2f).Within(.001f));
                 Assert.That(body.radius, Is.EqualTo(.5f).Within(.001f));
             }
