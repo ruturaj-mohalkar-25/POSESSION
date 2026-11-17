@@ -153,6 +153,7 @@ namespace Possession.Level04Gold
         private void Update()
         {
             if (player == null) player = FindFirstObjectByType<PossessionController>();
+            if (Time.timeScale <= 0f) return;
             if (IsInteracting)
             {
                 if (!CanOperate() || player.PossessedEnemy != engineer) { EndInteraction(); return; }
@@ -164,10 +165,16 @@ namespace Possession.Level04Gold
                     if (Mathf.Abs(Mathf.DeltaAngle(DialAngle, stop)) <= tolerance) { DialAngle = stop; RefreshOverlay(); }
                 }
                 if (Input.GetKeyDown(KeyCode.Return)) { if (AlignedSteps < 2) TryConfirmAlignment(); else TryOpenHandle(); }
-                if (Input.GetKeyDown(KeyCode.F) || Input.GetKeyDown(KeyCode.Escape)) EndInteraction();
+                if (Input.GetKeyDown(KeyCode.F)) EndInteraction();
                 RefreshHostTime();
             }
             else if (Input.GetKeyDown(KeyCode.F) && CanOperate()) TryBeginInteraction();
+        }
+
+        private void LateUpdate()
+        {
+            // The shared pause menu owns Escape/P and must stay above the vault controls.
+            if (overlay != null) overlay.gameObject.SetActive(IsInteracting && Time.timeScale > 0f);
         }
 
         private void OnEjected(EnemyBase host, bool forced)
