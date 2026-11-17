@@ -177,10 +177,137 @@ namespace Possession.Editor
             foreach(var t in world.GetComponentsInChildren<WorldLabel>())Object.DestroyImmediate(t.gameObject);
             CampaignSpaceSetup.Apply(scene);
             CampaignCombatSetup.Apply(scene);
+            ApplyPressureGuards(scene);
             EditorSceneManager.MarkSceneDirty(scene);EditorSceneManager.SaveScene(scene,Path);
             LevelBuildKit.RegisterScene(Path);AssetDatabase.SaveAssets();
-            Debug.Log("Level 2 Hunted built: 7 rooms, 3 dead ends, 8 enemies, 8 shards, 2 independent routes.");
+            Debug.Log("Level 2 Hunted built: 7 rooms, 3 dead ends, 10 enemies, 8 shards, 2 independent routes.");
         }
+
+        // Adds only the two room sentries; safe to apply to the authored scene without rebuilding it.
+        public static void ApplyPressureGuards(Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded || scene.name != CampaignLevels.SecondScene) return;
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+                throw new System.InvalidOperationException("Stop Play Mode before placing pressure Guards.");
+            AddPressureGuard(scene, "Guard_NorthStorage_Pressure", "Guard_North", "R4_Floor", 3.2f,
+                new[] { new Vector2(20.9f, 1.8f), new Vector2(22f, 1.8f), new Vector2(22f, 4.1f), new Vector2(20.9f, 4.1f) });
+            AddPressureGuard(scene, "Guard_GateChamber_Pressure", "Guard_GateChamber", "R6_Floor", 4f,
+                new[] { new Vector2(21f, 19.7f), new Vector2(22.2f, 19.7f), new Vector2(22.2f, 20.6f), new Vector2(21f, 20.6f) });
+        }
+
+        static void AddPressureGuard(Scene scene, string name, string templateName, string floorName,
+            float startDelay, Vector2[] plan)
+        {
+            var roots = scene.GetRootGameObjects();
+            var guards = new List<GuardEnemy>();
+            BoxCollider floor = null;
+            foreach (var root in roots)
+            {
+                guards.AddRange(root.GetComponentsInChildren<GuardEnemy>(true));
+                foreach (var box in root.GetComponentsInChildren<BoxCollider>(true))
+                    if (box.name == floorName) floor = box;
+            }
+            if (guards.Exists(g => g.name == name)) return;
+            var source = guards.Find(g => g.name == templateName);
+            if (source == null || floor == null || source.GetComponent<ShootAbility>() == null
+                || source.GetComponent<EnemyContactDamage>() == null)
+                throw new System.InvalidOperationException("Missing authored Guard or room for " + name);
+
+            float scale = CampaignLayoutScale.ForScene(scene);
+            var points = new Vector3[plan.Length];
+            for (int i = 0; i < points.Length; i++)
+            {
+                points[i] = Map(plan[i].x, plan[i].y, source.transform.position.y);
+                points[i] = new Vector3(points[i].x * scale, points[i].y, points[i].z * scale);
+            }
+            var copy = Object.Instantiate(source.gameObject, source.transform.parent);
+            copy.name = name;
+            copy.transform.SetPositionAndRotation(points[0], Quaternion.identity);
+            copy.SetActive(true);
+            var guard = copy.GetComponent<GuardEnemy>();
+            try
+            {
+                Physics.SyncTransforms();
+                ValidatePressureRoute(scene, guard, floor, points);
+            }
+            catch
+            {
+                Object.DestroyImmediate(copy);
+                throw;
+            }
+
+            var settings = new SerializedObject(guard);
+            var waypoints = settings.FindProperty("waypoints");
+            waypoints.arraySize = points.Length;
+            for (int i = 0; i < points.Length; i++)
+            {
+                var node = new GameObject(name + "_WP" + i).transform;
+                node.SetParent(copy.transform.parent);
+                node.position = points[i];
+                waypoints.GetArrayElementAtIndex(i).objectReferenceValue = node;
+            }
+            var home = floor.bounds;
+            home.center = new Vector3(home.center.x, 3f, home.center.z);
+            home.size = new Vector3(home.size.x, 8f, home.size.z);
+            settings.FindProperty("homeBounds").boundsValue = home;
+            settings.FindProperty("useHomeBounds").boolValue = true;
+            settings.FindProperty("patrolStartDelay").floatValue = startDelay;
+            settings.ApplyModifiedPropertiesWithoutUndo();
+            if (copy.GetComponent<HuntedEnemyPressure>() == null) copy.AddComponent<HuntedEnemyPressure>();
+            var marker = new GameObject("SpawnPoint_" + name).transform;
+            marker.SetParent(copy.transform.parent);
+            marker.SetPositionAndRotation(points[0], copy.transform.rotation);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(copy.transform);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(guard);
+            EditorUtility.SetDirty(guard);
+            EditorSceneManager.MarkSceneDirty(scene);
+        }
+
+        static void ValidatePressureRoute(Scene scene, GuardEnemy guard, BoxCollider floor, Vector3[] points)
+        {
+            var controller = guard.GetComponent<CharacterController>();
+            float radius = controller.radius * Mathf.Max(Mathf.Abs(guard.transform.lossyScale.x), Mathf.Abs(guard.transform.lossyScale.z)) + .05f;
+            float halfHeight = Mathf.Max(radius, controller.height * Mathf.Abs(guard.transform.lossyScale.y) * .5f);
+            var centreOffset = guard.transform.TransformVector(controller.center);
+            var segment = Vector3.up * (halfHeight - radius);
+            var sources = new List<PossessionChargePickup>();
+            foreach (var root in scene.GetRootGameObjects()) sources.AddRange(root.GetComponentsInChildren<PossessionChargePickup>(true));
+            var room = floor.bounds;
+            for (int i = 0; i < points.Length; i++)
+            {
+                Vector3 from = points[i], to = points[(i + 1) % points.Length];
+                foreach (var pickup in sources)
+                {
+                    Vector3 delta = to - from; delta.y = 0f;
+                    Vector3 offset = pickup.transform.position - from; offset.y = 0f;
+                    float t = delta.sqrMagnitude > .001f ? Mathf.Clamp01(Vector3.Dot(offset, delta) / delta.sqrMagnitude) : 0f;
+                    if ((offset - delta * t).magnitude < 3f)
+                        throw new System.InvalidOperationException(guard.name + " patrol crowds charge source " + pickup.name);
+                }
+                int samples = Mathf.CeilToInt(Vector3.Distance(from, to) / .4f);
+                for (int step = 0; step <= samples; step++)
+                {
+                    Vector3 p = Vector3.Lerp(from, to, samples > 0 ? step / (float)samples : 0f);
+                    if (p.x < room.min.x + radius || p.x > room.max.x - radius
+                        || p.z < room.min.z + radius || p.z > room.max.z - radius)
+                        throw new System.InvalidOperationException(guard.name + " patrol leaves " + floor.name);
+                    bool supported = false;
+                    foreach (var hit in Physics.RaycastAll(p + Vector3.up * .5f, Vector3.down,
+                                 halfHeight + 1f, ~0, QueryTriggerInteraction.Ignore))
+                        if (hit.collider == floor) supported = true;
+                    if (!supported) throw new System.InvalidOperationException(guard.name + " patrol has no room floor support.");
+                    var centre = p + centreOffset;
+                    foreach (var blocker in Physics.OverlapCapsule(centre + segment, centre - segment, radius,
+                                 ~0, QueryTriggerInteraction.Ignore))
+                    {
+                        if (blocker == floor || blocker.transform.IsChildOf(guard.transform)) continue;
+                        if (blocker.gameObject.scene != scene) continue;
+                        throw new System.InvalidOperationException(guard.name + " patrol blocked by " + blocker.name);
+                    }
+                }
+            }
+        }
+
         static void Floor(Transform parent,string name,RectInt rect,Material mat)
         { var p=Map(rect.center.x,rect.center.y,0);Cube(parent,name,p,new Vector3(rect.width*Unit,.2f,rect.height*Unit),mat); }
         static void Wall(Transform parent,float x1,float y1,float x2,float y2,Material mat)

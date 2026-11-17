@@ -1,0 +1,5 @@
+{
+  "name": "Possession.Level04Gold.Runtime",
+  "rootNamespace": "Possession.Level04Gold",
+  "references": ["Possession.Runtime", "Unity.ugui"]
+}

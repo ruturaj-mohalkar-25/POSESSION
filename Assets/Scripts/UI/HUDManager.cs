@@ -273,6 +273,7 @@ namespace Possession
                 PlayerState.Possessed_Guard => "Guard",
                 PlayerState.Possessed_Heavy => "Heavy",
                 PlayerState.Possessed_Drone => "Drone",
+                PlayerState.Possessed_Engineer => "Engineer",
                 _ => "Spirit"
             };
             SetFormText(form == "Heavy" ? "Heavy (slow)" : form);

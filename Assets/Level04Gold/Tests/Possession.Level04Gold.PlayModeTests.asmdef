@@ -1,0 +1,15 @@
+{
+  "name": "Possession.Level04Gold.PlayModeTests",
+  "rootNamespace": "Possession.Level04Gold.Tests",
+  "references": [
+    "Possession.Runtime",
+    "Possession.Level04Gold.Runtime",
+    "Unity.ugui"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ]
+}
