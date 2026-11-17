@@ -7,10 +7,10 @@ namespace Possession
     {
         private const string Key = "Possession.LevelsUnlocked";
 
-        public static int Unlocked => Mathf.Clamp(PlayerPrefs.GetInt(Key, 1), 1, CampaignLevels.SceneNames.Length);
-        public static bool IsUnlocked(int index) => index < Unlocked;
+        public static int Unlocked => Mathf.Clamp(PlayerPrefs.GetInt(Key, 1), 1, CampaignLevels.PlayableSceneNames.Length);
+        public static bool IsUnlocked(int index) => index >= 0 && index < Unlocked;
 
-        // Finishing a campaign level opens the next one. Other scenes (tutorial, Level 4) are ignored.
+        // Finishing a playable campaign level opens the next one; tutorials and fixtures are ignored.
         public static void OnLevelCompleted(string sceneName)
         {
             int number = CampaignLevels.NumberFor(sceneName);
@@ -19,7 +19,7 @@ namespace Possession
 
         public static void Set(int count)
         {
-            count = Mathf.Clamp(count, 1, CampaignLevels.SceneNames.Length);
+            count = Mathf.Clamp(count, 1, CampaignLevels.PlayableSceneNames.Length);
             if (count <= Unlocked) return;
             PlayerPrefs.SetInt(Key, count);
             PlayerPrefs.Save();

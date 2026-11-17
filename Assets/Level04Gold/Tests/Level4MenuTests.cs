@@ -12,9 +12,16 @@ namespace Possession.Level04Gold.Tests
 {
     public sealed class Level4MenuTests
     {
+        private const string ProgressKey = "Possession.LevelsUnlocked";
+        private bool hadSavedProgress;
+        private int savedProgress;
+
         [SetUp]
         public void Setup()
         {
+            hadSavedProgress = PlayerPrefs.HasKey(ProgressKey);
+            savedProgress = PlayerPrefs.GetInt(ProgressKey);
+            CampaignProgress.Reset();
             Time.captureFramerate = 60;
             Time.timeScale = 1f;
             EventBus.Clear();
@@ -23,6 +30,9 @@ namespace Possession.Level04Gold.Tests
         [UnityTearDown]
         public IEnumerator Cleanup()
         {
+            if (hadSavedProgress) PlayerPrefs.SetInt(ProgressKey, savedProgress);
+            else PlayerPrefs.DeleteKey(ProgressKey);
+            PlayerPrefs.Save();
             Time.captureFramerate = 0;
             Time.timeScale = 1f;
             var old = SceneManager.GetActiveScene();
@@ -34,6 +44,7 @@ namespace Possession.Level04Gold.Tests
         [UnityTest]
         public IEnumerator SavedPlayAndFourthLevelButtonsLoadTheSavedLevelAndRestartAndMenuWork()
         {
+            CampaignProgress.Set(CampaignLevels.PlayableSceneNames.Length);
             yield return Load("MainMenu");
             var menu = All<MainMenuController>().Single();
             var selection = Read<GameObject>(menu, "levelSelectPanel");
@@ -83,6 +94,41 @@ namespace Possession.Level04Gold.Tests
             Assert.That(Read<GameObject>(menu, "mainButtons").activeInHierarchy, Is.True);
             Assert.That(Read<GameObject>(menu, "levelSelectPanel").activeSelf, Is.False);
             Assert.That(Time.timeScale, Is.EqualTo(1f));
+        }
+
+        [UnityTest]
+        public IEnumerator FreshProfileLocksFourthUntilThirdCompletionThenTheSavedMenuLoadsIt()
+        {
+            yield return Load("MainMenu");
+            var menu = All<MainMenuController>().Single();
+            menu.OnPlayButton();
+            var buttons = Read<Button[]>(menu, "levelButtons");
+            Assert.That(buttons.Length, Is.EqualTo(4));
+            Assert.That(buttons[0].interactable, Is.True);
+            for (int i = 1; i < buttons.Length; i++)
+                Assert.That(buttons[i].interactable, Is.False, "An unearned stage must stay locked.");
+            Assert.That(buttons[3].GetComponentInChildren<Text>().text, Does.Contain("LOCKED"));
+            // UnityEvent.Invoke bypasses the disabled Button, so the controller must also reject it.
+            buttons[3].onClick.Invoke();
+            yield return null;
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("MainMenu"));
+
+            yield return Load(CampaignLevels.ThirdScene);
+            EventBus.LevelCompleted?.Invoke();
+            Assert.That(GameManager.Instance.CurrentState, Is.EqualTo(LevelState.Complete));
+            Assert.That(CampaignProgress.Unlocked, Is.EqualTo(4));
+            var hud = All<HUDManager>().Single();
+            var complete = Read<GameObject>(hud, "levelCompletePanel");
+            BoundButton(complete.transform, hud, nameof(HUDManager.OnQuitButton)).onClick.Invoke();
+            yield return AwaitScene("MainMenu");
+            menu = All<MainMenuController>().Single();
+            menu.OnPlayButton();
+            buttons = Read<Button[]>(menu, "levelButtons");
+            Assert.That(buttons[3].interactable, Is.True);
+            Assert.That(buttons[3].GetComponentInChildren<Text>().text, Is.EqualTo("LEVEL 4"));
+            buttons[3].onClick.Invoke();
+            yield return AwaitScene(CampaignLevels.FourthScene);
+            AssertSavedLevelFourIsReady();
         }
 
         [UnityTest]

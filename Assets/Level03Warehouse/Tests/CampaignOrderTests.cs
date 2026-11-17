@@ -13,8 +13,20 @@ namespace Possession.Warehouse.Tests
 {
     public sealed class CampaignOrderTests
     {
+        private const string ProgressKey="Possession.LevelsUnlocked";
+        private bool hadSavedProgress;
+        private int savedProgress;
+        [SetUp] public void Setup()
+        {
+            hadSavedProgress=PlayerPrefs.HasKey(ProgressKey);
+            savedProgress=PlayerPrefs.GetInt(ProgressKey);
+            CampaignProgress.Reset();
+        }
         [UnityTearDown] public IEnumerator Cleanup()
         {
+            if(hadSavedProgress)PlayerPrefs.SetInt(ProgressKey,savedProgress);
+            else PlayerPrefs.DeleteKey(ProgressKey);
+            PlayerPrefs.Save();
             Time.timeScale=1;var old=SceneManager.GetActiveScene();
             if(!CampaignLevels.PlayableSceneNames.Contains(old.name)&&old.name!="MainMenu"&&old.name!=TutorialScene.Name){EventBus.Clear();yield break;}
             SceneManager.SetActiveScene(SceneManager.CreateScene("CampaignCleanup"));
@@ -36,6 +48,8 @@ namespace Possession.Warehouse.Tests
         }
         [UnityTest] public IEnumerator AllFourMenuButtonsStartTheirDisplayedStages()
         {
+            // This fixture checks stage routing after the player has earned every unlock.
+            CampaignProgress.Set(CampaignLevels.PlayableSceneNames.Length);
             for(int selected=0;selected<4;selected++)
             {
                 yield return Load("MainMenu");

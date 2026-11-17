@@ -97,7 +97,7 @@ namespace Possession.Editor
             Set(level,"cargoEntry",doors["cargo-entry"]);Set(level,"cargo",doors["cargo"]);Set(level,"loadingWall",walls["Loading wall"]);
             var settings=new SerializedObject(hud);var objective=settings.FindProperty("objectiveText").objectReferenceValue;
             settings.FindProperty("objectives").arraySize=0;settings.ApplyModifiedPropertiesWithoutUndo();Set(level,"objective",objective);
-            // Shared HUD callbacks now route the third campaign level to Finish / Play Again.
+            // Shared HUD callbacks continue to Level 4 and reserve Finish for the campaign finale.
             foreach(var template in templates)Object.DestroyImmediate(template);
             CampaignCombatSetup.Apply(scene);
             ApplyPressureGuards(scene);
