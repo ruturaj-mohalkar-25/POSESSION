@@ -23,7 +23,8 @@ namespace Possession
 
     // One cue per player also handles hosts spawned after the scene loads.
     // Visibility leaves the white possession material and combat property blocks alone.
-    [DisallowMultipleComponent]
+    // Apply the host warning after floor-visibility systems restore visible bodies.
+    [DefaultExecutionOrder(2100), DisallowMultipleComponent]
     [RequireComponent(typeof(PossessionController))]
     public sealed class PossessedBodyBlink : MonoBehaviour
     {
@@ -114,7 +115,7 @@ namespace Possession
         private void LateUpdate()
         {
             if (host == null) return;
-            if (!LevelActive || !host.isActiveAndEnabled || host.CurrentHP <= 0
+            if (!LevelActive || !host.gameObject.activeInHierarchy || host.CurrentHP <= 0
                 || player.PossessedEnemy != host)
             {
                 Clear();

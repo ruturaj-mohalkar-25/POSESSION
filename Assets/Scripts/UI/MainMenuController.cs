@@ -12,7 +12,7 @@ namespace Possession
         [Header("Level Select")]
         [SerializeField] private GameObject levelSelectPanel;
         [SerializeField] private Button[] levelButtons;
-        private readonly string[] levelScenes = CampaignLevels.SceneNames;
+        private readonly string[] levelScenes = CampaignLevels.PlayableSceneNames;
 
         private void Start()
         {

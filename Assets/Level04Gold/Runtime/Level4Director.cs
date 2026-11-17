@@ -16,16 +16,20 @@ namespace Possession.Level04Gold
         [SerializeField] private HUDManager hud;
         [SerializeField] private Text failureTitle;
         private PossessionController player;
+        private SpiritController playerSpirit;
         private Text context, roomTitle, cipherNote;
+        private GameObject overlayRoot, statusPanel, contextPanel, cipherPanel;
+        private RectTransform statusRect;
         private Camera cameraView;
         private CameraFollow follow;
         private Quaternion cameraRotation;
-        private bool surveying, failed;
+        private bool surveying, failed, levelEnded;
         public bool EngineerLost => failed;
 
         private void Start()
         {
             player = FindFirstObjectByType<PossessionController>();
+            playerSpirit = player != null ? player.GetComponent<SpiritController>() : null;
             if (engineers == null || engineers.Length == 0) engineers = FindObjectsByType<EngineerEnemy>(FindObjectsSortMode.None);
             cameraView = Camera.main;
             if (cameraView != null) { follow = cameraView.GetComponent<CameraFollow>(); cameraRotation = cameraView.transform.rotation; }
@@ -40,7 +44,7 @@ namespace Possession.Level04Gold
                 && !engineers.Any(e => e != null && e.CurrentHP > 0 && e.gameObject.activeInHierarchy))
             {
                 failed = true;
-                hud.SetLevelObjective("NO ENGINEER LEFT • RETRY THE LEVEL");
+                if (hud != null) hud.SetLevelObjective("NO ENGINEER LEFT • RETRY");
                 if (failureTitle != null) failureTitle.text = "NO ENGINEER LEFT";
                 EventBus.LevelFailed?.Invoke();
                 return;
@@ -48,14 +52,16 @@ namespace Possession.Level04Gold
             if (player == null) return;
             Transform body = player.PossessedEnemy != null ? player.PossessedEnemy.transform : player.transform;
             Vector3 p = body.position;
-            if (roomTitle != null) roomTitle.text = "LEVEL 4 / THE SPLIT VAULT\n" + (p.y > 3.5f ? "UPPER FLOOR" : "LOWER FLOOR");
+            if (roomTitle != null) roomTitle.text = p.y > 3.5f ? "UPPER FLOOR" : "LOWER FLOOR";
             bool recovered = cipher != null && cipher.Recovered;
-            if (cipherNote != null) cipherNote.text = recovered ? "VAULT CIPHER\n" + Level4Cipher.Hint : "";
+            if (cipherNote != null) cipherNote.text = "CW TRIANGLE  •  CCW SQUARE";
+            if (cipherPanel != null) cipherPanel.SetActive(recovered);
+            if (statusRect != null) statusRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, recovered ? 108f : 44f);
             if (hud != null) hud.SetLevelObjective(
                 !recovered ? galleryDoor != null && !galleryDoor.IsOpen
-                    ? "GUARD • OPEN THE GALLERY TO REACH THE ARCHIVE"
-                    : "UPSTAIRS • ENGINEER • UNLOCK THE ARCHIVE"
-                : accessGate.IsOpen ? "BRING ENGINEER • OPEN THE VAULT" : "CIPHER RECOVERED • OPEN SERVICE ACCESS");
+                    ? "1/4  GUARD • OPEN THE GALLERY"
+                    : "2/4  ENGINEER • RECOVER THE CIPHER"
+                : accessGate.IsOpen ? "4/4  ENGINEER • OPEN THE VAULT" : "3/4  ENGINEER • OPEN SERVICE ACCESS");
             if (context == null) return;
             context.text = "";
             var plan = new Vector3(p.x / Level4Layout.GeometryScale, p.y, p.z / Level4Layout.GeometryScale);
@@ -65,12 +71,12 @@ namespace Possession.Level04Gold
             if (nearCipher)
             {
                 StopSurvey();
-                context.text = cipher.CanRecover(body) ? "F • RECOVER VAULT CIPHER" : "ENGINEER • RECOVER THE CIPHER";
+                context.text = cipher.CanRecover(body) ? "F • COPY CIPHER" : "CIPHER • ENGINEER REQUIRED";
                 if (Input.GetKeyDown(KeyCode.F)) cipher.TryRecover(body);
             }
             else if (overlook)
             {
-                context.text = "BRIDGE OUT • HOLD F TO SURVEY BELOW";
+                context.text = "HOLD F • LOOK BELOW";
                 if (Input.GetKey(KeyCode.F) && !vault.IsInteracting) Survey(); else StopSurvey();
             }
             else StopSurvey();
@@ -80,26 +86,26 @@ namespace Possession.Level04Gold
                     if (gate == null || gate.IsOpen) continue;
                     if (gate.CanUnlock(body))
                     {
-                        context.text = "F • ENGINEER • OPEN SECURITY DOOR";
+                        context.text = "F • OPEN SECURITY DOOR";
                         if (Input.GetKeyDown(KeyCode.F)) gate.TryUnlock(body);
                         break;
                     }
                     if (gate.CanRelease(body))
                     {
-                        context.text = "F • OPEN RETURN DOOR";
+                        context.text = "F • RELEASE RETURN DOOR";
                         if (Input.GetKeyDown(KeyCode.F)) gate.TryRelease(body);
                         break;
                     }
                     if (gate.EngineerPoint != null && Vector3.Distance(p, gate.EngineerPoint.position) < 3.5f)
-                        context.text = "SECURITY DOOR • ENGINEER REQUIRED";
+                        context.text = "DOOR • ENGINEER REQUIRED";
                 }
             if (accessGate.CanRelease(body))
             {
-                context.text = "F • RELEASE SERVICE ACCESS";
+                context.text = "F • OPEN SERVICE ACCESS";
                 if (Input.GetKeyDown(KeyCode.F)) accessGate.TryRelease(body);
             }
             if (!vault.IsOpen && vault.OperatorPoint != null && Vector3.Distance(p, vault.OperatorPoint.position) < 4f)
-                context.text = !vault.HasCipher ? "VAULT • RECOVER THE ARCHIVE CIPHER FIRST"
+                context.text = !vault.HasCipher ? "VAULT • RECOVER CIPHER FIRST"
                     : vault.CanOperate() ? "F • OPERATE THE VAULT" : "VAULT • ENGINEER REQUIRED";
             if (vault.IsInteracting) context.text = "";
         }
@@ -120,23 +126,96 @@ namespace Possession.Level04Gold
             if (cameraView != null) cameraView.transform.rotation = cameraRotation;
             if (follow != null) follow.enabled = true;
         }
-        private void OnDisable() => StopSurvey();
+        private void LateUpdate()
+        {
+            bool playing = !levelEnded && !failed && (playerSpirit == null || playerSpirit.CurrentHP > 0)
+                && (GameManager.Instance == null
+                || GameManager.Instance.CurrentState == LevelState.InProgress);
+            bool showing = playing && (vault == null || !vault.IsInteracting);
+            if (overlayRoot != null) overlayRoot.SetActive(showing);
+            if (statusPanel != null) statusPanel.SetActive(showing);
+            if (contextPanel != null) contextPanel.SetActive(showing && context != null && context.text.Length > 0);
+        }
+
+        private void OnEnable()
+        {
+            EventBus.LevelCompleted += HideForLevelEnd;
+            EventBus.LevelFailed += HideForLevelEnd;
+            EventBus.SpiritDied += HideForLevelEnd;
+            EventBus.GameComplete += HideForLevelEnd;
+            if (overlayRoot != null) overlayRoot.SetActive(true);
+        }
+
+        private void OnDisable()
+        {
+            EventBus.LevelCompleted -= HideForLevelEnd;
+            EventBus.LevelFailed -= HideForLevelEnd;
+            EventBus.SpiritDied -= HideForLevelEnd;
+            EventBus.GameComplete -= HideForLevelEnd;
+            StopSurvey();
+            if (overlayRoot != null) overlayRoot.SetActive(false);
+        }
+
+        private void HideForLevelEnd()
+        {
+            levelEnded = true;
+            StopSurvey();
+            if (overlayRoot != null) overlayRoot.SetActive(false);
+        }
+
         private void BuildLabels()
         {
             var root = new GameObject("Level 4 context", typeof(Canvas), typeof(CanvasScaler));
             root.transform.SetParent(transform, false);
+            overlayRoot = root;
             var canvas = root.GetComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay; canvas.sortingOrder = 5;
-            var scaler = root.GetComponent<CanvasScaler>(); scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize; scaler.referenceResolution = new Vector2(1920, 1080);
-            roomTitle = Label(root.transform, new Vector2(0f, 1f), new Vector2(22f, -18f), new Vector2(460f, 66f), 23, TextAnchor.UpperLeft);
-            context = Label(root.transform, new Vector2(.5f, 0f), new Vector2(0f, 170f), new Vector2(1100, 46), 25, TextAnchor.MiddleCenter);
-            cipherNote = Label(root.transform, new Vector2(1f, 1f), new Vector2(-22f, -18f), new Vector2(450, 78), 20, TextAnchor.UpperRight);
+            var scaler = root.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.matchWidthOrHeight = .5f;
+
+            var status = Panel(root.transform, "FloorStatus", new Vector2(1f, 1f),
+                new Vector2(-24f, -20f), new Vector2(340f, 108f));
+            statusPanel = status.gameObject;
+            statusRect = status;
+            roomTitle = GoldTheme.Label(status, "FloorLabel", "", 20,
+                Vector2.up, Vector2.one, TextAnchor.MiddleRight);
+            var floorRect = roomTitle.rectTransform;
+            floorRect.pivot = new Vector2(.5f, 1f);
+            floorRect.anchoredPosition = new Vector2(0f, -4f);
+            floorRect.sizeDelta = new Vector2(-32f, 36f);
+            var cipherRect = GoldTheme.Rect(status, "RecoveredCipher", Vector2.up, Vector2.one);
+            cipherRect.pivot = new Vector2(.5f, 1f);
+            cipherRect.anchoredPosition = new Vector2(0f, -40f);
+            cipherRect.sizeDelta = new Vector2(-32f, 62f);
+            cipherPanel = cipherRect.gameObject;
+            var heading = GoldTheme.Label(cipherPanel.transform, "CipherHeading", "CIPHER RECOVERED", 17,
+                new Vector2(0, .53f), Vector2.one, TextAnchor.MiddleRight);
+            heading.color = GoldTheme.Teal;
+            cipherNote = GoldTheme.Label(cipherPanel.transform, "CipherNote", "", 18,
+                Vector2.zero, new Vector2(1, .54f), TextAnchor.MiddleRight);
+            cipherPanel.SetActive(false);
+
+            var action = Panel(root.transform, "ActionPrompt", new Vector2(.5f, 0f),
+                new Vector2(0f, 170f), new Vector2(640f, 44f));
+            action.pivot = new Vector2(.5f, .5f);
+            contextPanel = action.gameObject;
+            context = GoldTheme.Label(action, "ActionText", "", 25,
+                new Vector2(.03f, .1f), new Vector2(.97f, .9f));
+            contextPanel.SetActive(false);
         }
-        private static Text Label(Transform parent, Vector2 anchor, Vector2 position, Vector2 size, int font, TextAnchor alignment)
+
+        private static RectTransform Panel(Transform parent, string name, Vector2 anchor, Vector2 position, Vector2 size)
         {
-            var go = new GameObject("Context", typeof(RectTransform), typeof(Text), typeof(Outline)); go.transform.SetParent(parent, false);
-            var rect = go.GetComponent<RectTransform>(); rect.anchorMin = rect.anchorMax = rect.pivot = anchor; rect.anchoredPosition = position; rect.sizeDelta = size;
-            var text = go.GetComponent<Text>(); text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); text.fontSize = font; text.alignment = alignment;
-            text.color = new Color(.9f, .96f, 1f); text.raycastTarget = false; go.GetComponent<Outline>().effectColor = Color.black; return text;
+            var rect = GoldTheme.Rect(parent, name, anchor, anchor);
+            rect.pivot = anchor;
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+            var image = rect.gameObject.AddComponent<Image>();
+            image.color = GoldTheme.Panel;
+            image.raycastTarget = false;
+            GoldTheme.Box(rect, "Accent", Vector2.zero, new Vector2(.006f, 1f), GoldTheme.Teal);
+            return rect;
         }
     }
 }

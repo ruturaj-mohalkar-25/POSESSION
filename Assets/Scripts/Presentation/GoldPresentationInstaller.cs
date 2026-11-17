@@ -17,8 +17,8 @@ namespace Possession
 
         public static void Install(Scene scene)
         {
-            // The tutorial pair owns its scene and teaching sequence.
-            if (CampaignLevels.NumberFor(scene.name) == 0) return;
+            // The tutorial and two-storey level own their scene composition.
+            if (!CampaignLevels.SceneNames.Contains(scene.name)) return;
             var roots = scene.GetRootGameObjects();
             if (roots.Any(r => r.GetComponent<GoldRoomPresentation>() != null)) return;
             var host = new GameObject("Gold_RoomPresentation");

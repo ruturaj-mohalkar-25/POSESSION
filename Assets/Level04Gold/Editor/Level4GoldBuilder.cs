@@ -59,7 +59,7 @@ namespace Possession.Level04Gold.Editor
             var charge = spirit.GetComponent<PossessionCharge>() ?? spirit.gameObject.AddComponent<PossessionCharge>();
             Set(charge, "maxCharges", 3); Set(charge, "startingCharges", 1);
             Set(hud, "objectives", Array.Empty<string>());
-            Possession.Editor.HUDSetup.StyleHUD(hud);
+            Level4PresentationSetup.Apply(scene);
 
             var guardJunction = Actor<GuardEnemy>(guardTemplate, lower, "Guard_Junction", new Vector3(26, 1.4f, 7),
                 new[] { P(26, 7), P(29, 11), P(36, 11), P(36, 4) }, new Bounds(new Vector3(30, 2, 8), new Vector3(20, 8, 12)));
@@ -83,6 +83,7 @@ namespace Possession.Level04Gold.Editor
             var archiveEngineer = NewHost<EngineerEnemy>(upper, "Engineer_Archive", P(70, 27.5f, 6.4f), amber,
                 Array.Empty<Vector3>(), new Bounds(new Vector3(71, 7, 24), new Vector3(14, 8, 12)));
             DecorateEngineer(archiveEngineer);
+            ApplyEngineerPatrols(scene);
             guardJunction.transform.rotation = Quaternion.LookRotation(Vector3.right);
 
             var galleryDoor = BuildTargetDoor(gameplay, "Gallery_Door", new Vector3(42, 2.25f, 8), 90f,
@@ -144,6 +145,58 @@ namespace Possession.Level04Gold.Editor
             if (!File.Exists(ScenePath)) { Build(); return; }
             EditorSceneManager.OpenScene(ScenePath);
         }
+
+        [MenuItem("Possession/Level 4 Gold/Update Engineer Patrols")]
+        public static void UpdateEngineerPatrols()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            var scene = EditorSceneManager.OpenScene(ScenePath);
+            ApplyEngineerPatrols(scene);
+            EditorSceneManager.SaveScene(scene);
+        }
+
+        public static void ApplyEngineerPatrols(Scene scene)
+        {
+            var engineers = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<EngineerEnemy>(true)).ToArray();
+            ConfigureEngineerPatrol(engineers.Single(e => e.name == "Engineer"),
+                new[] { P(10, 25), P(12.5f, 25), P(12.5f, 21), P(7, 21) }, 1.2f);
+            ConfigureEngineerPatrol(engineers.Single(e => e.name == "Engineer_Archive"),
+                new[] { P(70, 27.5f, 6.4f), P(74.5f, 27.5f, 6.4f), P(74.5f, 23, 6.4f), P(67.5f, 23, 6.4f) }, 2.4f);
+            EditorSceneManager.MarkSceneDirty(scene);
+        }
+
+        private static void ConfigureEngineerPatrol(EngineerEnemy engineer, Vector3[] points, float startDelay)
+        {
+            // Waypoints live on the floor, outside the moving body, just like Guard routes.
+            string routeName = engineer.name + "_Patrol";
+            var route = engineer.transform.parent.Find(routeName);
+            if (route == null)
+            {
+                route = new GameObject(routeName).transform;
+                route.SetParent(engineer.transform.parent, false);
+            }
+            var nodes = new Object[points.Length];
+            for (int i = 0; i < points.Length; i++)
+            {
+                string nodeName = "Waypoint_" + (i + 1);
+                var node = route.Find(nodeName);
+                if (node == null)
+                {
+                    node = new GameObject(nodeName).transform;
+                    node.SetParent(route, false);
+                }
+                node.position = Level4Layout.Map(points[i]);
+                nodes[i] = node;
+            }
+            Set(engineer, "waypoints", nodes);
+            Set(engineer, "patrolSpeedMultiplier", .5f);
+            Set(engineer, "turnSpeed", 240f);
+            Set(engineer, "waypointWaitTime", .9f);
+            Set(engineer, "patrolStartDelay", startDelay);
+        }
+
         private static GameObject Template(GameObject source) { var clone = Object.Instantiate(source); clone.transform.SetParent(null); clone.SetActive(false); return clone; }
         private static Vector3 P(float x, float z, float y = 1.4f) => new Vector3(x, y, z);
         private static T Actor<T>(GameObject template, Transform parent, string name, Vector3 position, Vector3[] points, Bounds bounds) where T : EnemyBase

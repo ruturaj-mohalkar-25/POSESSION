@@ -234,7 +234,8 @@ namespace Possession.Level04Gold.Editor
                 Rect r=MappedRect(covers[i]);
                 Cube(parent,"Cover_"+(i+1).ToString("00"),new Vector3(r.center.x,y+CoverHeight*.5f,r.center.y),
                     new Vector3(r.width,CoverHeight,r.height),wood);
-                Cube(parent,"Cover_Rim_"+(i+1).ToString("00"),new Vector3(r.center.x,y+CoverHeight-.05f,r.center.y),
+                // Keep the metal cap above the body's top face to prevent depth flicker.
+                Cube(parent,"Cover_Rim_"+(i+1).ToString("00"),new Vector3(r.center.x,y+CoverHeight-.025f,r.center.y),
                     new Vector3(r.width+.04f,.10f,r.height+.04f),trim,false);
             }
         }

@@ -19,7 +19,11 @@ namespace Possession.Level04Gold
         private Canvas overlay;
         private RectTransform dialPointer;
         private Text progressText, feedbackText, hostTime;
-        private Image boltOne, boltTwo;
+        private Image boltOne, boltTwo, cipherFirst, cipherSecond;
+        private Button rotateLeft, rotateRight, confirmButton, handleButton;
+        private static readonly Color ObjectiveGold = new Color(.95f, .75f, .2f);
+        private static readonly Color SuccessGreen = new Color(.2f, .85f, .3f);
+        private static readonly Color DangerRed = new Color(.9f, .2f, .2f);
         private Quaternion closedDoor;
         public bool IsInteracting { get; private set; }
         public int AlignedSteps { get; private set; }
@@ -32,6 +36,15 @@ namespace Possession.Level04Gold
         {
             player = FindFirstObjectByType<PossessionController>();
             if (doorLeaf != null) closedDoor = doorLeaf.localRotation;
+        }
+
+        private void OnEnable()
+        {
+            EventBus.LevelCompleted += EndInteraction;
+            EventBus.LevelFailed += EndInteraction;
+            EventBus.SpiritDied += EndInteraction;
+            EventBus.GameComplete += EndInteraction;
+            EventBus.Ejected += OnEjected;
         }
 
         public bool CanOperate()
@@ -77,6 +90,7 @@ namespace Possession.Level04Gold
             if (!IsInteracting || !CanOperate() || AlignedSteps >= 2 || Mathf.Abs(degrees) < .001f) return;
             DialAngle = Mathf.Repeat(DialAngle + degrees, 360f);
             lastDirection = Mathf.Sign(degrees);
+            if (feedbackText != null) feedbackText.text = "";
             RefreshOverlay();
         }
 
@@ -85,20 +99,20 @@ namespace Possession.Level04Gold
             if (!IsInteracting || !CanOperate() || AlignedSteps >= 2) return false;
             if (Mathf.Abs(Input.GetAxisRaw("Horizontal")) > .01f)
             {
-                if (feedbackText != null) feedbackText.text = "RELEASE DIAL TO CONFIRM";
+                ShowFeedback("RELEASE TO CONFIRM", ObjectiveGold);
                 return false;
             }
             float target = AlignedSteps == 0 ? firstStop : secondStop;
             float direction = AlignedSteps == 0 ? 1f : -1f;
             if (Mathf.Abs(Mathf.DeltaAngle(DialAngle, target)) > tolerance || lastDirection != direction)
             {
-                if (feedbackText != null) feedbackText.text = "BOLT STILL LOCKED";
+                ShowFeedback("BOLT STILL LOCKED", DangerRed);
                 return false;
             }
             DialAngle = target;
             AlignedSteps++;
             lastDirection = 0f;
-            if (feedbackText != null) feedbackText.text = AlignedSteps == 2 ? "BOLTS RELEASED • TURN HANDLE" : "FIRST BOLT RELEASED";
+            ShowFeedback(AlignedSteps == 2 ? "BOLTS RELEASED • TURN HANDLE" : "FIRST BOLT RELEASED", SuccessGreen);
             if (firstBolt != null && AlignedSteps >= 1) firstBolt.localScale = new Vector3(.18f, .28f, .18f);
             if (secondBolt != null && AlignedSteps >= 2) secondBolt.localScale = new Vector3(.18f, .28f, .18f);
             RefreshOverlay();
@@ -151,77 +165,130 @@ namespace Possession.Level04Gold
                 }
                 if (Input.GetKeyDown(KeyCode.Return)) { if (AlignedSteps < 2) TryConfirmAlignment(); else TryOpenHandle(); }
                 if (Input.GetKeyDown(KeyCode.F) || Input.GetKeyDown(KeyCode.Escape)) EndInteraction();
-                if (hostTime != null) hostTime.text = $"HOST {player.PossessTimer:0.0}s";
+                RefreshHostTime();
             }
             else if (Input.GetKeyDown(KeyCode.F) && CanOperate()) TryBeginInteraction();
         }
 
-        private void OnDisable() => EndInteraction();
+        private void OnEjected(EnemyBase host, bool forced)
+        {
+            if (IsInteracting && host == engineer) EndInteraction();
+        }
+
+        private void OnDisable()
+        {
+            EventBus.LevelCompleted -= EndInteraction;
+            EventBus.LevelFailed -= EndInteraction;
+            EventBus.SpiritDied -= EndInteraction;
+            EventBus.GameComplete -= EndInteraction;
+            EventBus.Ejected -= OnEjected;
+            EndInteraction();
+        }
         private void OnDestroy() { if (overlay != null) Destroy(overlay.gameObject); }
 
         private void RefreshOverlay()
         {
             if (wheelPointer != null) wheelPointer.localRotation = Quaternion.Euler(0f, 0f, -DialAngle);
             if (dialPointer != null) dialPointer.localRotation = Quaternion.Euler(0f, 0f, -DialAngle);
-            if (progressText != null) progressText.text = $"BOLTS {AlignedSteps}/2";
-            if (boltOne != null) boltOne.color = AlignedSteps >= 1 ? new Color(.25f, 1f, .6f) : new Color(.35f, .4f, .46f);
-            if (boltTwo != null) boltTwo.color = AlignedSteps >= 2 ? new Color(.25f, 1f, .6f) : new Color(.35f, .4f, .46f);
+            if (progressText != null) progressText.text = $"BOLTS {AlignedSteps} / 2";
+            if (boltOne != null) boltOne.color = AlignedSteps >= 1 ? SuccessGreen : GoldTheme.Secondary;
+            if (boltTwo != null) boltTwo.color = AlignedSteps >= 2 ? SuccessGreen : GoldTheme.Secondary;
+            if (cipherFirst != null) cipherFirst.color = AlignedSteps == 0 ? GoldTheme.Teal : GoldTheme.Secondary;
+            if (cipherSecond != null) cipherSecond.color = AlignedSteps == 1 ? GoldTheme.Teal : GoldTheme.Secondary;
+            if (rotateLeft != null) rotateLeft.interactable = AlignedSteps < 2;
+            if (rotateRight != null) rotateRight.interactable = AlignedSteps < 2;
+            if (confirmButton != null) confirmButton.interactable = AlignedSteps < 2;
+            if (handleButton != null) handleButton.interactable = AlignedSteps == 2;
+            RefreshHostTime();
+        }
+
+        private void RefreshHostTime()
+        {
+            if (hostTime == null || player == null) return;
+            hostTime.text = $"HOST {Mathf.Max(0f, player.PossessTimer):0.0}s";
+            float fraction = player.PossessDuration > 0f ? player.PossessTimer / player.PossessDuration : 0f;
+            hostTime.color = fraction <= .2f ? DangerRed : fraction <= .35f ? ObjectiveGold : GoldTheme.TextColor;
+        }
+
+        private void ShowFeedback(string value, Color color)
+        {
+            if (feedbackText == null) return;
+            feedbackText.text = value;
+            feedbackText.color = color;
         }
 
         private void BuildOverlay()
         {
             var root = new GameObject("Vault dial", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             overlay = root.GetComponent<Canvas>(); overlay.renderMode = RenderMode.ScreenSpaceOverlay; overlay.sortingOrder = 60;
-            var scaler = root.GetComponent<CanvasScaler>(); scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize; scaler.referenceResolution = new Vector2(1920, 1080);
-            var panel = ImageNode(root.transform, "Mechanical lock", new Vector2(0, 30), new Vector2(640, 740), new Color(.035f, .055f, .08f, .98f));
-            Label(panel.transform, "VAULT • ENGINEER", new Vector2(0, 315), new Vector2(600, 48), 32, new Color(1f, .8f, .35f));
-            hostTime = Label(panel.transform, "", new Vector2(0, 267), new Vector2(500, 38), 24, Color.white);
-            var dial = ImageNode(panel.transform, "Dial plate", new Vector2(0, 55), new Vector2(340, 340), new Color(.12f, .18f, .23f));
+            var scaler = root.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.matchWidthOrHeight = .5f;
+            var panel = ImageNode(root.transform, "Mechanical lock", new Vector2(0, 30), new Vector2(720, 700), GoldTheme.Panel);
+            panel.raycastTarget = true;
+            GoldTheme.Box(panel.transform, "Accent", new Vector2(0, .994f), Vector2.one, GoldTheme.Teal);
+            var title = Label(panel.transform, "VAULT • ENGINEER", new Vector2(-110, 301), new Vector2(410, 42), 30, GoldTheme.TextColor, "VaultTitle");
+            title.alignment = TextAnchor.MiddleLeft;
+            hostTime = Label(panel.transform, "", new Vector2(230, 301), new Vector2(170, 38), 24, GoldTheme.TextColor, "HostTime");
+            hostTime.alignment = TextAnchor.MiddleRight;
+
+            cipherFirst = ImageNode(panel.transform, "CipherStepOne", new Vector2(-160, 243), new Vector2(300, 40), GoldTheme.Teal);
+            cipherSecond = ImageNode(panel.transform, "CipherStepTwo", new Vector2(160, 243), new Vector2(300, 40), GoldTheme.Secondary);
+            Label(cipherFirst.transform, "1  CW • TRIANGLE", Vector2.zero, new Vector2(276, 34), 21, GoldTheme.TextColor);
+            Label(cipherSecond.transform, "2  CCW • SQUARE", Vector2.zero, new Vector2(276, 34), 21, GoldTheme.TextColor);
+
+            var dial = ImageNode(panel.transform, "Dial plate", new Vector2(0, 50), new Vector2(300, 300), GoldTheme.Secondary);
             for (int i = 0; i < 12; i++)
             {
                 float angle = i * 30f * Mathf.Deg2Rad;
-                var tick = ImageNode(dial.transform, "Tick", new Vector2(Mathf.Sin(angle) * 148, Mathf.Cos(angle) * 148), new Vector2(4, 18), new Color(.45f, .6f, .65f));
+                var tick = ImageNode(dial.transform, "Tick", new Vector2(Mathf.Sin(angle) * 135, Mathf.Cos(angle) * 135), new Vector2(3, 14), GoldTheme.TextColor);
                 tick.rectTransform.localRotation = Quaternion.Euler(0, 0, -i * 30);
             }
             Mark(dial.transform, "TRIANGLE", firstStop); Mark(dial.transform, "SQUARE", secondStop);
             Mark(dial.transform, "CIRCLE", 150); Mark(dial.transform, "DIAMOND", 210);
             dialPointer = new GameObject("Dial pointer", typeof(RectTransform)).GetComponent<RectTransform>();
             dialPointer.SetParent(dial.transform, false); dialPointer.sizeDelta = Vector2.zero;
-            ImageNode(dialPointer, "Pointer", new Vector2(0, 57), new Vector2(7, 115), new Color(1f, .8f, .3f));
-            ImageNode(dialPointer, "Hub", Vector2.zero, new Vector2(23, 23), new Color(.9f, .93f, .95f));
-            progressText = Label(panel.transform, "BOLTS 0/2", new Vector2(0, -150), new Vector2(300, 36), 25, Color.white);
-            boltOne = ImageNode(panel.transform, "Bolt one", new Vector2(-155, -150), new Vector2(24, 24), Color.gray);
-            boltTwo = ImageNode(panel.transform, "Bolt two", new Vector2(155, -150), new Vector2(24, 24), Color.gray);
-            Button(panel.transform, "< CCW", new Vector2(-205, -215), new Vector2(155, 46), () => RotateDial(-30));
-            Button(panel.transform, "CONFIRM", new Vector2(0, -215), new Vector2(205, 46), () => TryConfirmAlignment());
-            Button(panel.transform, "CW >", new Vector2(205, -215), new Vector2(155, 46), () => RotateDial(30));
-            feedbackText = Label(panel.transform, "", new Vector2(0, -265), new Vector2(600, 34), 21, new Color(.55f, 1f, .75f));
-            Button(panel.transform, "TURN HANDLE", new Vector2(-135, -315), new Vector2(245, 46), () => TryOpenHandle());
-            Button(panel.transform, "LEAVE [F]", new Vector2(145, -315), new Vector2(215, 46), EndInteraction);
-            Label(root.transform, "A / D rotate   •   ENTER confirm   •   E eject", new Vector2(0, -405), new Vector2(1000, 44), 24, Color.white);
+            ImageNode(dialPointer, "Pointer", new Vector2(0, 53), new Vector2(6, 106), ObjectiveGold);
+            ImageNode(dialPointer, "Hub", Vector2.zero, new Vector2(21, 21), GoldTheme.TextColor);
+            progressText = Label(panel.transform, "", new Vector2(0, -130), new Vector2(250, 34), 24, GoldTheme.TextColor, "BoltProgress");
+            boltOne = ImageNode(panel.transform, "Bolt one", new Vector2(-148, -130), new Vector2(22, 22), GoldTheme.Secondary);
+            boltTwo = ImageNode(panel.transform, "Bolt two", new Vector2(148, -130), new Vector2(22, 22), GoldTheme.Secondary);
+            rotateLeft = Button(panel.transform, "RotateCCW", "< CCW", new Vector2(-220, -180), new Vector2(164, 48), () => RotateDial(-30));
+            confirmButton = Button(panel.transform, "ConfirmAlignment", "CONFIRM", new Vector2(0, -180), new Vector2(224, 48), () => TryConfirmAlignment(), true);
+            rotateRight = Button(panel.transform, "RotateCW", "CW >", new Vector2(220, -180), new Vector2(164, 48), () => RotateDial(30));
+            feedbackText = Label(panel.transform, "", new Vector2(0, -228), new Vector2(640, 32), 21, GoldTheme.TextColor, "VaultFeedback");
+            handleButton = Button(panel.transform, "TurnHandle", "TURN HANDLE", new Vector2(-125, -280), new Vector2(280, 48), () => TryOpenHandle(), true);
+            Button(panel.transform, "LeaveVault", "LEAVE [F]", new Vector2(165, -280), new Vector2(240, 48), EndInteraction);
+            Label(panel.transform, "A / D ROTATE   •   ENTER CONFIRM   •   E EJECT", new Vector2(0, -324), new Vector2(650, 26), 18, GoldTheme.TextColor, "VaultControls");
         }
 
         private static void Mark(Transform parent, string text, float degrees)
         {
             float a = degrees * Mathf.Deg2Rad;
-            Label(parent, text, new Vector2(Mathf.Sin(a) * 111, Mathf.Cos(a) * 111), new Vector2(105, 28), 15, new Color(.6f, .94f, 1f));
+            Label(parent, text, new Vector2(Mathf.Sin(a) * 103, Mathf.Cos(a) * 103), new Vector2(100, 26), 15, GoldTheme.TextColor, "Mark_" + text);
         }
         private static Image ImageNode(Transform parent, string name, Vector2 pos, Vector2 size, Color color)
         {
             var node = new GameObject(name, typeof(RectTransform), typeof(Image)); node.transform.SetParent(parent, false);
             var rect = node.GetComponent<RectTransform>(); rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one * .5f; rect.anchoredPosition = pos; rect.sizeDelta = size;
-            var image = node.GetComponent<Image>(); image.color = color; return image;
+            var image = node.GetComponent<Image>(); image.color = color; image.raycastTarget = false; return image;
         }
-        private static Text Label(Transform parent, string text, Vector2 pos, Vector2 size, int font, Color color)
+        private static Text Label(Transform parent, string text, Vector2 pos, Vector2 size, int font, Color color, string name = "Label")
         {
-            var node = new GameObject("Label", typeof(RectTransform), typeof(Text)); node.transform.SetParent(parent, false);
-            var rect = node.GetComponent<RectTransform>(); rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one * .5f; rect.anchoredPosition = pos; rect.sizeDelta = size;
-            var label = node.GetComponent<Text>(); label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); label.fontSize = font; label.alignment = TextAnchor.MiddleCenter; label.text = text; label.color = color; label.raycastTarget = false; return label;
+            var label = GoldTheme.Label(parent, name, text, font, Vector2.one * .5f, Vector2.one * .5f);
+            var rect = label.rectTransform; rect.pivot = Vector2.one * .5f; rect.anchoredPosition = pos; rect.sizeDelta = size;
+            label.color = color;
+            return label;
         }
-        private static void Button(Transform parent, string text, Vector2 pos, Vector2 size, UnityEngine.Events.UnityAction action)
+        private static Button Button(Transform parent, string name, string text, Vector2 pos, Vector2 size,
+            UnityEngine.Events.UnityAction action, bool primary = false)
         {
-            var image = ImageNode(parent, text, pos, size, new Color(.15f, .25f, .32f)); var button = image.gameObject.AddComponent<Button>(); button.targetGraphic = image;
-            button.onClick.AddListener(action); Label(image.transform, text, Vector2.zero, size, 22, Color.white);
+            var button = GoldTheme.Button(parent, name, text, Vector2.one * .5f, Vector2.one * .5f, primary);
+            var rect = button.GetComponent<RectTransform>(); rect.pivot = Vector2.one * .5f; rect.anchoredPosition = pos; rect.sizeDelta = size;
+            GoldTheme.Style(button.GetComponentInChildren<Text>(), 24, TextAnchor.MiddleCenter);
+            button.onClick.AddListener(action);
+            return button;
         }
     }
 }

@@ -256,16 +256,16 @@ namespace Possession.Tests
         }
 
         [UnityTest]
-        public IEnumerator HostDisableAndDeathRestoreVisibility()
+        public IEnumerator HostDeactivationAndDeathRestoreVisibility()
         {
             Possess(host);
             EventBus.PossessTimerUpdated?.Invoke(2f, 10f);
             yield return WaitForHiddenBody();
-            host.enabled = false;
+            host.gameObject.SetActive(false);
             yield return null;
             Assert.That(body.forceRenderingOff, Is.False);
-            host.enabled = true;
-            EventBus.Possessed?.Invoke(host, player.CurrentState);
+            host.gameObject.SetActive(true);
+            Possess(host);
             EventBus.PossessTimerUpdated?.Invoke(2f, 10f);
             yield return WaitForHiddenBody();
             host.TakeDamage(host.CurrentHP);

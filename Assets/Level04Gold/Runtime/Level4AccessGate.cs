@@ -14,6 +14,7 @@ namespace Possession.Level04Gold
         public bool IsOpen { get; private set; }
         public Transform ReleasePoint => releasePoint;
         public Transform EngineerPoint => engineerPoint;
+        public Transform MovingPanel => movingPanel;
 
         private void Awake()
         {
