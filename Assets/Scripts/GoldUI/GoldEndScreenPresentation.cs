@@ -81,14 +81,14 @@ namespace Possession
 
             Stretch(panel);
             var background = panel.GetComponent<Image>();
-            if (background != null) background.color = GoldPart2Theme.Background;
+            if (background != null) background.color = GoldTheme.Background;
 
             RectTransform card = FindDirect(panel, "Gold End Card");
             if (card == null)
             {
                 card = CreateRect(panel, "Gold End Card", new Vector2(.20f, .10f), new Vector2(.80f, .90f));
                 var cardImage = card.gameObject.AddComponent<Image>();
-                cardImage.color = GoldPart2Theme.Panel;
+                cardImage.color = GoldTheme.Panel;
                 cardImage.raycastTarget = false;
                 card.SetAsFirstSibling();
             }
@@ -96,13 +96,13 @@ namespace Possession
             foreach (var text in panel.GetComponentsInChildren<Text>(true))
             {
                 bool title = text.name == "Title" || text.name.Contains("Title");
-                GoldPart2Theme.StyleText(text, title ? 64 : Mathf.Max(22, text.fontSize), text.alignment);
-                if (title) text.color = GoldPart2Theme.Teal;
+                GoldTheme.Style(text, title ? 64 : Mathf.Max(22, text.fontSize), text.alignment);
+                if (title) text.color = GoldTheme.Teal;
             }
 
             var buttons = panel.GetComponentsInChildren<Button>(true);
             for (int i = 0; i < buttons.Length; i++)
-                GoldPart2Theme.StyleButton(buttons[i], i == 0);
+                StyleExistingButton(buttons[i], i == 0);
         }
 
         private void EnsurePausePanel()
@@ -118,14 +118,14 @@ namespace Possession
             RectTransform overlay = CreateRect(transform, PauseName, Vector2.zero, Vector2.one);
             pausePanel = overlay.gameObject;
             var overlayImage = pausePanel.AddComponent<Image>();
-            overlayImage.color = GoldPart2Theme.Background;
+            overlayImage.color = GoldTheme.Background;
 
             RectTransform card = CreateRect(overlay, "Pause Card", new Vector2(.31f, .16f), new Vector2(.69f, .84f));
             var cardImage = card.gameObject.AddComponent<Image>();
-            cardImage.color = GoldPart2Theme.Panel;
+            cardImage.color = GoldTheme.Panel;
 
             CreateText(card, "Title", "PAUSED", 64, new Vector2(.08f, .70f), new Vector2(.92f, .92f),
-                GoldPart2Theme.Teal);
+                GoldTheme.Teal);
             CreateButton(card, "ResumeButton", "RESUME", new Vector2(.18f, .48f), new Vector2(.82f, .62f),
                 Resume, true);
             CreateButton(card, "RestartButton", "RESTART", new Vector2(.18f, .30f), new Vector2(.82f, .44f),
@@ -171,7 +171,7 @@ namespace Possession
         {
             var text = CreateRect(parent, objectName, min, max).gameObject.AddComponent<Text>();
             text.text = value;
-            GoldPart2Theme.StyleText(text, size, TextAnchor.MiddleCenter);
+            GoldTheme.Style(text, size, TextAnchor.MiddleCenter);
             text.color = color;
             text.raycastTarget = false;
             return text;
@@ -185,9 +185,28 @@ namespace Possession
             button.targetGraphic = image;
             button.onClick.AddListener(action);
             CreateText(image.transform, "Label", label, 30, new Vector2(.04f, .08f),
-                new Vector2(.96f, .92f), GoldPart2Theme.Text);
-            GoldPart2Theme.StyleButton(button, primary);
+                new Vector2(.96f, .92f), GoldTheme.TextColor);
+            StyleExistingButton(button, primary);
             return button;
+        }
+
+        private static void StyleExistingButton(Button button, bool primary)
+        {
+            if (button == null) return;
+            var image = button.targetGraphic as Image ?? button.GetComponent<Image>();
+            if (image != null) button.targetGraphic = image;
+
+            Color normal = primary ? GoldTheme.Teal : GoldTheme.Secondary;
+            var colors = button.colors;
+            colors.normalColor = normal;
+            colors.highlightedColor = Color.Lerp(normal, Color.white, .18f);
+            colors.selectedColor = colors.highlightedColor;
+            colors.pressedColor = Color.Lerp(normal, Color.black, .25f);
+            colors.disabledColor = new Color(.18f, .19f, .21f, .6f);
+            colors.fadeDuration = .08f;
+            button.colors = colors;
+
+            GoldTheme.Style(button.GetComponentInChildren<Text>(true), 30, TextAnchor.MiddleCenter);
         }
     }
 
