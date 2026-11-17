@@ -37,7 +37,6 @@ namespace Possession
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.C) && CheckpointReached) RetryCourtyard();
-            else if (Input.GetKeyDown(KeyCode.R)) FullRestart();
         }
         private void LateUpdate() => UpdateObjective();
         private void UpdateObjective()

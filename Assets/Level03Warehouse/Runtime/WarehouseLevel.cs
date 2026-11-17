@@ -21,7 +21,6 @@ namespace Possession.Warehouse
         public bool CanExtract => LeftReady || RightReady;
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.R)) RestartPreview();
             if (hud == null && objective != null) hud = objective.GetComponentInParent<HUDManager>();
             string text = CanExtract ? "EXIT OPEN  •  REACH THE EXIT" : "OPEN A WING  •  EACH DOOR NEEDS 3 TARGETS";
             if (hud != null) hud.SetLevelObjective(text);

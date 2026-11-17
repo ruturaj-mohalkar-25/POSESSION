@@ -22,7 +22,7 @@ namespace Possession
             checkpoint=retry.gameObject.AddComponent<Button>(); checkpoint.targetGraphic=retry.GetComponent<Image>(); checkpoint.onClick.AddListener(director.RetryCourtyard);
             Label(retry,"C · RETRY COURTYARD",Vector2.zero,new Vector2(290,40),22);
             NavButton(go.transform,"Menu", "MENU",new Vector2(-20,-20),director.MainMenu);
-            NavButton(go.transform,"Restart", "R · RESTART",new Vector2(-180,-20),director.FullRestart);
+            NavButton(go.transform,"Restart", "RESTART",new Vector2(-180,-20),director.FullRestart);
         }
         private void Update()
         {
