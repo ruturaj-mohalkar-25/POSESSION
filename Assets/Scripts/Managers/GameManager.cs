@@ -76,6 +76,7 @@ namespace Possession
             if (currentState != LevelState.InProgress) return;
             currentState = LevelState.Complete;
             Time.timeScale = 0f;
+            CampaignProgress.OnLevelCompleted(SceneManager.GetActiveScene().name);
 
             int stars = 1;
             if (starThresholds.Length >= 1 && elapsedTime <= starThresholds[0]) stars = 3;
