@@ -41,8 +41,8 @@ namespace Possession
         private void BuildGuard()
         {
             Material cloth = Own(RuntimeMaterials.Lit(new Color(.06f, .24f, .28f)));
-            Material badge = Own(RuntimeMaterials.Lit(GoldPart2Theme.Teal,
-                GoldPart2Theme.Teal * .25f));
+            Material badge = Own(RuntimeMaterials.Lit(GoldTheme.Teal,
+                GoldTheme.Teal * .25f));
 
             AddPiece("Guard Cap", PrimitiveType.Cylinder, new Vector3(0f, 1.03f, 0f),
                 new Vector3(.44f, .10f, .44f), cloth);

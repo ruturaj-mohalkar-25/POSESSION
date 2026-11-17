@@ -69,10 +69,54 @@ namespace Possession.Tests
             Assert.That(Time.timeScale, Is.EqualTo(1f));
         }
 
+        [UnityTest]
+        public IEnumerator EndScreenUsesSharedGoldThemeAndPreservesButtonOrder()
+        {
+            var root = new GameObject("GoldPart2Test End Canvas", typeof(RectTransform), typeof(Canvas),
+                typeof(CanvasScaler), typeof(GraphicRaycaster));
+            var panel = new GameObject("GameOverPanel", typeof(RectTransform), typeof(Image));
+            panel.transform.SetParent(root.transform, false);
+
+            var title = new GameObject("Title", typeof(RectTransform), typeof(Text)).GetComponent<Text>();
+            title.transform.SetParent(panel.transform, false);
+            title.text = "GAME OVER";
+
+            CreateButton(panel.transform, "RestartButton", "RESTART");
+            CreateButton(panel.transform, "MenuButton", "MAIN MENU");
+
+            var presentation = root.AddComponent<GoldEndScreenPresentation>();
+            presentation.Apply();
+            yield return null;
+
+            Assert.That(panel.GetComponent<Image>().color, Is.EqualTo(GoldTheme.Background));
+            Assert.That(title.color, Is.EqualTo(GoldTheme.Teal));
+            Assert.That(panel.transform.Find("Gold End Card"), Is.Not.Null);
+
+            var buttons = panel.GetComponentsInChildren<Button>(true);
+            Assert.That(buttons.Length, Is.EqualTo(2));
+            Assert.That(buttons[0].name, Is.EqualTo("RestartButton"));
+            Assert.That(buttons[1].name, Is.EqualTo("MenuButton"));
+            Assert.That(buttons[0].colors.normalColor, Is.EqualTo(GoldTheme.Teal));
+            Assert.That(buttons[1].colors.normalColor, Is.EqualTo(GoldTheme.Secondary));
+        }
+
         private static T Enemy<T>(string name) where T : EnemyBase
         {
             var go = new GameObject(name, typeof(CharacterController));
             return go.AddComponent<T>();
+        }
+
+        private static Button CreateButton(Transform parent, string name, string label)
+        {
+            var button = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button))
+                .GetComponent<Button>();
+            button.transform.SetParent(parent, false);
+            button.targetGraphic = button.GetComponent<Image>();
+
+            var text = new GameObject("Label", typeof(RectTransform), typeof(Text)).GetComponent<Text>();
+            text.transform.SetParent(button.transform, false);
+            text.text = label;
+            return button;
         }
     }
 }
