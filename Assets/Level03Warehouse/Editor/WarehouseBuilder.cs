@@ -17,6 +17,7 @@ namespace Possession.Editor
     {
         public const string Root="Assets/Level03Warehouse";
         public const string ScenePath=Root+"/Level_03_Warehouse.unity";
+        private const string InspectionPressure="Inspection_Pressure_Guard",LoadingPressure="Loading_Pressure_Guard";
         [Serializable] public class Point { public float x,y; }
         [Serializable] public class Area { public float x,y,width,depth;public string name; }
         [Serializable] public class Segment { public float x1,y1,x2,y2;public string name;public bool transparent; }
@@ -99,8 +100,9 @@ namespace Possession.Editor
             // Shared HUD callbacks now route the third campaign level to Finish / Play Again.
             foreach(var template in templates)Object.DestroyImmediate(template);
             CampaignCombatSetup.Apply(scene);
+            ApplyPressureGuards(scene);
             EditorSceneManager.MarkSceneDirty(scene);EditorSceneManager.SaveScene(scene);AssetDatabase.SaveAssets();
-            Debug.Log("Warehouse campaign Level 3 built: original layout with wider rooms/passages; 4 Guards, 2 Heavies, 4 target doors, 3 cracked walls and 9 charge sources.");
+            Debug.Log("Warehouse campaign Level 3 built: original layout with wider rooms/passages; 6 Guards, 2 Heavies, 4 target doors, 3 cracked walls and 9 charge sources.");
         }
         [MenuItem("Possession/Level Design/Level 3 Warehouse/Open Local Scene")]
         public static void Open(){if(!EditorApplication.isPlayingOrWillChangePlaymode)EditorSceneManager.OpenScene(ScenePath);}
@@ -201,6 +203,7 @@ namespace Possession.Editor
             var controller=obj.GetComponent<CharacterController>();controller.minMoveDistance=0;
             ConfigurePatrol(parent,a,enemy);
             Set(enemy,"patrolStartDelay",index*.25f);
+            if(IsPressureGuard(a.name))ConfigurePressureGuard(enemy,a,true);
         }
         // Reapply routes without rebuilding room geometry or replacing actors and puzzle references.
         public static void ApplyPatrols(Scene scene)
@@ -209,9 +212,82 @@ namespace Possession.Editor
             var enemies=scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<EnemyBase>(true)).ToArray();
             foreach(var actor in data.actors)
             {
-                var enemy=enemies.Single(e=>e.name==actor.name);
+                var enemy=enemies.SingleOrDefault(e=>e.name==actor.name);
+                // Older saved scenes receive the two new bodies through ApplyPressureGuards.
+                // Campaign combat tuning calls this method before that non-destructive upgrade.
+                if(enemy==null&&IsPressureGuard(actor.name))continue;
+                if(enemy==null)throw new InvalidOperationException("Missing Warehouse actor "+actor.name);
                 ConfigurePatrol(enemy.transform.parent,actor,enemy);
+                if(IsPressureGuard(actor.name))ConfigurePressureGuard(enemy,actor,false);
             }
+        }
+
+        // Upgrade the saved Warehouse without rebuilding geometry, doors, objectives or original NPCs.
+        // Repeating this operation reuses the same two bodies and their own patrol roots.
+        public static void ApplyPressureGuards(Scene scene)
+        {
+            if(EditorApplication.isPlayingOrWillChangePlaymode)
+                throw new InvalidOperationException("Stop Play Mode before updating Warehouse guards.");
+            if(!scene.IsValid()||!scene.isLoaded||scene.name!=CampaignLevels.ThirdScene)return;
+            data=JsonUtility.FromJson<Layout>(File.ReadAllText(Root+"/Data/warehouse-layout.json"));
+            var guards=scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<GuardEnemy>(true)).ToArray();
+            foreach(var actor in data.actors.Where(a=>IsPressureGuard(a.name)))
+            {
+                var guard=guards.SingleOrDefault(g=>g.name==actor.name);
+                bool created=guard==null;
+                if(created)
+                {
+                    string sourceName=actor.name==InspectionPressure?"Inspection_Guard":"Cargo_room_Guard";
+                    var source=guards.FirstOrDefault(g=>g.name==sourceName)
+                        ??guards.FirstOrDefault(g=>!IsPressureGuard(g.name));
+                    if(source==null)throw new InvalidOperationException("No existing Warehouse Guard to copy.");
+                    var clone=Object.Instantiate(source.gameObject,source.transform.parent);
+                    if(source.transform.parent==null)SceneManager.MoveGameObjectToScene(clone,scene);
+                    clone.name=actor.name;clone.SetActive(true);
+                    guard=clone.GetComponent<GuardEnemy>();
+                    guard.transform.position=Map(actor.x,actor.y,source.transform.position.y);
+                    GroundPressureGuard(guard,scene);
+                }
+                ConfigurePatrol(guard.transform.parent,actor,guard);
+                ConfigurePressureGuard(guard,actor,created);
+                EditorUtility.SetDirty(guard);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(guard);
+            }
+            EditorSceneManager.MarkSceneDirty(scene);
+        }
+
+        private static bool IsPressureGuard(string name)=>name==InspectionPressure||name==LoadingPressure;
+
+        private static void ConfigurePressureGuard(EnemyBase enemy,Actor actor,bool setFacing)
+        {
+            var room=data.rooms.Single(r=>actor.x>=r.x&&actor.x<=r.x+r.width
+                &&actor.y>=r.y&&actor.y<=r.y+r.depth);
+            Set(enemy,"useHomeBounds",true);
+            Set(enemy,"homeBounds",new Bounds(Map(room.x+room.width*.5f,room.y+room.depth*.5f,3f),
+                new Vector3(room.width*Unit,10f,room.depth*Unit)));
+            Set(enemy,"patrolStartDelay",actor.name==InspectionPressure?2.4f:4.2f);
+            Set(enemy,"moveSpeed",5f);Set(enemy,"patrolSpeedMultiplier",.5f);
+            Set(enemy,"turnSpeed",240f);Set(enemy,"waypointWaitTime",.9f);
+            Set(enemy,"detectionRange",CampaignCombatSetup.GuardDetection);
+            Set(enemy,"visionAngle",CampaignCombatSetup.ConeAngle);
+            var attack=enemy.GetComponent<EnemyContactDamage>();
+            if(attack!=null)Set(attack,"shootRange",CampaignCombatSetup.GuardShotRange);
+            var controller=enemy.GetComponent<CharacterController>();
+            if(controller!=null)controller.minMoveDistance=0;
+            if(setFacing)enemy.transform.rotation=Quaternion.LookRotation(actor.name==InspectionPressure?Vector3.forward:Vector3.left);
+        }
+
+        private static void GroundPressureGuard(GuardEnemy guard,Scene scene)
+        {
+            Physics.SyncTransforms();
+            var hit=Physics.RaycastAll(guard.transform.position+Vector3.up*5f,Vector3.down,15f,~0,QueryTriggerInteraction.Ignore)
+                .Where(h=>h.collider.gameObject.scene==scene&&(h.collider.name.EndsWith("_Floor",StringComparison.Ordinal)
+                    ||h.collider.name.StartsWith("Hall_",StringComparison.Ordinal)))
+                .OrderBy(h=>h.distance).FirstOrDefault();
+            var controller=guard.GetComponent<CharacterController>();
+            if(hit.collider==null||controller==null)throw new InvalidOperationException("No floor under "+guard.name);
+            guard.transform.position+=Vector3.up*(hit.point.y+.05f-controller.bounds.min.y);
+            Physics.SyncTransforms();
         }
         private static void ConfigurePatrol(Transform parent,Actor a,EnemyBase enemy)
         {
