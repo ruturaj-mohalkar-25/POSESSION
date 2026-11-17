@@ -38,7 +38,8 @@ From the gallery, walk east into the flat stair foyer and follow the north-point
 | F | Engineer: unlock a marked security door, copy the archive cipher, or operate the vault. Any controlled form can use an inside emergency release. Hold F at the broken overlook to survey below. |
 | A / D | Rotate the vault dial counterclockwise / clockwise. On-screen buttons also work. |
 | Enter | Confirm a stopped alignment; after both bolts release, turn the handle. |
-| F / Escape | Leave the vault controls. E still ejects. |
+| F / Leave button | Leave the vault controls. E still ejects. |
+| Escape / P | Pause or resume with the shared campaign menu. Vault progress is retained. |
 
 Engineer has no shooting or smashing ability. Its tools unlock **Maintenance Access**, **Archive Entry** and **Archive Clue** doors, copy the cipher and operate the vault. Unlocked doors stay open for other forms.
 

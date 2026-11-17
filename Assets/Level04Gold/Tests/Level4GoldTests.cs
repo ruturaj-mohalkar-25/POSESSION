@@ -470,6 +470,46 @@ namespace Possession.Level04Gold.Tests
         }
 
         [UnityTest]
+        public IEnumerator SharedPausePreservesTheActiveVaultAndResumeRestoresItsControls()
+        {
+            yield return PrepareEngineerAtVault();
+            var vault = Vault();
+            var engineer = LowerEngineer();
+            var pause = All<GoldEndScreenPresentation>().Single();
+            Assert.That(vault.TryBeginInteraction(), Is.True);
+            vault.RotateDial(60f);
+            Assert.That(vault.TryConfirmAlignment(), Is.True);
+            var overlay = All<Canvas>().Single(c => c.name == "Vault dial");
+            pause.Pause();
+            float hostTime = possession.PossessTimer;
+            float levelTime = GameManager.Instance.LevelTimer;
+            yield return null;
+            yield return new WaitForSecondsRealtime(.2f);
+            Assert.That(pause.IsPaused && pause.PausePanel.activeInHierarchy, Is.True);
+            Assert.That(vault.IsInteracting, Is.True, "Pausing must keep the active operator and dial state.");
+            Assert.That(engineer.enabled, Is.False);
+            Assert.That(overlay.gameObject.activeSelf, Is.False, "Vault controls must not cover the shared pause buttons.");
+            Assert.That(possession.PossessTimer, Is.EqualTo(hostTime).Within(.001f));
+            Assert.That(GameManager.Instance.LevelTimer, Is.EqualTo(levelTime).Within(.001f));
+            vault.RotateDial(-120f);
+            Assert.That(vault.TryConfirmAlignment(), Is.False);
+            Assert.That(vault.DialAngle, Is.EqualTo(60f));
+            Assert.That(vault.AlignedSteps, Is.EqualTo(1));
+
+            pause.PausePanel.transform.Find("Pause Card/ResumeButton")
+                .GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            yield return null;
+            Assert.That(pause.IsPaused, Is.False);
+            Assert.That(vault.IsInteracting && overlay.gameObject.activeSelf, Is.True);
+            Assert.That(engineer.enabled, Is.False);
+            vault.RotateDial(-120f);
+            Assert.That(vault.TryConfirmAlignment(), Is.True);
+            Assert.That(vault.AlignedSteps, Is.EqualTo(2));
+            vault.EndInteraction();
+            Assert.That(engineer.enabled, Is.True);
+        }
+
+        [UnityTest]
         public IEnumerator TheNormalTimerContinuesAtTheDialAndForcedEjectionKeepsProgressAndShield()
         {
             yield return PrepareEngineerAtVault();
