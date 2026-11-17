@@ -2,13 +2,128 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>POSESSION Game Builds</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>POSSESSION</title>
+  <meta name="description" content="Play POSSESSION in your browser. Choose a build.">
+  <style>
+    :root {
+      --bg: #13161a;
+      --panel: #1b1f24;
+      --secondary: #383d45;
+      --teal: #219c94;
+      --teal-bright: #3cc4bb;
+      --text: #f2f5f7;
+      --muted: #9aa3ad;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(900px 500px at 50% -10%, rgba(33, 156, 148, .14), transparent 70%),
+        var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+      padding: 32px 16px;
+    }
+    header { text-align: center; }
+    h1 {
+      margin: 0;
+      font-size: clamp(2.4rem, 8vw, 4.5rem);
+      letter-spacing: .28em;
+      padding-left: .28em;
+      font-weight: 800;
+    }
+    .tag {
+      margin: 10px 0 0;
+      color: var(--teal-bright);
+      letter-spacing: .3em;
+      text-transform: uppercase;
+      font-size: .8rem;
+    }
+    main {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 300px));
+      gap: 20px;
+      width: 100%;
+      justify-content: center;
+    }
+    .build {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 26px 24px 24px;
+      background: var(--panel);
+      border: 1px solid var(--secondary);
+      border-left: 4px solid var(--secondary);
+      border-radius: 4px;
+      color: var(--text);
+      text-decoration: none;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+    .build.primary { border-left-color: var(--teal); }
+    .build:hover, .build:focus-visible {
+      transform: translateY(-3px);
+      border-color: var(--teal);
+      background: #20262c;
+      outline: none;
+    }
+    .build:focus-visible { box-shadow: 0 0 0 3px rgba(60, 196, 187, .45); }
+    .name { font-size: 1.5rem; font-weight: 700; letter-spacing: .12em; }
+    .note { color: var(--muted); font-size: .92rem; line-height: 1.45; }
+    .play {
+      margin-top: 18px;
+      padding: 12px 0;
+      text-align: center;
+      font-weight: 700;
+      letter-spacing: .18em;
+      background: var(--secondary);
+      color: var(--text);
+      border-radius: 3px;
+    }
+    .primary .play { background: var(--teal); color: #061312; }
+    .build:hover .play, .build:focus-visible .play { background: var(--teal-bright); color: #061312; }
+    footer { color: var(--muted); font-size: .8rem; text-align: center; max-width: 36ch; line-height: 1.5; }
+    kbd {
+      background: var(--panel);
+      border: 1px solid var(--secondary);
+      border-radius: 3px;
+      padding: 1px 6px;
+      font: inherit;
+      color: var(--text);
+    }
+    @media (max-width: 680px) { main { grid-template-columns: minmax(0, 1fr); max-width: 360px; } }
+    @media (prefers-reduced-motion: reduce) { .build { transition: none; } .build:hover { transform: none; } }
+  </style>
 </head>
 <body>
-  <h1>Select a Game Build</h1>
-  <ul>
-    <li><a href="./beta/">Play Build BETA</a></li>
-    <li><a href="./gold/">Play Build GOLD</a></li>
-  </ul>
+  <header>
+    <h1>POSSESSION</h1>
+    <p class="tag">Choose a build</p>
+  </header>
+
+  <main>
+    <a class="build primary" href="./gold/">
+      <span class="name">GOLD</span>
+      <span class="note">The latest build.</span>
+      <span class="play">PLAY</span>
+    </a>
+    <a class="build" href="./beta/">
+      <span class="name">BETA</span>
+      <span class="note">The earlier build.</span>
+      <span class="play">PLAY</span>
+    </a>
+  </main>
+
+  <footer>
+    Best on desktop with a keyboard and mouse. <kbd>WASD</kbd> move, <kbd>E</kbd> possess, mouse to aim.
+  </footer>
 </body>
 </html>
