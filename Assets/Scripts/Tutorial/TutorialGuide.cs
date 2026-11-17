@@ -117,10 +117,12 @@ namespace Possession
             if (exitTrigger != null) exitTrigger.enabled = true;
             if (!Progress.Started) Progress.Begin(); // play starts straight away; hints run alongside
             MarkLayoutWallsFadeable();
+            HideEnemyNameTags();
             BuildCheckeredExit();
             _ = HeavyRoomStartZ; // remember where the door sits before it opens
             ChargeHUDInstaller.ShowKeyHints = false; // the objective bar already names the key
             gameObject.AddComponent<TutorialOverlay>().Initialize(this);
+            gameObject.AddComponent<TutorialDoorFader>().Initialize(possession); // doors fade like walls
             ChargeHUDInstaller.Install(gameObject.scene);
             UpdateObjective(); // no opening hint: the YOU arrow and objective bar cover it
         }
@@ -218,6 +220,14 @@ namespace Possession
         // camera's wall fader skipped them and the Spirit vanished behind the near wall. Tag every
         // standing piece of the layout (anything that isn't a floor) so it fades when it blocks the view.
         private static readonly string[] LayoutRoots = { "CompactTutorialLayout", "P4_LevelLayout" };
+
+        // The arrow and Field Guide already name the bodies, so drop the GUARD / HEAVY tags above them
+        private static void HideEnemyNameTags()
+        {
+            foreach (var label in FindObjectsByType<WorldLabel>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                if (label.Follow != null && label.Follow.GetComponentInParent<EnemyBase>() != null)
+                    Destroy(label.gameObject);
+        }
 
         private void MarkLayoutWallsFadeable()
         {
