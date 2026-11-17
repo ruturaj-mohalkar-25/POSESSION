@@ -38,7 +38,6 @@ namespace Possession.Level04Gold
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.R)) { LevelFlow.Load(gameObject.scene.name); return; }
             if (GameManager.Instance != null && GameManager.Instance.CurrentState != LevelState.InProgress) { StopSurvey(); if (context != null) context.text = ""; return; }
             if (!failed && !vault.IsOpen && engineers != null && engineers.Length > 0
                 && !engineers.Any(e => e != null && e.CurrentHP > 0 && e.gameObject.activeInHierarchy))

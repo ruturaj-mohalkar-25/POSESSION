@@ -7,7 +7,7 @@ Level 4: two floors, guarded archive access, a recoverable vault cipher, and an 
 Use **Unity 6000.3.22f1** in this checkout.
 
 - Open `Assets/Level04Gold/Scenes/Level_04_Gold.unity`, then press **Play**.
-- From `Assets/Scenes/MainMenu.unity`, press **Play → LEVEL 4**. Completing Level 3 also continues here; opening the vault is the campaign finale.
+- From `Assets/Scenes/MainMenu.unity`, press **Play → LEVEL 4** after completing Level 3. Campaign stages unlock progressively; opening the vault is the campaign finale. For editor playtesting, **Possession → Campaign → Unlock All Levels** unlocks the menu entries.
 - Editor shortcut: **Possession → Level 4 Gold → Open Local Level**.
 - To regenerate the blockout, stop Play Mode and choose **Possession → Level 4 Gold → Build and Open**. This replaces the local Level 4 scene; preserve manual edits separately.
 
@@ -39,7 +39,6 @@ From the gallery, walk east into the flat stair foyer and follow the north-point
 | A / D | Rotate the vault dial counterclockwise / clockwise. On-screen buttons also work. |
 | Enter | Confirm a stopped alignment; after both bolts release, turn the handle. |
 | F / Escape | Leave the vault controls. E still ejects. |
-| R | Retry the whole level. |
 
 Engineer has no shooting or smashing ability. Its tools unlock **Maintenance Access**, **Archive Entry** and **Archive Clue** doors, copy the cipher and operate the vault. Unlocked doors stay open for other forms.
 
