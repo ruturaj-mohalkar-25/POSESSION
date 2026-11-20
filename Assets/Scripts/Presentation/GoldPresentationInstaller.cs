@@ -31,6 +31,7 @@ namespace Possession
                 if (door.GetComponent<GoldDoorPresentation>() == null)
                     door.gameObject.AddComponent<GoldDoorPresentation>().Build();
             host.AddComponent<GoldContactShadows>().Build(scene);
+            GoldRoomDecor.Install(scene);
         }
     }
 }
