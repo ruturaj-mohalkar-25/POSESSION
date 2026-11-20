@@ -10,6 +10,11 @@ namespace Possession
         Possessed_Drone
     }
 
+    public enum PossessionBlockReason
+    {
+        None, Unavailable, NoCharges, Recovering, Hostile, OutOfRange, Obstructed, InVisionCone
+    }
+
     public class PossessionController : MonoBehaviour
     {
         [Header("Possession Settings")]
@@ -35,6 +40,7 @@ namespace Possession
         public float EjectProtectionSeconds => 2f;
         public EnemyBase PossessedEnemy => possessedEnemy;
         public float PossessRange => possessRange;
+        public float EjectCooldownRemaining => Mathf.Max(0f, ejectCooldownTimer);
         public bool CanStartPossession => currentState == PlayerState.Spirit && ejectCooldownTimer <= 0f
             && spirit != null && spirit.CurrentHP > 0
             && (GameManager.Instance == null || GameManager.Instance.CurrentState == LevelState.InProgress)
@@ -94,14 +100,30 @@ namespace Possession
 
         public bool TryPossess(EnemyBase enemy)
         {
-            if (!CanStartPossession || Time.timeScale <= 0f || enemy == null
-                || GameManager.Instance != null && GameManager.Instance.CurrentState != LevelState.InProgress
-                || !enemy.gameObject.activeInHierarchy || !enemy.CanBePossessedFrom(transform)
-                || (enemyLayer.value & (1 << enemy.gameObject.layer)) == 0
-                || Vector3.Distance(transform.position, enemy.transform.position) > possessRange
-                || !HasLineOfSight(enemy)) return false;
+            if (GetPossessionBlockReason(enemy) != PossessionBlockReason.None) return false;
             Possess(enemy);
             return possessedEnemy == enemy;
+        }
+
+        // Guidance and the E action use the same rules, so a hint never promises an invalid action.
+        public PossessionBlockReason GetPossessionBlockReason(EnemyBase enemy)
+        {
+            if (currentState != PlayerState.Spirit || spirit == null || spirit.CurrentHP <= 0
+                || Time.timeScale <= 0f
+                || GameManager.Instance != null && GameManager.Instance.CurrentState != LevelState.InProgress
+                || enemy == null || !enemy.gameObject.activeInHierarchy || enemy.CurrentHP <= 0
+                || (enemyLayer.value & (1 << enemy.gameObject.layer)) == 0)
+                return PossessionBlockReason.Unavailable;
+            var charges = GetComponent<PossessionCharge>();
+            if (charges != null && !charges.HasCharge) return PossessionBlockReason.NoCharges;
+            if (ejectCooldownTimer > 0f) return PossessionBlockReason.Recovering;
+            if (!enemy.CanBePossessed) return enemy.IsHostile
+                ? PossessionBlockReason.Hostile : PossessionBlockReason.Unavailable;
+            if (Vector3.Distance(transform.position, enemy.transform.position) > possessRange)
+                return PossessionBlockReason.OutOfRange;
+            if (!HasLineOfSight(enemy)) return PossessionBlockReason.Obstructed;
+            if (!enemy.CanBePossessedFrom(transform)) return PossessionBlockReason.InVisionCone;
+            return PossessionBlockReason.None;
         }
 
         private EnemyBase FindNearestEnemy()

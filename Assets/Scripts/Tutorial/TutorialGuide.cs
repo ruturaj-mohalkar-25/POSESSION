@@ -370,29 +370,45 @@ namespace Possession
                 if (!Progress.HitTarget)
                 {
                     if (possession.CurrentState == PlayerState.Possessed_Guard) return "LEFT CLICK - HIT THE TARGET";
-                    if (Charges == 0) return "COLLECT WHITE SOUL - +1 CHARGE";
-                    return "POSSESS THE GUARD - PRESS E";
+                    if (possession.CurrentState != PlayerState.Spirit) return "E - RETURN TO SPIRIT";
+                    return PossessionInstruction(guard, "GUARD");
                 }
                 // Door is open: first get to the Heavy's room, then deal with the Heavy
                 if (!reachedHeavyRoom) return "DOOR OPEN - GO THROUGH IT";
                 if (possession.CurrentState == PlayerState.Possessed_Guard) return "E - LEAVE THE GUARD";
                 if (!Progress.UsedHeavy)
                 {
-                    if (Charges == 0) return "COLLECT WHITE SOUL - +1 CHARGE";
-                    return "POSSESS THE HEAVY - PRESS E";
+                    return PossessionInstruction(heavy, "HEAVY");
                 }
                 if (!Progress.BrokeWall)
                 {
                     if (possession.CurrentState == PlayerState.Possessed_Heavy)
                         return "LEFT CLICK - SMASH THE WALL";
-                    if (Charges == 0) return "COLLECT WHITE SOUL - +1 CHARGE";
-                    return "POSSESS THE HEAVY - PRESS E";
+                    return PossessionInstruction(heavy, "HEAVY");
                 }
                 return possession.CurrentState == PlayerState.Spirit ? "REACH THE EXIT" : "E - RETURN TO SPIRIT";
             }
         }
 
         public string Instruction => Title;
+
+        private string PossessionInstruction(EnemyBase body, string name)
+        {
+            var reason = possession.GetPossessionBlockReason(body);
+            if (reason == PossessionBlockReason.None && possession.FindPossessableEnemy() != body)
+                return "MOVE CLOSER TO THE " + name;
+            return reason switch
+            {
+                PossessionBlockReason.None => "PRESS E - POSSESS " + name,
+                PossessionBlockReason.NoCharges => "COLLECT WHITE SOUL - +1 CHARGE",
+                PossessionBlockReason.Recovering => "RECOVERING - KEEP MOVING",
+                PossessionBlockReason.Hostile => name + " HOSTILE - MOVE AWAY",
+                PossessionBlockReason.OutOfRange => "MOVE CLOSER TO THE " + name,
+                PossessionBlockReason.Obstructed => "GO AROUND WALL TO " + name,
+                PossessionBlockReason.InVisionCone => "AVOID RED CONE - GET BEHIND",
+                _ => "FIND ANOTHER BODY"
+            };
+        }
 
         public string ControlsLegend
         {
@@ -402,7 +418,7 @@ namespace Possession
                     return "WASD  Move\nLeft click  Shoot\nE  Eject";
                 if (possession.CurrentState == PlayerState.Possessed_Heavy)
                     return "WASD  Move\nLeft click  Smash\nE  Eject";
-                return "WASD  Move\nE  Possess";
+                return "WASD  Move\nSpace  Jump\nE  Possess";
             }
         }
 
@@ -426,7 +442,8 @@ namespace Possession
             if (best == null) return false;
             body = best.transform;
             danger = best.IsHostile;
-            text = best == possession.FindPossessableEnemy() ? "E" : "";
+            text = possession.GetPossessionBlockReason(best) == PossessionBlockReason.None
+                && best == possession.FindPossessableEnemy() ? "E" : "";
             return true;
         }
 

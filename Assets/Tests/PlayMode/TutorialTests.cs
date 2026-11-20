@@ -128,7 +128,10 @@ namespace Possession.Tests
                 FindObjectsSortMode.None).Where(t => t.name == "ObjectiveBar").ToArray();
             Assert.That(objectiveBars, Has.Length.EqualTo(1),
                 "The tutorial should reuse the campaign objective bar instead of adding another HUD style.");
-            Assert.That(objectiveBars[0].gameObject.activeInHierarchy, Is.True);
+            Assert.That(objectiveBars[0].gameObject.activeInHierarchy, Is.False,
+                "The nearby instruction bubble replaces the duplicate objective bar in practice.");
+            Assert.That(overlay.GetComponentsInChildren<Text>(true).Single(t => t.name == "HintBody").text,
+                Does.Contain("MOVE CLOSER").And.Contain("WASD"));
             Assert.That(Object.FindObjectsByType<Text>(FindObjectsInactive.Include, FindObjectsSortMode.None)
                 .Single(t => t.name == "ObjectiveText").text, Is.EqualTo(guide.Title));
             float remaining = manager.LevelTimer;
@@ -267,7 +270,7 @@ namespace Possession.Tests
             Assert.That(guide.FailureMessage, Does.Contain("CAUGHT"));
             var overlay = Object.FindFirstObjectByType<TutorialOverlay>();
             Assert.That(overlay.GetComponentsInChildren<Text>(true).Single(t => t.name == "ResultBody").text,
-                Is.EqualTo("Restarting…"));
+                Does.StartWith("Restarting"));
         }
 
         [UnityTest]

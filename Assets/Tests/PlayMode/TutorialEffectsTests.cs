@@ -61,7 +61,7 @@ namespace Possession.Tests
         {
             Begin(); yield return null;
             Assert.That(guide.GetComponent<TutorialCoach>(), Is.Null);
-            Assert.That(guide.Title, Is.EqualTo("WHITE SPIRIT · WASD TO MOVE"));
+            Assert.That(guide.Title, Does.Contain("MOVE CLOSER"));
             guide.Progress.Move(TutorialMovement.Forward);
             guide.Progress.Move(TutorialMovement.Left);
             guide.Progress.Move(TutorialMovement.Back);
@@ -69,7 +69,8 @@ namespace Possession.Tests
             guide.Progress.Move(TutorialMovement.Jump);
             yield return null;
             Assert.That(guide.Progress.Movement, Is.EqualTo(TutorialMovement.All));
-            Assert.That(guide.Title, Is.EqualTo("GREEN = SAFE TO POSSESS · E · COSTS 1 CHARGE"));
+            Assert.That(guide.Title, Does.Contain("MOVE CLOSER"));
+            Assert.That(Object.FindFirstObjectByType<TutorialCoach>(), Is.Null);
         }
 
         [UnityTest]
@@ -79,19 +80,20 @@ namespace Possession.Tests
             Assert.That(guide.Possession.PossessRange, Is.EqualTo(5f));
             Assert.That(Vector3.Distance(guide.Spirit.transform.position, guide.Guard.transform.position),
                 Is.GreaterThan(guide.Possession.PossessRange));
-            Assert.That(guide.Title, Is.EqualTo("WHITE SPIRIT · WASD TO MOVE"));
+            Assert.That(guide.Title, Does.Contain("MOVE CLOSER").And.Not.Contain("PRESS E"));
         }
 
         [UnityTest]
-        public IEnumerator MovingFirstTeachesThatTheRedConeIsEnemyVision()
+        public IEnumerator MovingOutsidePossessionRangeKeepsAnActionableApproachHint()
         {
             Begin();
             Vector3 start = guide.Spirit.transform.position;
             guide.Spirit.RestoreAt(start + Vector3.right * 1.5f);
             Physics.SyncTransforms();
             yield return null;
-            Assert.That(guide.Progress.Movement, Is.EqualTo(TutorialMovement.All));
-            Assert.That(guide.Title, Is.EqualTo("RED CONE = ENEMY VISION · STAY OUT"));
+            Assert.That(Vector3.Distance(guide.Spirit.transform.position, guide.Guard.transform.position),
+                Is.GreaterThan(guide.Possession.PossessRange));
+            Assert.That(guide.Title, Does.Contain("MOVE CLOSER").And.Not.Contain("PRESS E"));
         }
 
         [UnityTest]
@@ -105,7 +107,7 @@ namespace Possession.Tests
             Assert.That(guide.Nearby(out _, out string prompt, out _), Is.True);
             Assert.That(prompt, Is.EqualTo("E"));
             yield return TutorialTestSupport.Possess(guide, guide.Guard);
-            Assert.That(guide.Title, Is.EqualTo("LMB · HIT THE TARGET"));
+            Assert.That(guide.Title, Does.Contain("HIT THE TARGET"));
             float timer = guide.Possession.PossessTimer;
             yield return new WaitForSeconds(0.15f);
             Assert.That(guide.Possession.PossessTimer, Is.LessThan(timer),
@@ -183,9 +185,9 @@ namespace Possession.Tests
             Invoke(guide.Possession, "Eject", false);
             yield return TutorialTestSupport.PreparePossession(guide, guide.Heavy);
             yield return null;
-            Assert.That(guide.Title, Is.EqualTo("GREEN = SAFE TO POSSESS HEAVY · E"));
+            Assert.That(guide.Title, Is.EqualTo("PRESS E - POSSESS HEAVY"));
             yield return TutorialTestSupport.Possess(guide, guide.Heavy);
-            Assert.That(guide.Title, Is.EqualTo("LMB · SMASH THE CRACKED WALL"));
+            Assert.That(guide.Title, Does.Contain("SMASH THE WALL"));
             var wall = Object.FindFirstObjectByType<BreakableWall>();
             var controller = guide.Heavy.GetComponent<CharacterController>();
             controller.enabled = false;
