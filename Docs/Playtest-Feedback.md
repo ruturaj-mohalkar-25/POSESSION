@@ -26,7 +26,22 @@ Enemy speeds, reaction delays, attack windups, the two-second eject shield, coll
 
 The untouched integration baseline (`e701a02`) ran **287 PlayMode tests: 280 passed, 7 failed**. All seven failures were stale Tutorial expectations: earlier wording, movement-checklist behavior, duplicate objective-bar visibility and an ellipsis character. Related expectations were updated for the current non-pausing, nearby-instruction design while retaining real possession, shooting/smashing, completion and clock checks. The existing pickup cooldown/reuse fixture also disables random relocation during its short wait, preventing automatic recollection from starting a second cooldown before its assertion. Pickup behavior in the game is unchanged.
 
-Final full PlayMode run: **296 passed, 0 failed, 0 skipped**, including all nine new feedback regressions. Browser evidence is recorded below after the release build is checked.
+Final full PlayMode run: **296 passed, 0 failed, 0 skipped**, including all nine new feedback regressions. Release WebGL build succeeded (9.36 MB). Chrome verification at a 1440 × 1000 viewport / 1280 × 720 canvas exercised HOW TO PLAY, WASD approach, the ready E prompt, real possession and the running countdown. There were **0 browser console errors**; only engine WebGL/deprecation warnings. The screenshots below are actual browser gameplay captures, with no staged actor relocation or gameplay debug hooks.
+
+- [Playable feedback build](https://utkarsh-landge.github.io/posession-gold-playtest-2026/playtest-feedback/)
+- Runtime source commit: `0a8cb91`; later evidence commits only add documentation/screenshots.
+
+### Approach and controls
+
+![Approach instruction and movement/jump keys](PlaytestFeedback/01-approach-instructions.png)
+
+### Ready to possess
+
+![Actionable E prompt after approaching](PlaytestFeedback/02-ready-to-possess.png)
+
+### Stationary circle and ejection explanation
+
+![Fixed outer rim alongside the shrinking countdown arc](PlaytestFeedback/03-countdown-circle.png)
 
 ## Reproduce
 
