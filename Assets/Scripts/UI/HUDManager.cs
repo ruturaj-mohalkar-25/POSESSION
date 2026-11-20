@@ -56,7 +56,6 @@ namespace Possession
         private string firstLevelScene => CampaignLevels.FirstScene;
 
         private float healthPct = 1f;
-        private EnemyBase[] enemies;
         private Transform spirit;
         private Camera cam;
         private Coroutine flashRoutine;
@@ -172,7 +171,6 @@ namespace Possession
                 spirit = spiritController.transform;
                 UpdateHealth(spiritController.MaxHP, spiritController.MaxHP);
             }
-            enemies = FindObjectsByType<EnemyBase>(FindObjectsSortMode.None);
         }
 
         private void LateUpdate()
@@ -478,33 +476,20 @@ namespace Possession
         // Same pick as PossessionController: nearest possessable enemy the spirit can see
         private void PlacePromptOverEnemy()
         {
-            if (spirit == null || enemies == null) return;
+            var possession = PlayerPossession;
+            var best = possession != null && possession.CanStartPossession
+                ? possession.FindPossessableEnemy() : null;
+            if (best == null)
+            {
+                possessPrompt.SetActive(false);
+                return;
+            }
             if (cam == null) cam = Camera.main;
             if (cam == null) return;
-
-            EnemyBase best = null;
-            float bestDist = float.MaxValue;
-            foreach (var enemy in enemies)
-            {
-                if (enemy == null || !enemy.isActiveAndEnabled || !enemy.CanBePossessed) continue;
-                float dist = Vector3.Distance(spirit.position, enemy.transform.position);
-                if (dist >= bestDist || !CanSee(enemy)) continue;
-                bestDist = dist;
-                best = enemy;
-            }
-            if (best == null) return;
 
             Vector3 above = best.transform.position + Vector3.up * promptHeight * best.transform.lossyScale.y;
             Vector3 screen = cam.WorldToScreenPoint(above);
             if (screen.z > 0f) possessPrompt.transform.position = screen; // overlay canvas uses screen pixels
-        }
-
-        private bool CanSee(EnemyBase enemy)
-        {
-            if (!Physics.Linecast(spirit.position, enemy.transform.position, out RaycastHit hit,
-                    ~0, QueryTriggerInteraction.Ignore))
-                return true;
-            return hit.collider.GetComponentInParent<EnemyBase>() == enemy || hit.collider.transform.IsChildOf(spirit);
         }
 
         // ---------------- Messages ----------------

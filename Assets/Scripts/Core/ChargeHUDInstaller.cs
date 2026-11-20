@@ -99,7 +99,10 @@ namespace Possession
             }
             else if (charge.HasCharge)
             {
-                label.text = "CHARGES " + charge.Count + "/" + charge.MaxCharges + (ChargeHUDInstaller.ShowKeyHints ? " · E near a body" : "");
+                string hint = possession.EjectCooldownRemaining > 0f ? "RECOVERING"
+                    : possession.FindPossessableEnemy() != null ? "E TO POSSESS" : "APPROACH FROM BEHIND";
+                label.text = "CHARGES " + charge.Count + "/" + charge.MaxCharges
+                    + (ChargeHUDInstaller.ShowKeyHints ? " · " + hint : "");
                 label.color = new Color(.45f, 1f, .7f);
             }
             else
