@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
@@ -45,6 +46,27 @@ namespace Possession.Tests
                 Assert.That(Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
                     .Any(t=>t.name.ToLowerInvariant().Contains("sofa")),Is.False);
             }
+        }
+
+        [UnityTest]
+        public IEnumerator CampaignContainsEveryRequestedPosterHeadlineAcrossActualRoomPlacements()
+        {
+            var headlines = new HashSet<string>();
+            foreach (string scene in CampaignLevels.SceneNames)
+            {
+                yield return Load(scene);
+                var art = Object.FindObjectsByType<UscWallArt>(FindObjectsInactive.Include,FindObjectsSortMode.None);
+                foreach (var poster in art.Where(p=>p.name=="Decor_Painting"))
+                    foreach (var text in poster.GetComponentsInChildren<TextMesh>(true).Where(t=>t.name=="Campus headline"))
+                        headlines.Add(text.text.Replace('\n',' ').Trim());
+                // A coverage win must not silently replace the existing TV, plants, vases or mat.
+                var props = Object.FindObjectsByType<Transform>(FindObjectsInactive.Include,FindObjectsSortMode.None);
+                foreach (string kind in new[]{"Decor_Painting","Decor_WallTV","Decor_CornerPlant","Decor_CornerVase","Decor_FloorMat"})
+                    Assert.That(props.Any(t=>t.name==kind),Is.True,scene+" missing "+kind);
+            }
+            foreach (string expected in new[]{"USC","FIGHT ON","TROJANS","SC","LA","BEAT UCLA"})
+                Assert.That(headlines.Contains(expected),Is.True,"Missing primary poster headline: "+expected
+                    +"; actual: "+string.Join(", ",headlines));
         }
 
         [UnityTest]

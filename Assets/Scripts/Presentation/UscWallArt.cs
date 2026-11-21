@@ -22,7 +22,7 @@ namespace Possession
             Font.textureRebuilt += RefreshAtlas;
             if (television)
             {
-                Label("USC",new Vector3(0,.26f,-.13f),new Vector2(2.9f,1.05f),Gold);
+                Label("USC",new Vector3(0,.26f,-.13f),new Vector2(2.9f,1.05f),Gold,true);
                 Label("TROJANS  /  FIGHT ON",new Vector3(0,-.6f,-.13f),new Vector2(3.05f,.28f),Paper);
                 return;
             }
@@ -38,13 +38,13 @@ namespace Possession
             };
             var design = designs[Mathf.Abs(variant)%designs.Length];
             Label(design.Item2,new Vector3(0,1.02f,-.13f),new Vector2(3.2f,.22f),Paper);
-            Label(design.Item1,new Vector3(0,.08f,-.13f),new Vector2(3.2f,1.35f),Gold);
+            Label(design.Item1,new Vector3(0,.08f,-.13f),new Vector2(3.2f,1.35f),Gold,true);
             Label(design.Item3,new Vector3(0,-1.02f,-.13f),new Vector2(3.2f,.25f),Paper);
         }
 
-        private void Label(string value,Vector3 position,Vector2 box,Color tint)
+        private void Label(string value,Vector3 position,Vector2 box,Color tint,bool headline=false)
         {
-            var go = new GameObject("Campus lettering",typeof(TextMesh)) { layer = 2 };
+            var go = new GameObject(headline ? "Campus headline" : "Campus lettering",typeof(TextMesh)) { layer = 2 };
             go.transform.SetParent(transform,false);
             go.transform.localPosition = position;
             var text = go.GetComponent<TextMesh>();
