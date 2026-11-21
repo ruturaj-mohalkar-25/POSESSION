@@ -6,12 +6,13 @@ using UnityEngine.SceneManagement;
 
 namespace Possession
 {
-    // Visual dressing only. Every primitive loses its collider before it enters the scene.
+    // Dressing is visual only, except explicitly marked solid hiding crates.
     public sealed class GoldRoomDecor : MonoBehaviour
     {
         private readonly List<Material> materials = new();
         private readonly List<(Renderer wall, GameObject prop)> mounted = new();
         private readonly List<Vector3> occupied = new();
+        private readonly List<(Vector3 from, Vector3 to)> patrolSegments = new();
         private Material cream, brass, teal, ink, clay, leaf, stem, blue, rug;
         private int cornerProps;
         private Transform[] objectives;
@@ -64,6 +65,7 @@ namespace Possession
                     || t.GetComponent<EnemyBase>() != null || t.GetComponent<SpiritController>() != null
                     || t.GetComponent<PossessionChargePickup>() != null || t.GetComponent<HealthPickup>() != null
                     || t.name.ToLowerInvariant().Contains("waypoint")).ToArray();
+            BuildPatrolClearance(scene);
             occupied.AddRange(all.Where(r => r.name == "Gold_CornerCabinet").Select(r => r.bounds.center));
             Physics.SyncTransforms();
             int room = 0;
@@ -80,18 +82,45 @@ namespace Possession
                 var vaseAt=leftPlant?c:a;
                 if (Corner(vaseAt,leftPlant?Vector3.right:Vector3.left) && Clear(vaseAt,2.5f)) { CornerProp(vaseAt); occupied.Add(vaseAt); }
                 var mat = new Vector3(b.min.x+2.2f,b.max.y+.035f,b.center.z);
-                if (Clear(mat,3f) && !Physics.CheckBox(mat+Vector3.up*.25f,new Vector3(1.45f,.2f,1f),Quaternion.identity,~0,QueryTriggerInteraction.Ignore))
+                if (Clear(mat,3f) && !Physics.CheckBox(mat+Vector3.up*1.1f,new Vector3(1.45f,1.1f,1f),Quaternion.identity,~0,QueryTriggerInteraction.Ignore))
                     Mat(mat);
                 room++;
             }
         }
         private bool Clear(Vector3 point,float distance) => !objectives.Any(t => Flat(t.position,point)<distance)
-            && !occupied.Any(p => Flat(p,point)<2.4f);
+            && !occupied.Any(p => Flat(p,point)<2.4f)
+            && !patrolSegments.Any(segment=>DistanceToSegment(point,segment.from,segment.to)<2.2f);
         private static float Flat(Vector3 a,Vector3 b) => Vector2.Distance(new Vector2(a.x,a.z),new Vector2(b.x,b.z));
         private static bool Corner(Vector3 p,Vector3 side) =>
             Physics.Raycast(p+Vector3.up*.7f,side,1.7f,1,QueryTriggerInteraction.Ignore)
             && Physics.Raycast(p+Vector3.up*.7f,Vector3.forward,1.7f,1,QueryTriggerInteraction.Ignore)
             && !Physics.CheckBox(p+Vector3.up*.85f,new Vector3(.65f,.8f,.65f),Quaternion.identity,~0,QueryTriggerInteraction.Ignore);
+
+        private static bool IsWaypoint(Transform t) => t.name.ToLowerInvariant().Contains("waypoint")
+            || t.name.Contains("_WP");
+
+        private void BuildPatrolClearance(Scene scene)
+        {
+            // Authored routes use either a Waypoint_* group or <enemy>_WP0/1 siblings.
+            // Keep plants clear of whole route segments, not only their endpoints.
+            var points = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<Transform>(true))
+                .Where(IsWaypoint).ToArray();
+            foreach (var group in points.GroupBy(t => (t.parent,
+                t.name.Contains("_WP") ? t.name.Substring(0,t.name.LastIndexOf("_WP")) : string.Empty)))
+            {
+                var route = group.OrderBy(t => t.GetSiblingIndex()).ToArray();
+                for (int i = 0; i < route.Length; i++)
+                    patrolSegments.Add((route[i].position,route[(i + 1) % route.Length].position));
+            }
+        }
+
+        private static float DistanceToSegment(Vector3 p,Vector3 a,Vector3 b)
+        {
+            var start = new Vector2(a.x,a.z); var span = new Vector2(b.x-a.x,b.z-a.z);
+            var point = new Vector2(p.x,p.z);
+            float t = span.sqrMagnitude > .0001f ? Mathf.Clamp01(Vector2.Dot(point-start,span)/span.sqrMagnitude) : 0f;
+            return Vector2.Distance(point,start+span*t);
+        }
 
         private void Mount(MeshRenderer[] walls,Bounds room,int index)
         {
@@ -170,10 +199,8 @@ namespace Possession
         }
         private void Mat(Vector3 at)
         {
-            var r=Root("Decor_FloorMat",at);
-            Part(r,"Woven border",PrimitiveType.Cube,Vector3.zero,new Vector3(2.8f,.025f,1.8f),cream);
-            Part(r,"Terracotta weave",PrimitiveType.Cube,new Vector3(0,.018f,0),new Vector3(2.55f,.012f,1.55f),rug);
-            for(int i=-1;i<=1;i++)Part(r,"Woven stripe",PrimitiveType.Cube,new Vector3(i*.68f,.027f,0),new Vector3(.045f,.008f,1.4f),brass);
+            var r=Root("Decor_HidingCrate",at-Vector3.up*.035f);
+            HidingCrate.Build(r);
         }
         private void LateUpdate()
         {

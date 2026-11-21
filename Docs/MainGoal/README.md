@@ -25,3 +25,9 @@ Release WebGL build succeeded (`Builds/MainGoal`). Collider fingerprints matched
 ![Campaign camera overview](Level_03-overview.png)
 
 The combined main+USC regression run passed **312/312 tests, 0 skipped**. Main-only review build: https://utkarsh-landge.github.io/posession-gold-playtest-2026/playtest-feedback/main-goal/ . Editor inspection lighting is explicitly released before changing scenes/building, retaining project quality settings.
+
+## November 21 corrections
+
+The flat floor mats now become solid 2.8 × 2.2 × 1.8 m wooden hiding crates. Each intentionally adds exactly one enabled BoxCollider, blocking movement and enemy sight. Original scene colliders are unchanged. Crates keep clear of complete patrol segments and gameplay objectives and join camera occlusion fading.
+
+Spirit, police and Heavy now have distance-driven alternating feet. Walking stops when actual movement stops; pause freezes the pose. Heavy retains an orange work uniform, hardhat and visible hammer. Red vision cones use 96 ray samples and an expanding hit buffer, and stop at solid cover. New regression checks cover stride/idle/pause, Heavy smash-guide visibility and actual detection plus rendered-cone obstruction.
