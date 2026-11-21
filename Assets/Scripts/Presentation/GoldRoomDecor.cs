@@ -7,13 +7,16 @@ using UnityEngine.SceneManagement;
 namespace Possession
 {
     // Visual dressing only. Every primitive loses its collider before it enters the scene.
+    [DefaultExecutionOrder(1100)]
     public sealed class GoldRoomDecor : MonoBehaviour
     {
         private readonly List<Material> materials = new();
         private readonly List<(Renderer wall, GameObject prop)> mounted = new();
         private readonly List<Vector3> occupied = new();
-        private Material cream, brass, teal, ink, clay, leaf, stem, blue, rug;
-        private int cornerProps;
+        private readonly List<Vector3> wallArtCenters = new();
+        private readonly List<(Vector3 from, Vector3 to)> patrolSegments = new();
+        private Material cream, ink, leaf, stem, rug, cardinal, gold;
+        private int cornerProps, artworkVariant;
         private Transform[] objectives;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -47,11 +50,11 @@ namespace Possession
         }
         private void Build(Scene scene)
         {
-            cream = Paint(new Color(.88f,.83f,.69f)); brass = Paint(new Color(.57f,.39f,.17f));
-            teal = Paint(new Color(.12f,.43f,.4f)); ink = Paint(new Color(.065f,.085f,.11f));
-            clay = Paint(new Color(.58f,.27f,.16f)); leaf = Paint(new Color(.19f,.40f,.24f));
-            stem = Paint(new Color(.22f,.28f,.15f)); blue = Paint(new Color(.12f,.23f,.31f));
-            rug = Paint(new Color(.36f,.23f,.19f));
+            cream = Paint(new Color(.94f,.9f,.78f)); ink = Paint(new Color(.065f,.085f,.11f));
+            leaf = Paint(new Color(.19f,.40f,.24f)); stem = Paint(new Color(.22f,.28f,.15f));
+            cardinal = Paint(new Color(.6f,0f,0f)); gold = Paint(new Color(1f,.8f,0f));
+            rug = Paint(new Color(.34f,.035f,.065f));
+            artworkVariant = Mathf.Max(0,CampaignLevels.NumberFor(scene.name)-1)*2;
             var all = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<MeshRenderer>(true)).ToArray();
             var floors = all.Where(r => r.GetComponent<Collider>() != null && r.bounds.size.y < .6f
                 && r.name.ToLowerInvariant().Contains("floor")).OrderBy(r => r.name).ToArray();
@@ -63,22 +66,24 @@ namespace Possession
                     || t.GetComponent<BreakableWall>() != null || t.GetComponent<LevelExit>() != null
                     || t.GetComponent<EnemyBase>() != null || t.GetComponent<SpiritController>() != null
                     || t.GetComponent<PossessionChargePickup>() != null || t.GetComponent<HealthPickup>() != null
-                    || t.name.ToLowerInvariant().Contains("waypoint")).ToArray();
+                    || IsWaypoint(t)).ToArray();
+            BuildPatrolClearance(scene);
             occupied.AddRange(all.Where(r => r.name == "Gold_CornerCabinet").Select(r => r.bounds.center));
             Physics.SyncTransforms();
             int room = 0;
-            foreach (var floor in floors.Where(f => f.bounds.size.x >= 7f && f.bounds.size.z >= 7f))
+            foreach (var floor in floors.Where(f => f.bounds.size.x >= 4f && f.bounds.size.z >= 4f))
             {
-                if (room >= 7) break;
                 var b = floor.bounds;
                 Mount(walls,b,room);
-                Vector3 a = new Vector3(b.min.x+1.25f,b.max.y,b.max.z-1.25f);
-                Vector3 c = new Vector3(b.max.x-1.25f,b.max.y,b.max.z-1.25f);
-                bool leftPlant=Corner(a,Vector3.left) && Clear(a,2.5f);
-                if (leftPlant) { CornerProp(a); occupied.Add(a); }
-                else if(Corner(c,Vector3.right) && Clear(c,2.5f)) { CornerProp(c); occupied.Add(c); }
-                var vaseAt=leftPlant?c:a;
-                if (Corner(vaseAt,leftPlant?Vector3.right:Vector3.left) && Clear(vaseAt,2.5f)) { CornerProp(vaseAt); occupied.Add(vaseAt); }
+                // Visit every real corner, including the near wall, rather than only two corners
+                // in the first seven rooms. Floor seams and openings fail the two-wall check.
+                foreach (float x in new[] { -1f, 1f }) foreach (float z in new[] { -1f, 1f })
+                {
+                    Vector3 at = new Vector3(x < 0f ? b.min.x + 1.25f : b.max.x - 1.25f,
+                        b.max.y, z < 0f ? b.min.z + 1.25f : b.max.z - 1.25f);
+                    if (!Corner(at, Vector3.right * x, Vector3.forward * z) || !Clear(at,2.5f)) continue;
+                    CornerProp(at); occupied.Add(at);
+                }
                 var mat = new Vector3(b.min.x+2.2f,b.max.y+.035f,b.center.z);
                 if (Clear(mat,3f) && !Physics.CheckBox(mat+Vector3.up*.25f,new Vector3(1.45f,.2f,1f),Quaternion.identity,~0,QueryTriggerInteraction.Ignore))
                     Mat(mat);
@@ -86,12 +91,46 @@ namespace Possession
             }
         }
         private bool Clear(Vector3 point,float distance) => !objectives.Any(t => Flat(t.position,point)<distance)
-            && !occupied.Any(p => Flat(p,point)<2.4f);
+            && !occupied.Any(p => Flat(p,point)<2.4f)
+            && !patrolSegments.Any(segment => DistanceToSegment(point, segment.from, segment.to) < 1.8f);
         private static float Flat(Vector3 a,Vector3 b) => Vector2.Distance(new Vector2(a.x,a.z),new Vector2(b.x,b.z));
-        private static bool Corner(Vector3 p,Vector3 side) =>
-            Physics.Raycast(p+Vector3.up*.7f,side,1.7f,1,QueryTriggerInteraction.Ignore)
-            && Physics.Raycast(p+Vector3.up*.7f,Vector3.forward,1.7f,1,QueryTriggerInteraction.Ignore)
+        private static bool Corner(Vector3 p,Vector3 side,Vector3 end) =>
+            SolidWall(p+Vector3.up*.7f,side)
+            && SolidWall(p+Vector3.up*.7f,end)
             && !Physics.CheckBox(p+Vector3.up*.85f,new Vector3(.65f,.8f,.65f),Quaternion.identity,~0,QueryTriggerInteraction.Ignore);
+
+        private static bool SolidWall(Vector3 at,Vector3 direction) =>
+            Physics.Raycast(at,direction,out var hit,1.7f,1,QueryTriggerInteraction.Ignore)
+            && hit.collider.GetComponentInParent<Door>() == null
+            && hit.collider.GetComponentInParent<BreakableWall>() == null
+            && hit.collider.GetComponentInParent<EnemyBase>() == null
+            && hit.collider.GetComponentInParent<SpiritController>() == null;
+
+        private static bool IsWaypoint(Transform t) => t.name.ToLowerInvariant().Contains("waypoint")
+            || t.name.Contains("_WP");
+
+        private void BuildPatrolClearance(Scene scene)
+        {
+            // Authored routes use either a Waypoint_* group or <enemy>_WP0/1 siblings.
+            // Keep plants clear of whole route segments, not only their endpoints.
+            var points = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<Transform>(true))
+                .Where(IsWaypoint).ToArray();
+            foreach (var group in points.GroupBy(t => (t.parent,
+                t.name.Contains("_WP") ? t.name.Substring(0,t.name.LastIndexOf("_WP")) : string.Empty)))
+            {
+                var route = group.OrderBy(t => t.GetSiblingIndex()).ToArray();
+                for (int i = 0; i < route.Length; i++)
+                    patrolSegments.Add((route[i].position,route[(i + 1) % route.Length].position));
+            }
+        }
+
+        private static float DistanceToSegment(Vector3 p,Vector3 a,Vector3 b)
+        {
+            var start = new Vector2(a.x,a.z); var span = new Vector2(b.x-a.x,b.z-a.z);
+            var point = new Vector2(p.x,p.z);
+            float t = span.sqrMagnitude > .0001f ? Mathf.Clamp01(Vector2.Dot(point-start,span)/span.sqrMagnitude) : 0f;
+            return Vector2.Distance(point,start+span*t);
+        }
 
         private void Mount(MeshRenderer[] walls,Bounds room,int index)
         {
@@ -99,18 +138,18 @@ namespace Possession
             {
                 Bounds b=wall.bounds;
                 if (b.size.z>1.5f || b.center.z<room.center.z || Mathf.Abs(b.min.z-room.max.z)>1f) continue;
-                float left=Mathf.Max(b.min.x,room.min.x)+1.5f,right=Mathf.Min(b.max.x,room.max.x)-1.5f;
+                float left=Mathf.Max(b.min.x,room.min.x)+2.1f,right=Mathf.Min(b.max.x,room.max.x)-2.1f;
                 if(right<left)continue;
                 foreach(float x in new[]{left,right,(left+right)*.5f})
                 {
-                    Vector3 p=new Vector3(x,Mathf.Min(room.max.y+2.7f,b.max.y-.9f),b.min.z-.13f);
-                    if(!Clear(p,2.7f))continue;
-                    if(wall.GetComponentsInChildren<Transform>(true).Any(t=>t.name=="Gold_RoomSign" && Mathf.Abs(t.position.x-x)<3.5f))continue;
+                    Vector3 p=new Vector3(x,Mathf.Min(room.max.y+2.7f,b.max.y-1.4f),b.min.z-.13f);
+                    if(objectives.Any(t => Flat(t.position,p)<3f) || wallArtCenters.Any(c=>Flat(c,p)<4.4f))continue;
+                    if(wall.GetComponentsInChildren<Transform>(true).Any(t=>t.name=="Gold_RoomSign" && Mathf.Abs(t.position.x-x)<4.1f))continue;
                     bool tv=index%3==1;
                     var root=Root(tv?"Decor_WallTV":"Decor_Painting",p);
                     root.SetParent(wall.transform,true);
-                    if(tv)TV(root);else Painting(root,index);
-                    mounted.Add((wall,root.gameObject));occupied.Add(p);return;
+                    if(tv)TV(root);else Painting(root,artworkVariant++);
+                    mounted.Add((wall,root.gameObject));wallArtCenters.Add(p);return;
                 }
             }
         }
@@ -122,22 +161,17 @@ namespace Possession
             => GoldRoomPresentation.Part(root,name,kind,root.TransformPoint(position),size,m);
         private void Painting(Transform root,int variant)
         {
-            Part(root,"Brass frame",PrimitiveType.Cube,Vector3.zero,new Vector3(2.5f,1.9f,.12f),brass);
-            Part(root,"Linen canvas",PrimitiveType.Cube,new Vector3(0,0,-.075f),new Vector3(2.28f,1.68f,.035f),cream);
-            var sun=Part(root,"Ochre sun",PrimitiveType.Cylinder,new Vector3(.57f,.36f,-.11f),new Vector3(.46f,.012f,.46f),clay);
-            sun.transform.rotation=Quaternion.Euler(90,0,0);
-            Part(root,"Horizon",PrimitiveType.Cube,new Vector3(0,-.44f,-.12f),new Vector3(2.15f,.44f,.025f),teal);
-            for(int i=0;i<3;i++)
-            {
-                var hill=Part(root,"Abstract hills",PrimitiveType.Sphere,new Vector3(-.78f+i*.65f,-.18f,-.135f),new Vector3(.85f,.55f+i*.08f,.025f),i%2==0?blue:teal);
-            }
+            Part(root,"Gold gallery frame",PrimitiveType.Cube,Vector3.zero,new Vector3(3.9f,2.7f,.12f),gold);
+            Part(root,"Cardinal art board",PrimitiveType.Cube,new Vector3(0,0,-.075f),new Vector3(3.66f,2.46f,.035f),cardinal);
+            Part(root,"Gold rule",PrimitiveType.Cube,new Vector3(0,-.77f,-.11f),new Vector3(2.95f,.025f,.02f),gold);
+            root.gameObject.AddComponent<UscWallArt>().Build(variant,false);
         }
         private void TV(Transform root)
         {
-            Part(root,"Thin bezel",PrimitiveType.Cube,Vector3.zero,new Vector3(2.65f,1.65f,.14f),ink);
-            Part(root,"Screen",PrimitiveType.Cube,new Vector3(0,.02f,-.085f),new Vector3(2.4f,1.37f,.025f),blue);
-            for(int i=0;i<5;i++)Part(root,"Quiet city screen",PrimitiveType.Cube,new Vector3(-.85f+i*.43f,-.21f,-.105f),new Vector3(.28f,.25f+(i%3)*.19f,.015f),teal);
-            Part(root,"Screen reflection",PrimitiveType.Cube,new Vector3(-.45f,.48f,-.12f),new Vector3(1.2f,.045f,.01f),cream);
+            Part(root,"Thin bezel",PrimitiveType.Cube,Vector3.zero,new Vector3(3.9f,2.5f,.14f),ink);
+            Part(root,"Cardinal screen",PrimitiveType.Cube,new Vector3(0,.02f,-.085f),new Vector3(3.64f,2.24f,.025f),cardinal);
+            Part(root,"Gold screen trim",PrimitiveType.Cube,new Vector3(0,-.9f,-.11f),new Vector3(3.2f,.035f,.015f),gold);
+            root.gameObject.AddComponent<UscWallArt>().Build(0,true);
         }
         private void CornerProp(Vector3 at)
         { if (cornerProps++ % 2 == 0) Plant(at); else Vase(at); }
@@ -145,7 +179,8 @@ namespace Possession
         private void Plant(Vector3 at)
         {
             var r=Root("Decor_CornerPlant",at);
-            Part(r,"Clay planter",PrimitiveType.Cylinder,new Vector3(0,.3f,0),new Vector3(.72f,.3f,.72f),clay);
+            Part(r,"Cardinal planter",PrimitiveType.Cylinder,new Vector3(0,.3f,0),new Vector3(.72f,.3f,.72f),cardinal);
+            Part(r,"Gold planter rim",PrimitiveType.Cylinder,new Vector3(0,.59f,0),new Vector3(.75f,.035f,.75f),gold);
             Part(r,"Soil",PrimitiveType.Cylinder,new Vector3(0,.61f,0),new Vector3(.63f,.015f,.63f),ink);
             Part(r,"Stem",PrimitiveType.Cylinder,new Vector3(0,1.05f,0),new Vector3(.055f,.45f,.055f),stem);
             for(int i=0;i<7;i++)
@@ -159,21 +194,26 @@ namespace Possession
         {
             var r=Root("Decor_CornerVase",at);
             Part(r,"Ceramic body",PrimitiveType.Sphere,new Vector3(0,.48f,0),new Vector3(.7f,.95f,.7f),cream);
-            Part(r,"Vase neck",PrimitiveType.Cylinder,new Vector3(0,.99f,0),new Vector3(.25f,.23f,.25f),cream);
+            Part(r,"Vase neck",PrimitiveType.Cylinder,new Vector3(0,.99f,0),new Vector3(.25f,.23f,.25f),gold);
             Part(r,"Dark opening",PrimitiveType.Cylinder,new Vector3(0,1.23f,0),new Vector3(.2f,.008f,.2f),ink);
             for(int i=0;i<3;i++)
             {
-                var reed=Part(r,"Dried reed",PrimitiveType.Cylinder,new Vector3((i-1)*.09f,1.48f,0),new Vector3(.025f,.38f,.025f),stem);
+                var reed=Part(r,"Artificial stem",PrimitiveType.Cylinder,new Vector3((i-1)*.09f,1.48f,0),new Vector3(.025f,.38f,.025f),stem);
                 reed.transform.rotation=Quaternion.Euler(0,0,(i-1)*-12f);
-                Part(r,"Seed head",PrimitiveType.Sphere,new Vector3((i-1)*.18f,1.85f,0),new Vector3(.12f,.25f,.12f),brass);
+                for(int j=0;j<3;j++)
+                {
+                    var l=Part(r,"Artificial leaf",PrimitiveType.Sphere,
+                        new Vector3((i-1)*.18f+(j%2==0?.16f:-.16f),1.4f+j*.18f,0),new Vector3(.43f,.1f,.2f),leaf);
+                    l.transform.rotation=Quaternion.Euler(0,i*53f,(j%2==0?1f:-1f)*23f);
+                }
             }
         }
         private void Mat(Vector3 at)
         {
             var r=Root("Decor_FloorMat",at);
             Part(r,"Woven border",PrimitiveType.Cube,Vector3.zero,new Vector3(2.8f,.025f,1.8f),cream);
-            Part(r,"Terracotta weave",PrimitiveType.Cube,new Vector3(0,.018f,0),new Vector3(2.55f,.012f,1.55f),rug);
-            for(int i=-1;i<=1;i++)Part(r,"Woven stripe",PrimitiveType.Cube,new Vector3(i*.68f,.027f,0),new Vector3(.045f,.008f,1.4f),brass);
+            Part(r,"Cardinal weave",PrimitiveType.Cube,new Vector3(0,.018f,0),new Vector3(2.55f,.012f,1.55f),rug);
+            for(int i=-1;i<=1;i++)Part(r,"Gold woven stripe",PrimitiveType.Cube,new Vector3(i*.68f,.027f,0),new Vector3(.045f,.008f,1.4f),gold);
         }
         private void LateUpdate()
         {
