@@ -19,6 +19,12 @@ namespace Possession
         private EnemyBase enemy;
         private SpiritController spirit;
         private Transform model, oldModel;
+        private readonly List<(Transform part, Vector3 rest, Quaternion rotation, int side)> gaitParts = new();
+        private Vector3 previousPosition;
+        private Vector3 gaitDirection=Vector3.back;
+        private float gaitPhase, gaitWeight;
+        public float GaitPhase => gaitPhase;
+        public float GaitWeight => gaitWeight;
         private bool oldActive, oldForceOff;
         public Transform Model => model;
         public bool IsShowing => model != null && model.gameObject.activeSelf;
@@ -28,7 +34,7 @@ namespace Possession
             if(model != null)return;
             body=GetComponent<Renderer>();if(body==null)return;
             enemy=GetComponent<EnemyBase>();spirit=GetComponent<SpiritController>();
-            if(spirit==null && !(enemy is GuardEnemy))return;
+            if(spirit==null && enemy==null)return;
             var inherited=transform.Find("Character Avatar");
             bool cloned=inherited!=null;
             if(inherited!=null){inherited.gameObject.SetActive(false);Release(inherited.gameObject);}
@@ -36,27 +42,47 @@ namespace Possession
             oldModel=transform.Find("P5_Model");if(oldModel!=null){oldActive=cloned||oldModel.gameObject.activeSelf;oldModel.gameObject.SetActive(false);}
             navy=Mat(new Color(.055f,.12f,.23f));black=Mat(new Color(.035f,.045f,.06f));gold=Mat(new Color(.88f,.65f,.16f));
             white=Mat(new Color(.91f,.94f,.93f));skin=Mat(new Color(.67f,.43f,.29f));teal=Mat(new Color(.08f,.45f,.43f));
-            uniformNavy=Mat(new Color(.055f,.12f,.23f));
+            uniformNavy=Mat(enemy is HeavyEnemy?new Color(.95f,.39f,.055f):new Color(.055f,.12f,.23f));
             uniform.Add(uniformNavy);
             model=BuildModel(enemy is GuardEnemy);model.name="Character Avatar";
             var mesh=GetComponent<MeshFilter>();var bounds=mesh!=null&&mesh.sharedMesh!=null?mesh.sharedMesh.bounds:new Bounds(Vector3.zero,new Vector3(1,2,1));
             model.localPosition=new Vector3(0,bounds.min.y,0);model.localScale=Vector3.one*(bounds.size.y/2.65f);
             GetComponent<EnemyContactDamage>()?.RefreshPresentationRenderers();
+            previousPosition=transform.position;
             Refresh();
         }
-        private void LateUpdate()=>Refresh();
+        private void LateUpdate(){Refresh();AdvanceGait(Time.deltaTime);}
+        // Driven by travelled distance, so blocked input never produces walking in place.
+        public void AdvanceGait(float deltaTime)
+        {
+            Vector3 travel=transform.position-previousPosition;previousPosition=transform.position;travel.y=0;
+            if(model==null||deltaTime<=0f)return;
+            bool moving=travel.magnitude>.0005f&&travel.magnitude<3f&&IsShowing;
+            gaitWeight=Mathf.MoveTowards(gaitWeight,moving?1f:0f,deltaTime*9f);
+            if(moving)gaitPhase+=travel.magnitude*8f;
+            if(moving)gaitDirection=model.InverseTransformDirection(travel.normalized);
+            Vector3 local=gaitDirection;local.y=0;local.Normalize();
+            foreach(var item in gaitParts)
+            {
+                float wave=Mathf.Sin(gaitPhase+(item.side<0?Mathf.PI:0))*gaitWeight;
+                float lift=Mathf.Max(0,wave)*.17f;
+                item.part.localPosition=item.rest+local*(wave*.43f)+Vector3.up*lift;
+                item.part.localRotation=item.part.name=="Boot"?item.rotation:Quaternion.AngleAxis(wave*24f,Vector3.Cross(Vector3.up,local))*item.rotation;
+            }
+            if(spirit!=null&&moving)model.rotation=Quaternion.LookRotation(travel)*Quaternion.Euler(0,180,0);
+        }
         public void Refresh()
         {
             if(model==null||body==null)return;
             body.forceRenderingOff=true;
             if(oldModel!=null)oldModel.gameObject.SetActive(false);
-            if(enemy is GuardEnemy)
+            if(enemy!=null)
             {
                 foreach(Transform old in transform)
-                    if(old.name=="Guard Cap"||old.name=="Guard Cap Brim"||old.name=="Guard Badge")
+                    if(old.name=="Guard Cap"||old.name=="Guard Cap Brim"||old.name=="Guard Badge"||old.name=="Heavy Left Shoulder"||old.name=="Heavy Right Shoulder"||old.name=="Heavy Chest Plate"||old.name=="Heavy Chest Mark"||old.name=="Heavy Belt")
                     {if(!legacyPieces.ContainsKey(old.gameObject))legacyPieces[old.gameObject]=old.gameObject.activeSelf;old.gameObject.SetActive(false);}
                 // Preserve the established white-body possession cue; equipment keeps its own colours.
-                uniformNavy.color=enemy.IsPossessed?Color.white:new Color(.055f,.12f,.23f);
+                uniformNavy.color=enemy.IsPossessed?Color.white:enemy is HeavyEnemy?new Color(.95f,.39f,.055f):new Color(.055f,.12f,.23f);
                 if(!enemy.IsPossessed)model.localRotation=Quaternion.Euler(0,180,0);
                 if(enemy.IsPossessed && Time.timeScale>0f && Camera.main!=null)
                 {
@@ -86,6 +112,7 @@ namespace Possession
         private void OnEnable()
         {
             EventBus.Possessed+=OnPossessed;EventBus.Ejected+=OnEjected;
+            previousPosition=transform.position;
             if(model!=null)Refresh();
         }
         private void OnDisable()
@@ -120,17 +147,19 @@ namespace Possession
         private Transform BuildModel(bool officer)
         {
             var root=new GameObject(officer?"Police avatar proposal":"Player avatar proposal").transform;root.SetParent(transform,false);
-            Material cloth=officer?uniformNavy:white;
+            bool heavy=enemy is HeavyEnemy;
+            Material cloth=enemy!=null?uniformNavy:white;
             Part(root,"Torso",PrimitiveType.Capsule,new Vector3(0,1.38f,0),new Vector3(.85f,.57f,.55f),cloth);
             for(int side=-1;side<=1;side+=2)
             {
-                Part(root,"Trouser leg",PrimitiveType.Capsule,new Vector3(side*.23f,.48f,0),new Vector3(.31f,.42f,.35f),cloth);
-                Part(root,"Boot",PrimitiveType.Cube,new Vector3(side*.23f,.105f,-.1f),new Vector3(.34f,.2f,.53f),officer?black:teal);
+                var leg=Part(root,"Trouser leg",PrimitiveType.Capsule,new Vector3(side*.25f,.48f,0),new Vector3(.31f,.42f,.35f),cloth).transform;
+                var boot=Part(root,"Boot",PrimitiveType.Cube,new Vector3(side*.25f,.105f,-.16f),new Vector3(.35f,.2f,.65f),enemy!=null?black:teal).transform;
+                gaitParts.Add((leg,leg.localPosition,leg.localRotation,side));gaitParts.Add((boot,boot.localPosition,boot.localRotation,side));
                 var sleeve=Part(root,"Sleeve",PrimitiveType.Capsule,new Vector3(side*.56f,1.43f,0),new Vector3(.29f,.35f,.34f),cloth);
                 sleeve.transform.localRotation=Quaternion.Euler(0,0,side*12);
-                Part(root,"Hand",PrimitiveType.Sphere,new Vector3(side*.65f,1.1f,-.04f),Vector3.one*.25f,officer?skin:white);
+                Part(root,"Hand",PrimitiveType.Sphere,new Vector3(side*.65f,1.1f,-.04f),Vector3.one*.25f,enemy!=null?skin:white);
             }
-            Part(root,"Head",PrimitiveType.Sphere,new Vector3(0,2.15f,0),new Vector3(.68f,.76f,.64f),officer?skin:white);
+            Part(root,"Head",PrimitiveType.Sphere,new Vector3(0,2.15f,0),new Vector3(.68f,.76f,.64f),enemy!=null?skin:white);
             if(officer)
             {
                 Part(root,"Uniform belt",PrimitiveType.Cube,new Vector3(0,1.05f,0),new Vector3(.82f,.13f,.57f),black);
@@ -145,13 +174,22 @@ namespace Possession
                 var grip=Part(root,"Sidearm grip",PrimitiveType.Cube,new Vector3(.68f,1.08f,-.2f),new Vector3(.13f,.28f,.17f),black);grip.transform.localRotation=Quaternion.Euler(-12,0,0);
                 Part(root,"Sidearm muzzle",PrimitiveType.Cube,new Vector3(.68f,1.23f,-.67f),new Vector3(.11f,.11f,.025f),navy);
             }
+            else if(heavy)
+            {
+                Part(root,"Hardhat crown",PrimitiveType.Sphere,new Vector3(0,2.43f,0),new Vector3(.79f,.43f,.76f),gold);
+                Part(root,"Hardhat rim",PrimitiveType.Cylinder,new Vector3(0,2.35f,0),new Vector3(.91f,.035f,.87f),gold);
+                Part(root,"Hammer handle",PrimitiveType.Cylinder,new Vector3(.81f,1.22f,-.12f),new Vector3(.09f,.51f,.09f),black);
+                Part(root,"Hammer head",PrimitiveType.Cube,new Vector3(.81f,1.76f,-.12f),new Vector3(.56f,.29f,.35f),navy);
+                Part(root,"Work belt",PrimitiveType.Cube,new Vector3(0,1.06f,0),new Vector3(.86f,.16f,.6f),black);
+                foreach(int side in new[]{-1,1})Part(root,"Reflective vest stripe",PrimitiveType.Cube,new Vector3(side*.23f,1.48f,-.29f),new Vector3(.085f,.64f,.04f),gold);
+            }
             else
             {
                 Part(root,"Face panel",PrimitiveType.Sphere,new Vector3(0,2.13f,-.24f),new Vector3(.48f,.4f,.2f),Mat(new Color(.14f,.22f,.25f)));
                 Part(root,"Teal collar",PrimitiveType.Cylinder,new Vector3(0,1.89f,0),new Vector3(.58f,.07f,.53f),teal);
                 Part(root,"Chest identity patch",PrimitiveType.Cube,new Vector3(0,1.5f,-.29f),new Vector3(.18f,.16f,.04f),teal);
             }
-            for(int side=-1;side<=1;side+=2)Part(root,"Eye",PrimitiveType.Sphere,new Vector3(side*.13f,2.17f,-.32f),new Vector3(.065f,.085f,.04f),officer?black:white);
+            for(int side=-1;side<=1;side+=2)Part(root,"Eye",PrimitiveType.Sphere,new Vector3(side*.13f,2.17f,-.32f),new Vector3(.065f,.085f,.04f),enemy!=null?black:white);
             return root;
         }
     }
@@ -174,7 +212,7 @@ namespace Possession
                     if(spirit.GetComponent<PlayerIdentityView>()==null)spirit.gameObject.AddComponent<PlayerIdentityView>();
                     if(spirit.GetComponent<CharacterAvatarView>()==null)spirit.gameObject.AddComponent<CharacterAvatarView>().Build();
                 }
-                foreach(var guard in root.GetComponentsInChildren<GuardEnemy>(true))
+                foreach(var guard in root.GetComponentsInChildren<EnemyBase>(true))
                     if(guard.GetComponent<CharacterAvatarView>()==null)guard.gameObject.AddComponent<CharacterAvatarView>().Build();
             }
             if(actors)

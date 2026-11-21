@@ -20,7 +20,7 @@ namespace Possession.Editor
                 try
                 {
                 Func<string> geometry=()=>string.Join("\n",scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<Collider>(true))
-                    .OrderBy(c=>c.GetInstanceID()).Select(c=>c.GetInstanceID()+"|"+EditorJsonUtility.ToJson(c)+"|"+c.transform.position.ToString("R")+"|"+c.transform.lossyScale.ToString("R")));
+                    .Where(c=>c.GetComponent<HidingCrate>()==null).OrderBy(c=>c.GetInstanceID()).Select(c=>c.GetInstanceID()+"|"+EditorJsonUtility.ToJson(c)+"|"+c.transform.position.ToString("R")+"|"+c.transform.lossyScale.ToString("R")));
                 string before=geometry();GoldPresentationInstaller.Install(scene);GoldRoomDecor.Install(scene);CharacterPresentationInstaller.Install(scene);
                 foreach(var root in scene.GetRootGameObjects())foreach(var view in root.GetComponentsInChildren<CharacterAvatarView>(true))view.Refresh();
                 foreach(var root in scene.GetRootGameObjects())foreach(var identity in root.GetComponentsInChildren<PlayerIdentityView>(true))identity.Refresh();
@@ -32,13 +32,21 @@ namespace Possession.Editor
                 Save(camera,folder+"/"+scene.name+"-overview.png");
                 if(!stretch)
                 {
-                    foreach(var actor in new Component[]{spirit,UnityEngine.Object.FindFirstObjectByType<GuardEnemy>()})
+                    foreach(var actor in new Component[]{spirit,UnityEngine.Object.FindFirstObjectByType<GuardEnemy>(),UnityEngine.Object.FindFirstObjectByType<HeavyEnemy>()})
                     {
                         if(actor==null)continue;
                         var body=actor.GetComponent<Renderer>();var point=body.bounds.center;
-                        var front=actor is GuardEnemy?actor.transform.forward:Vector3.back;
+                        var front=actor is EnemyBase?actor.transform.forward:Vector3.back;
                         camera.transform.position=point+front*4+Vector3.up*3.5f;camera.transform.LookAt(point);
-                        SaveClear(camera,point,folder+"/"+scene.name+(actor is GuardEnemy?"-police.png":"-player.png"));
+                        string role=actor is GuardEnemy?"police":actor is HeavyEnemy?"heavy":"player";
+                        SaveClear(camera,point,folder+"/"+scene.name+"-"+role+".png");
+                        var avatar=actor.GetComponent<CharacterAvatarView>();var original=actor.transform.position;
+                        for(int step=0;step<2;step++)
+                        {
+                            for(int frame=0;frame<8;frame++){actor.transform.position+=Vector3.forward*.045f;avatar.AdvanceGait(.02f);}
+                            SaveClear(camera,point,folder+"/"+scene.name+"-"+role+"-stride"+(step+1)+".png");
+                        }
+                        actor.transform.position=original;avatar.AdvanceGait(0);
                     }
                 }
                 else
@@ -47,10 +55,13 @@ namespace Possession.Editor
                     foreach(string kind in new[]{"Decor_Painting","Decor_WallTV","Decor_CornerVase","Decor_CornerPlant"})
                     {
                         var prop=props.FirstOrDefault(t=>t.name==kind);if(prop==null)continue;
-                        camera.transform.position=prop.position+new Vector3(0,4,-5);camera.transform.LookAt(prop.position+Vector3.up*.4f);
+                        camera.transform.position=prop.position-prop.forward*5+Vector3.up*3;camera.transform.LookAt(prop.position+Vector3.up*.4f);
                         SaveClear(camera,prop.position,folder+"/"+scene.name+"-"+kind+".png");
                     }
                 }
+                var crate=UnityEngine.Object.FindFirstObjectByType<HidingCrate>();
+                if(crate!=null)
+                {var point=crate.GetComponent<Collider>().bounds.center;camera.transform.position=point+new Vector3(4,4,-6);camera.transform.LookAt(point);SaveClear(camera,point,folder+"/"+scene.name+"-hiding-crate.png");}
                 Debug.Log("CHARACTER_GOAL_GEOMETRY_OK "+scene.name);
                 }
                 finally

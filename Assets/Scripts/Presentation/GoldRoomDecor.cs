@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 
 namespace Possession
 {
-    // Visual dressing only. Every primitive loses its collider before it enters the scene.
+    // Dressing is visual only, except explicitly marked solid hiding crates.
     [DefaultExecutionOrder(1100)]
     public sealed class GoldRoomDecor : MonoBehaviour
     {
@@ -85,14 +85,14 @@ namespace Possession
                     CornerProp(at); occupied.Add(at);
                 }
                 var mat = new Vector3(b.min.x+2.2f,b.max.y+.035f,b.center.z);
-                if (Clear(mat,3f) && !Physics.CheckBox(mat+Vector3.up*.25f,new Vector3(1.45f,.2f,1f),Quaternion.identity,~0,QueryTriggerInteraction.Ignore))
+                if (Clear(mat,3f) && !Physics.CheckBox(mat+Vector3.up*1.1f,new Vector3(1.45f,1.1f,1f),Quaternion.identity,~0,QueryTriggerInteraction.Ignore))
                     Mat(mat);
                 room++;
             }
         }
         private bool Clear(Vector3 point,float distance) => !objectives.Any(t => Flat(t.position,point)<distance)
             && !occupied.Any(p => Flat(p,point)<2.4f)
-            && !patrolSegments.Any(segment => DistanceToSegment(point, segment.from, segment.to) < 1.8f);
+            && !patrolSegments.Any(segment => DistanceToSegment(point, segment.from, segment.to) < 2.2f);
         private static float Flat(Vector3 a,Vector3 b) => Vector2.Distance(new Vector2(a.x,a.z),new Vector2(b.x,b.z));
         private static bool Corner(Vector3 p,Vector3 side,Vector3 end) =>
             SolidWall(p+Vector3.up*.7f,side)
@@ -233,10 +233,8 @@ namespace Possession
         }
         private void Mat(Vector3 at)
         {
-            var r=Root("Decor_FloorMat",at);
-            Part(r,"Woven border",PrimitiveType.Cube,Vector3.zero,new Vector3(2.8f,.025f,1.8f),cream);
-            Part(r,"Cardinal weave",PrimitiveType.Cube,new Vector3(0,.018f,0),new Vector3(2.55f,.012f,1.55f),rug);
-            for(int i=-1;i<=1;i++)Part(r,"Gold woven stripe",PrimitiveType.Cube,new Vector3(i*.68f,.027f,0),new Vector3(.045f,.008f,1.4f),gold);
+            var r=Root("Decor_HidingCrate",at-Vector3.up*.035f);
+            HidingCrate.Build(r);
         }
         private void LateUpdate()
         {

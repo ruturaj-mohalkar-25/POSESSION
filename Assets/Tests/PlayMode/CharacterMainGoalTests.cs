@@ -154,6 +154,56 @@ namespace Possession.Tests
                 Assert.That(size.y,Is.EqualTo(.76f).Within(.001f));
             }
         }
+        [UnityTest] public IEnumerator AllActorsHaveDistanceDrivenFeetThatStopAndPause()
+        {
+            yield return Load(CampaignLevels.FirstScene);
+            foreach(var avatar in Object.FindObjectsByType<CharacterAvatarView>(FindObjectsSortMode.None))
+            {
+                Assert.That(avatar.Model.Find("Trouser leg"),Is.Not.Null,avatar.name);
+                var feet=avatar.Model.GetComponentsInChildren<Transform>().Where(t=>t.name=="Boot").ToArray();
+                Assert.That(feet.Length,Is.EqualTo(2),avatar.name);
+                for(int i=0;i<12;i++){avatar.transform.position+=Vector3.forward*.045f;avatar.AdvanceGait(.02f);}
+                Assert.That(avatar.GaitWeight,Is.GreaterThan(.8f));
+                Assert.That(Mathf.Abs(feet[0].localPosition.z-feet[1].localPosition.z),Is.GreaterThan(.15f),"Feet must visibly alternate.");
+                var before=feet.Select(t=>t.localPosition).ToArray();float phase=avatar.GaitPhase;
+                avatar.AdvanceGait(0);Assert.That(avatar.GaitPhase,Is.EqualTo(phase));
+                Assert.That(feet.Select(t=>t.localPosition),Is.EqualTo(before));
+                for(int i=0;i<30;i++)avatar.AdvanceGait(.02f);
+                Assert.That(avatar.GaitWeight,Is.EqualTo(0));
+                Assert.That(feet[0].localPosition.y,Is.EqualTo(.105f).Within(.001f));
+                Assert.That(feet[1].localPosition.y,Is.EqualTo(.105f).Within(.001f));
+            }
+            Assert.That(Object.FindObjectsByType<HeavyEnemy>(FindObjectsSortMode.None).All(h=>h.GetComponent<CharacterAvatarView>()!=null),Is.True);
+        }
+        [UnityTest] public IEnumerator HeavyAvatarPreservesPossessedSmashGuide()
+        {
+            yield return Load(CampaignLevels.FirstScene);
+            var heavy=Object.FindFirstObjectByType<HeavyEnemy>();
+            EventBus.Possessed?.Invoke(heavy,PlayerState.Possessed_Heavy);
+            heavy.GetComponent<CharacterAvatarView>().Refresh();yield return null;
+            var guide=heavy.transform.Find("Heavy Smash Guide");
+            Assert.That(guide,Is.Not.Null);Assert.That(guide.gameObject.activeInHierarchy,Is.True);
+            Assert.That(guide.GetComponentsInChildren<LineRenderer>().Any(r=>r.enabled),Is.True);
+        }
+        [UnityTest] public IEnumerator SolidCrateBlocksSightAndClipsRedConeAtItsFrontFace()
+        {
+            yield return Load(CampaignLevels.FirstScene);
+            var go=new GameObject("Cover fixture guard");go.transform.position=new Vector3(1000,1.05f,1000);
+            var guard=go.AddComponent<GuardEnemy>();guard.enabled=false;
+            var target=new GameObject("Cover fixture target");target.transform.position=go.transform.position+Vector3.forward*4;
+            Physics.SyncTransforms();Assert.That(guard.CanSee(target.transform),Is.True);
+            var crate=new GameObject("Decor_HidingCrate");crate.transform.position=new Vector3(1000,0,1002.7f);HidingCrate.Build(crate.transform);
+            Physics.SyncTransforms();Assert.That(guard.CanSee(target.transform),Is.False,"Solid cover must stop actual enemy detection.");
+            var box=crate.GetComponent<BoxCollider>();Assert.That(box.isTrigger,Is.False);Assert.That(box.bounds.size.y,Is.GreaterThan(2));
+            Assert.That(crate.GetComponentsInChildren<Collider>().Count(c=>c.enabled),Is.EqualTo(1));
+            var view=go.AddComponent<VisionConeView>();
+            typeof(VisionConeView).GetMethod("LateUpdate",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).Invoke(view,null);
+            var cone=Object.FindObjectsByType<MeshFilter>(FindObjectsSortMode.None).Single(f=>f.name=="Cover fixture guard Vision Cone");
+            var vertex=cone.sharedMesh.vertices[49];
+            Assert.That(cone.transform.TransformPoint(vertex).z,Is.LessThanOrEqualTo(box.bounds.min.z+.02f),"Red cone must end at cover rather than continue behind it.");
+            Object.DestroyImmediate(crate);Physics.SyncTransforms();Assert.That(guard.CanSee(target.transform),Is.True);
+            Object.DestroyImmediate(target);Object.DestroyImmediate(go);
+        }
         [UnityTest] public IEnumerator SpiritDeathHidesItsVisualModel()
         {
             yield return Load(CampaignLevels.FirstScene);
