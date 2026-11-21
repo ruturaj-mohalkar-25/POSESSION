@@ -1,11 +1,15 @@
-# USC room style: stretch build
+# USC room style correction release
 
-Separate followup to the character/shadow main goal. Adds cardinal/gold USC, Fight On, Trojans, SC, LA and Beat UCLA wall typography, matching wall TVs and artificial greenery in safe corners. No sofa. All four corners are considered per eligible room; doors, objectives, pickups, cabinets and complete patrol segments retain clearance. Wall art and plants add no colliders; the main goal intentionally adds solid cover colliders.
+USC, Fight On, Trojans, SC, LA and Beat UCLA typography now mounts on all four feasible interior wall directions. Long clear spans can hold multiple frames/TVs. Side-wall meshes and local text bounds turn correctly toward their room. Door, objective, room-sign and same-face artwork spacing remain clear. Safe corners retain artificial plants/vases. No sofa.
 
-Combined gameplay suite: **312 passed, 0 failed, 0 skipped**. Release WebGL build succeeded. Collider fingerprints matched before/after presentation installation in all three campaign scenes and Tutorial.
+Includes the main goal's solid wooden cover, distance-driven Spirit/police/Heavy feet, F shadows and readable equipment. Crates remain opaque and their trim/lid faces are separated to prevent shimmer. Their enclosing blocking boxes intentionally change cover collision; original authored colliders remain unchanged.
 
-These PNGs are actual Unity scene inspection renders, with a repositioned camera and HUD hidden. Closeups temporarily hide intervening walls and world labels for inspection; the runtime build keeps normal visibility behavior. Browser gameplay verification is recorded separately.
+Final combined full PlayMode suite: **319 passed, 0 failed, 0 skipped**. Additional focused stability suite: **46/46 passed**. Covers full campaign solutions/patrols, actual vision/cone obstruction, stride/idle/pause, collision/material stability, trim separation and all four artwork orientations with door/sign clearance.
 
-![USC wall art](Level_03-Decor_Painting.png)
-![Artificial foliage in vase](Level_03-Decor_CornerVase.png)
-![Room overview](Level_03-overview.png)
+PNG captures use repositioned inspection cameras and hidden HUD. Closeups temporarily hide intervening walls/world labels. Normal runtime cameras and visibility apply in the game.
+
+![Wall art](Level_03-Decor_Painting.png)
+![TV](Level_03-Decor_WallTV.png)
+![Solid cover](Level_03-hiding-crate.png)
+
+Review order: #84 → #85 → #86.
