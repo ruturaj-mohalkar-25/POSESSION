@@ -82,7 +82,7 @@ namespace Possession
                 var vaseAt=leftPlant?c:a;
                 if (Corner(vaseAt,leftPlant?Vector3.right:Vector3.left) && Clear(vaseAt,2.5f)) { CornerProp(vaseAt); occupied.Add(vaseAt); }
                 var mat = new Vector3(b.min.x+2.2f,b.max.y+.035f,b.center.z);
-                if (Clear(mat,3f) && !Physics.CheckBox(mat+Vector3.up*1.1f,new Vector3(1.45f,1.1f,1f),Quaternion.identity,~0,QueryTriggerInteraction.Ignore))
+                if (Clear(mat,3f) && !patrolSegments.Any(s=>DistanceToSegment(mat,s.from,s.to)<2.7f) && !Physics.CheckBox(mat+Vector3.up*1.14f,new Vector3(1.51f,1.14f,1.04f),Quaternion.identity,~0,QueryTriggerInteraction.Ignore))
                     Mat(mat);
                 room++;
             }
