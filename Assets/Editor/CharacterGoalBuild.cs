@@ -17,6 +17,8 @@ namespace Possession.Editor
             foreach(string path in CampaignLevels.ScenePaths.Concat(new[]{"Assets/Scenes/Tutorial.unity"}))
             {
                 var scene=EditorSceneManager.OpenScene(path);
+                try
+                {
                 Func<string> geometry=()=>string.Join("\n",scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<Collider>(true))
                     .OrderBy(c=>c.GetInstanceID()).Select(c=>c.GetInstanceID()+"|"+EditorJsonUtility.ToJson(c)+"|"+c.transform.position.ToString("R")+"|"+c.transform.lossyScale.ToString("R")));
                 string before=geometry();GoldPresentationInstaller.Install(scene);GoldRoomDecor.Install(scene);CharacterPresentationInstaller.Install(scene);
@@ -50,6 +52,14 @@ namespace Possession.Editor
                     }
                 }
                 Debug.Log("CHARACTER_GOAL_GEOMETRY_OK "+scene.name);
+                }
+                finally
+                {
+                    // Edit-mode inspection components do not receive normal play-mode teardown.
+                    foreach(var root in scene.GetRootGameObjects())
+                        foreach(var lighting in root.GetComponentsInChildren<CharacterShadowLighting>(true))
+                            typeof(CharacterShadowLighting).GetMethod("Release",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(lighting,null);
+                }
             }
             EditorSceneManager.OpenScene("Assets/Scenes/MainMenu.unity");PlaytestFeedbackBuild.WebGL();
         }
