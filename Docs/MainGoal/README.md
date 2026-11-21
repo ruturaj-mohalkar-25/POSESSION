@@ -17,3 +17,9 @@ Full gameplay suite: **304 passed, 0 failed**. After the additional fallback lif
 Native closeups are inspection camera renders; any wall between the camera and character is temporarily hidden for the capture only. Gameplay overview and browser evidence are recorded separately.
 
 The approved preview used Unity primitives; built-in FBX capsule/sphere meshes have different unit bounds. Runtime pieces explicitly normalize those mesh dimensions, and the identity collar fits the humanoid torso/head instead of the legacy capsule.
+
+Release WebGL build succeeded (`Builds/MainGoal`). Collider fingerprints matched in all three campaign stages and Tutorial. These are actual Unity level renders.
+
+![Police and F shadow](Level_03-police.png)
+![Spirit avatar](Level_03-player.png)
+![Campaign camera overview](Level_03-overview.png)
