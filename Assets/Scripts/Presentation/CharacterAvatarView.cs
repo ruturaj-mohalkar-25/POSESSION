@@ -109,7 +109,12 @@ namespace Possession
         {
             var go=new GameObject(name,typeof(MeshFilter),typeof(MeshRenderer));go.layer=2;go.transform.SetParent(root,false);
             go.transform.localPosition=at;go.transform.localScale=size;
-            go.GetComponent<MeshFilter>().sharedMesh=Resources.GetBuiltinResource<Mesh>(type==PrimitiveType.Capsule?"Capsule.fbx":type==PrimitiveType.Cylinder?"Cylinder.fbx":type==PrimitiveType.Sphere?"Sphere.fbx":"Cube.fbx");
+            var mesh=Resources.GetBuiltinResource<Mesh>(type==PrimitiveType.Capsule?"Capsule.fbx":type==PrimitiveType.Cylinder?"Cylinder.fbx":type==PrimitiveType.Sphere?"Sphere.fbx":"Cube.fbx");
+            go.GetComponent<MeshFilter>().sharedMesh=mesh;
+            // Builtin FBX meshes are not sized like CreatePrimitive (sphere/capsule are 2x).
+            var expected=type==PrimitiveType.Capsule||type==PrimitiveType.Cylinder?new Vector3(1,2,1):Vector3.one;
+            var actual=mesh.bounds.size;
+            go.transform.localScale=Vector3.Scale(size,new Vector3(expected.x/actual.x,expected.y/actual.y,expected.z/actual.z));
             var r=go.GetComponent<MeshRenderer>();r.sharedMaterial=material;r.shadowCastingMode=ShadowCastingMode.On;r.receiveShadows=true;return go;
         }
         private Transform BuildModel(bool officer)

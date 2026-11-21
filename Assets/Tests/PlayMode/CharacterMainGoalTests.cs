@@ -142,6 +142,18 @@ namespace Possession.Tests
             Assert.That(entered,Is.True);yield return null;
             Assert.That(pc.TryEject(false),Is.True);Assert.That(body.forceRenderingOff,Is.True);
         }
+        [UnityTest] public IEnumerator AvatarPartsMatchTheApprovedPrimitiveProportions()
+        {
+            yield return Load(CampaignLevels.FirstScene);
+            foreach(var avatar in Object.FindObjectsByType<CharacterAvatarView>(FindObjectsSortMode.None))
+            {
+                var torso=avatar.Model.Find("Torso");var mesh=torso.GetComponent<MeshFilter>().sharedMesh;
+                var size=Vector3.Scale(mesh.bounds.size,torso.localScale);
+                Assert.That(size.x,Is.EqualTo(.85f).Within(.001f));Assert.That(size.y,Is.EqualTo(1.14f).Within(.001f));
+                var head=avatar.Model.Find("Head");size=Vector3.Scale(head.GetComponent<MeshFilter>().sharedMesh.bounds.size,head.localScale);
+                Assert.That(size.y,Is.EqualTo(.76f).Within(.001f));
+            }
+        }
         [UnityTest] public IEnumerator SpiritDeathHidesItsVisualModel()
         {
             yield return Load(CampaignLevels.FirstScene);

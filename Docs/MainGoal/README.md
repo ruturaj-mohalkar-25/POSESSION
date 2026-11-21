@@ -12,6 +12,8 @@ This is a focused followup to existing PR84 (base branch codex/playtest-feedback
 
 ## Verification
 
-Full gameplay suite: **304 passed, 0 failed**. After the additional fallback lifecycle edge fix, **24/24 avatar and visible-body blink checks passed**. The final combined stretch suite will include these same runtime changes. Build and browser evidence follow. New regression coverage exercises real possession/ejection and shield retention, visible uniform versus cap colours, every stage/Tutorial avatar/shadow installation, no new colliders, component lifecycle, cloned actors, death, attack warning tint and additive lighting restoration. Existing countdown-blink timing/pause/restoration tests now observe the visible torso instead of the hidden legacy capsule.
+Full gameplay suite: **304 passed, 0 failed**. After the additional fallback lifecycle edge fix, **31/31 avatar, visible-body blink, proportion and level-presentation checks passed**. The final combined stretch suite will include these same runtime changes. Build and browser evidence follow. New regression coverage exercises real possession/ejection and shield retention, visible uniform versus cap colours, every stage/Tutorial avatar/shadow installation, no new colliders, component lifecycle, cloned actors, death, attack warning tint and additive lighting restoration. Existing countdown-blink timing/pause/restoration tests now observe the visible torso instead of the hidden legacy capsule.
 
 Native closeups are inspection camera renders; any wall between the camera and character is temporarily hidden for the capture only. Gameplay overview and browser evidence are recorded separately.
+
+The approved preview used Unity primitives; built-in FBX capsule/sphere meshes have different unit bounds. Runtime pieces explicitly normalize those mesh dimensions, and the identity collar fits the humanoid torso/head instead of the legacy capsule.

@@ -19,7 +19,7 @@ namespace Possession.Editor
                 var scene=EditorSceneManager.OpenScene(path);
                 Func<string> geometry=()=>string.Join("\n",scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<Collider>(true))
                     .OrderBy(c=>c.GetInstanceID()).Select(c=>c.GetInstanceID()+"|"+EditorJsonUtility.ToJson(c)+"|"+c.transform.position.ToString("R")+"|"+c.transform.lossyScale.ToString("R")));
-                string before=geometry();GoldPresentationInstaller.Install(scene);CharacterPresentationInstaller.Install(scene);
+                string before=geometry();GoldPresentationInstaller.Install(scene);GoldRoomDecor.Install(scene);CharacterPresentationInstaller.Install(scene);
                 foreach(var root in scene.GetRootGameObjects())foreach(var view in root.GetComponentsInChildren<CharacterAvatarView>(true))view.Refresh();
                 foreach(var root in scene.GetRootGameObjects())foreach(var identity in root.GetComponentsInChildren<PlayerIdentityView>(true))identity.Refresh();
                 foreach(var root in scene.GetRootGameObjects())foreach(var shadows in root.GetComponentsInChildren<GoldContactShadows>(true))shadows.Refresh();
@@ -61,6 +61,8 @@ namespace Possession.Editor
                 if(hit.collider.GetComponentInParent<EnemyBase>()!=null||hit.collider.GetComponentInParent<SpiritController>()!=null)continue;
                 var renderer=hit.collider.GetComponent<Renderer>();if(renderer!=null&&renderer.enabled){renderer.enabled=false;hidden.Add(renderer);}
             }
+            foreach(var label in UnityEngine.Object.FindObjectsByType<WorldLabel>(FindObjectsSortMode.None))
+                foreach(var renderer in label.GetComponentsInChildren<Renderer>())if(renderer.enabled){renderer.enabled=false;hidden.Add(renderer);}
             try{Save(camera,path);}finally{foreach(var renderer in hidden)if(renderer!=null)renderer.enabled=true;}
         }
         private static void Save(Camera camera,string path)

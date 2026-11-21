@@ -70,9 +70,18 @@ namespace Possession
             PulseAmount = pulseRemaining > 0 ? Mathf.Sin(Mathf.PI * (1f - pulseRemaining / PulseDuration)) : 0;
             var bounds = renderer.bounds;
             float radius = Mathf.Max(bounds.extents.x, bounds.extents.z);
-            collar.position = new Vector3(bounds.center.x, bounds.center.y + bounds.extents.y * .32f, bounds.center.z);
+            var avatar=TrackedBody.GetComponent<CharacterAvatarView>();
+            bool humanoid=avatar!=null&&avatar.isActiveAndEnabled&&avatar.Model!=null;
+            if(humanoid)
+            {
+                var torso=avatar.Model.Find("Torso").GetComponent<Renderer>().bounds;
+                var head=avatar.Model.Find("Head").GetComponent<Renderer>().bounds;
+                radius=Mathf.Max(head.extents.x,head.extents.z)*.92f;
+                collar.position=new Vector3(torso.center.x,torso.max.y+.01f,torso.center.z);
+            }
+            else collar.position = new Vector3(bounds.center.x, bounds.center.y + bounds.extents.y * .32f, bounds.center.z);
             float diameter = radius * 2.1f * (1f + .12f * PulseAmount);
-            collar.localScale = new Vector3(diameter, .20f + .10f * PulseAmount, diameter);
+            collar.localScale = new Vector3(diameter, (humanoid?.075f:.20f) + .10f * PulseAmount, diameter);
             tint.SetColor("_Color", Color.Lerp(GoldTheme.Teal, new Color(.40f, .85f, .77f), PulseAmount));
             collarRenderer.SetPropertyBlock(tint);
         }
