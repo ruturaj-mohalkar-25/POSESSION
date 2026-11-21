@@ -204,6 +204,63 @@ namespace Possession.Tests
             Object.DestroyImmediate(crate);Physics.SyncTransforms();Assert.That(guard.CanSee(target.transform),Is.True);
             Object.DestroyImmediate(target);Object.DestroyImmediate(go);
         }
+        [UnityTest] public IEnumerator CrateTrimHasDepthSeparationAndFitsInsideItsCollider()
+        {
+            yield return Load(CampaignLevels.FirstScene);
+            foreach(var crate in Object.FindObjectsByType<HidingCrate>(FindObjectsSortMode.None))
+            {
+                var wood=crate.transform.Find("Solid wooden box").GetComponent<Renderer>().bounds;
+                var cover=crate.GetComponent<BoxCollider>().bounds;
+                foreach(var r in crate.GetComponentsInChildren<Renderer>())
+                {
+                    Assert.That(cover.Contains(r.bounds.min)&&cover.Contains(r.bounds.max),Is.True,r.name+" must fit solid cover collider");
+                    if(r.name=="Lid plank")Assert.That(r.bounds.min.y,Is.GreaterThanOrEqualTo(wood.max.y-.001f));
+                    if(r.name=="Horizontal brace")Assert.That(r.bounds.min.z,Is.LessThan(wood.min.z-.04f));
+                    if(r.name=="Corner batten")
+                    {
+                        Assert.That(r.bounds.max.y,Is.GreaterThan(wood.max.y+.03f));
+                        Assert.That(Mathf.Abs(r.bounds.center.x-wood.center.x)+r.bounds.extents.x,Is.GreaterThan(wood.extents.x+.04f));
+                        Assert.That(Mathf.Abs(r.bounds.center.z-wood.center.z)+r.bounds.extents.z,Is.GreaterThan(wood.extents.z+.04f));
+                    }
+                }
+            }
+        }
+        [UnityTest] public IEnumerator CrateStaysStillAndOpaqueWhilePlayerPushesAndCameraCrossesItsEdge()
+        {
+            yield return Load(CampaignLevels.FirstScene);
+            var spirit=Object.FindFirstObjectByType<SpiritController>();spirit.enabled=false;
+            var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.name="Crate stability fixture floor";
+            floor.transform.position=new Vector3(1000,-.5f,1000);floor.transform.localScale=new Vector3(20,1,20);
+            var crate=new GameObject("Decor_HidingCrate");crate.transform.position=new Vector3(1000,0,1000);HidingCrate.Build(crate.transform);
+            spirit.RestoreAt(new Vector3(1000,1.2f,997.8f));
+            var camera=Camera.main;camera.GetComponent<CameraFollow>().enabled=false;
+            var fader=camera.GetComponent<WallOcclusionFader>();
+            yield return null;Physics.SyncTransforms();
+            var pieces=crate.GetComponentsInChildren<Renderer>();
+            var poses=pieces.Select(r=>r.transform.localPosition).ToArray();var materials=pieces.Select(r=>r.sharedMaterial).ToArray();
+            var body=spirit.GetComponent<Rigidbody>();Vector3 position=crate.transform.position;Quaternion rotation=crate.transform.rotation;
+            for(int frame=0;frame<50;frame++)
+            {
+                body.linearVelocity=new Vector3(0,body.linearVelocity.y,8);
+                yield return new WaitForFixedUpdate();
+                camera.transform.position=spirit.transform.position+new Vector3(Mathf.Sin(frame*.3f)*9f,2,8);
+                camera.transform.LookAt(spirit.transform.position);Physics.SyncTransforms();
+                if(frame==0)
+                {
+                    Assert.That(Physics.Linecast(camera.transform.position,spirit.transform.position,out var hit,~0,QueryTriggerInteraction.Ignore),Is.True);
+                    Assert.That(hit.collider.GetComponent<HidingCrate>(),Is.Not.Null,"Fixture must put cover between camera and player.");
+                }
+                fader.RefreshVisibility(.02f);
+                Assert.That(crate.transform.position,Is.EqualTo(position));Assert.That(crate.transform.rotation,Is.EqualTo(rotation));
+                for(int part=0;part<pieces.Length;part++)
+                {
+                    Assert.That(pieces[part].transform.localPosition,Is.EqualTo(poses[part]));
+                    Assert.That(pieces[part].sharedMaterial,Is.SameAs(materials[part]),"Camera edge must not pulse crate transparency.");
+                }
+            }
+            Assert.That(spirit.transform.position.z,Is.LessThan(crate.GetComponent<Collider>().bounds.min.z),"Player must remain blocked by crate.");
+            Object.DestroyImmediate(crate);Object.DestroyImmediate(floor);
+        }
         [UnityTest] public IEnumerator SpiritDeathHidesItsVisualModel()
         {
             yield return Load(CampaignLevels.FirstScene);

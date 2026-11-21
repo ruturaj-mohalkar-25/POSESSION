@@ -157,6 +157,8 @@ namespace Possession
 
         private static bool ShouldFade(Collider collider)
         {
+            // Solid cover stays opaque: fading its overlapping trim/box surfaces can look unstable.
+            if (collider.GetComponentInParent<HidingCrate>() != null) return false;
             // Interactive puzzle visuals and character feedback remain owned by their systems.
             if (collider.GetComponentInParent<EnemyBase>() != null
                 || collider.GetComponentInParent<SpiritController>() != null
