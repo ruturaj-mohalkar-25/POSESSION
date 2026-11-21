@@ -13,7 +13,7 @@ namespace Possession
         private readonly List<Material> materials = new();
         private readonly List<(Renderer wall, GameObject prop)> mounted = new();
         private readonly List<Vector3> occupied = new();
-        private readonly List<Vector3> wallArtCenters = new();
+        private readonly List<(Vector3 point, Vector3 outward)> wallArtCenters = new();
         private readonly List<(Vector3 from, Vector3 to)> patrolSegments = new();
         private Material cream, ink, leaf, stem, rug, cardinal, gold;
         private int cornerProps, artworkVariant;
@@ -134,22 +134,41 @@ namespace Possession
 
         private void Mount(MeshRenderer[] walls,Bounds room,int index)
         {
-            foreach (var wall in walls.OrderBy(w => Mathf.Abs(w.bounds.center.x-room.center.x)))
+            // Local -Z is the picture front. Turn it toward each room, including side walls.
+            foreach (var outward in new[]{Vector3.forward,Vector3.right,Vector3.back,Vector3.left})
             {
-                Bounds b=wall.bounds;
-                if (b.size.z>1.5f || b.center.z<room.center.z || Mathf.Abs(b.min.z-room.max.z)>1f) continue;
-                float left=Mathf.Max(b.min.x,room.min.x)+2.1f,right=Mathf.Min(b.max.x,room.max.x)-2.1f;
-                if(right<left)continue;
-                foreach(float x in new[]{left,right,(left+right)*.5f})
+                bool horizontal=Mathf.Abs(outward.z)>.5f;
+                foreach (var wall in walls.OrderBy(w => w.name))
                 {
-                    Vector3 p=new Vector3(x,Mathf.Min(room.max.y+2.7f,b.max.y-1.4f),b.min.z-.13f);
-                    if(objectives.Any(t => Flat(t.position,p)<3f) || wallArtCenters.Any(c=>Flat(c,p)<4.4f))continue;
-                    if(wall.GetComponentsInChildren<Transform>(true).Any(t=>t.name=="Gold_RoomSign" && Mathf.Abs(t.position.x-x)<4.1f))continue;
-                    bool tv=index%3==1;
-                    var root=Root(tv?"Decor_WallTV":"Decor_Painting",p);
-                    root.SetParent(wall.transform,true);
-                    if(tv)TV(root);else Painting(root,artworkVariant++);
-                    mounted.Add((wall,root.gameObject));wallArtCenters.Add(p);return;
+                    Bounds b=wall.bounds;
+                    if (horizontal ? b.size.z>1.5f : b.size.x>1.5f) continue;
+                    float face=horizontal ? (outward.z>0?b.min.z:b.max.z) : (outward.x>0?b.min.x:b.max.x);
+                    float boundary=horizontal ? (outward.z>0?room.max.z:room.min.z) : (outward.x>0?room.max.x:room.min.x);
+                    if(Mathf.Abs(face-boundary)>1f)continue;
+                    float left=Mathf.Max(horizontal?b.min.x:b.min.z,horizontal?room.min.x:room.min.z)+2.1f;
+                    float right=Mathf.Min(horizontal?b.max.x:b.max.z,horizontal?room.max.x:room.max.z)-2.1f;
+                    if(right<left)continue;
+                    // Fill long uninterrupted spans, with edge alternatives around doors/nameplates.
+                    int slots=Mathf.Max(1,Mathf.FloorToInt((right-left+4.2f)/5.2f));
+                    var candidates=new List<float>();
+                    for(int i=0;i<slots;i++)candidates.Add(Mathf.Lerp(left,right,(i+.5f)/slots));
+                    candidates.Add(left);candidates.Add(right);
+                    foreach(float along in candidates)
+                    {
+                        Vector3 p=horizontal ? new Vector3(along,0,face) : new Vector3(face,0,along);
+                        p-=outward*.13f;
+                        p.y=Mathf.Min(room.max.y+2.7f,b.max.y-1.4f);
+                        if(p.y-1.35f<room.max.y+.6f)continue;
+                        if(objectives.Any(t=>Flat(t.position,p)<3f)
+                            ||wallArtCenters.Any(c=>Vector3.Dot(c.outward,outward)>.5f&&Flat(c.point,p)<4.4f))continue;
+                        if(wall.GetComponentsInChildren<Transform>(true).Any(t=>t.name=="Gold_RoomSign"&&Flat(t.position,p)<4.1f))continue;
+                        bool tv=(index+mounted.Count)%3==1;
+                        var root=Root(tv?"Decor_WallTV":"Decor_Painting",p);
+                        root.rotation=Quaternion.LookRotation(outward);
+                        root.SetParent(wall.transform,true);
+                        if(tv)TV(root);else Painting(root,artworkVariant++);
+                        mounted.Add((wall,root.gameObject));wallArtCenters.Add((p,outward));
+                    }
                 }
             }
         }
@@ -158,7 +177,11 @@ namespace Possession
             var t=new GameObject(name).transform;t.gameObject.layer=2;t.SetParent(transform,false);t.position=position;return t;
         }
         private GameObject Part(Transform root,string name,PrimitiveType kind,Vector3 position,Vector3 size,Material m)
-            => GoldRoomPresentation.Part(root,name,kind,root.TransformPoint(position),size,m);
+        {
+            var part=GoldRoomPresentation.Part(root,name,kind,root.TransformPoint(position),size,m);
+            part.transform.localRotation=Quaternion.identity;
+            return part;
+        }
         private void Painting(Transform root,int variant)
         {
             Part(root,"Gold gallery frame",PrimitiveType.Cube,Vector3.zero,new Vector3(3.9f,2.7f,.12f),gold);

@@ -35,9 +35,9 @@ namespace Possession.Tests
                     Assert.That(labels.Length,Is.GreaterThanOrEqualTo(2));
                     Assert.That(labels.All(t => t.GetComponent<MeshRenderer>().sharedMaterial != null),Is.True);
                     var headline = labels.OrderByDescending(t => t.GetComponent<Renderer>().bounds.size.y).First();
-                    Bounds text = headline.GetComponent<Renderer>().bounds;
-                    Assert.That(text.size.x,Is.LessThanOrEqualTo(3.25f));
-                    Assert.That(text.size.y,Is.InRange(.65f,1.4f),scene+" headline needs a visible world-space size");
+                    Vector3 text = Vector3.Scale(headline.GetComponent<Renderer>().localBounds.size,headline.transform.localScale);
+                    Assert.That(text.x,Is.LessThanOrEqualTo(3.25f));
+                    Assert.That(text.y,Is.InRange(.65f,1.4f),scene+" headline needs a visible world-space size");
                     Assert.That(poster.transform.parent.GetComponent<Collider>(),Is.Not.Null,"Art mounts on solid walls.");
                 }
                 var vases = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None).Where(t=>t.name=="Decor_CornerVase").ToArray();
@@ -61,7 +61,7 @@ namespace Possession.Tests
                         headlines.Add(text.text.Replace('\n',' ').Trim());
                 // A coverage win must not silently replace the existing TV, plants, vases or mat.
                 var props = Object.FindObjectsByType<Transform>(FindObjectsInactive.Include,FindObjectsSortMode.None);
-                foreach (string kind in new[]{"Decor_Painting","Decor_WallTV","Decor_CornerPlant","Decor_CornerVase","Decor_FloorMat"})
+                foreach (string kind in new[]{"Decor_Painting","Decor_WallTV","Decor_CornerPlant","Decor_CornerVase","Decor_HidingCrate"})
                     Assert.That(props.Any(t=>t.name==kind),Is.True,scene+" missing "+kind);
             }
             foreach (string expected in new[]{"USC","FIGHT ON","TROJANS","SC","LA","BEAT UCLA"})
@@ -102,6 +102,7 @@ namespace Possession.Tests
             yield return null; yield return null;
             Assert.That(Corners().Length,Is.EqualTo(36),"Every clear corner in all nine rooms receives a plant or vase.");
             Assert.That(Object.FindObjectsByType<Collider>(FindObjectsInactive.Include,FindObjectsSortMode.None)
+                .Where(c=>!c.GetComponentsInParent<Transform>().Any(t=>t.name=="Decor_HidingCrate"))
                 .Select(c=>c.GetInstanceID()),Is.EquivalentTo(before));
             GoldRoomDecor.Install(SceneManager.GetActiveScene());
             Assert.That(Corners().Length,Is.EqualTo(36),"Reinstalling must not add duplicate props.");
@@ -124,6 +125,62 @@ namespace Possession.Tests
             Assert.That(corners.Length,Is.EqualTo(2),"Skip the door corner and the corner crossed by the patrol segment.");
             Assert.That(corners.All(t=>t.position.z<0f),Is.True);
             Assert.That(corners.All(t=>Vector2.Distance(new Vector2(t.position.x,t.position.z),new Vector2(6.75f,6.75f))>=2.5f),Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator EveryInteriorWallFaceGetsCorrectlyOrientedArtWithReadableLocalLettering()
+        {
+            yield return SyntheticScene();
+            Room(Vector3.zero);
+            Physics.SyncTransforms();
+            GoldRoomDecor.Install(SceneManager.GetActiveScene());
+            yield return null; yield return null;
+            var art=Object.FindObjectsByType<UscWallArt>(FindObjectsInactive.Include,FindObjectsSortMode.None);
+            foreach(var outward in new[]{Vector3.forward,Vector3.right,Vector3.back,Vector3.left})
+            {
+                var face=art.Where(p=>Vector3.Dot(p.transform.forward,outward)>.99f).ToArray();
+                Assert.That(face.Length,Is.GreaterThan(0),"No wall art facing "+-outward);
+                foreach(var poster in face)
+                {
+                    var wall=poster.transform.parent.GetComponent<Renderer>();
+                    Assert.That(wall,Is.Not.Null);
+                    Assert.That(Vector3.Dot(poster.transform.position-wall.bounds.center,outward),Is.LessThan(0f),"Art must face into room.");
+                    foreach(var piece in poster.GetComponentsInChildren<MeshRenderer>(true))
+                    {
+                        Assert.That(Quaternion.Angle(piece.transform.rotation,poster.transform.rotation),Is.LessThan(.1f),piece.name);
+                        if(piece.name!="Campus headline")continue;
+                        var size=Vector3.Scale(piece.localBounds.size,piece.transform.localScale);
+                        Assert.That(size.x,Is.LessThanOrEqualTo(3.25f));
+                        Assert.That(size.y,Is.InRange(.65f,1.4f));
+                    }
+                }
+                for(int i=0;i<face.Length;i++)for(int j=i+1;j<face.Length;j++)
+                    Assert.That(Vector3.Distance(face[i].transform.position,face[j].transform.position),Is.GreaterThanOrEqualTo(4.4f));
+            }
+            Assert.That(art.Any(p=>p.name=="Decor_WallTV"),Is.True);
+            Assert.That(art.Any(p=>p.name=="Decor_Painting"),Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator WallArtRespectsDoorAndExistingNameplateClearance()
+        {
+            yield return SyntheticScene();
+            Room(Vector3.zero);
+            var door=new GameObject("North door").AddComponent<Door>();
+            door.transform.position=new Vector3(0,1,8);
+            var wall=GameObject.Find("West wall").transform;
+            var sign=new GameObject("Gold_RoomSign").transform;
+            sign.SetParent(wall,true);sign.position=new Vector3(-7.8f,3.2f,0);
+            Physics.SyncTransforms();
+            GoldRoomDecor.Install(SceneManager.GetActiveScene());
+            yield return null;yield return null;
+            foreach(var poster in Object.FindObjectsByType<UscWallArt>(FindObjectsInactive.Include,FindObjectsSortMode.None))
+            {
+                var p=poster.transform.position;
+                Assert.That(Vector2.Distance(new Vector2(p.x,p.z),new Vector2(0,8)),Is.GreaterThanOrEqualTo(3f));
+                if(poster.transform.parent==wall)
+                    Assert.That(Vector2.Distance(new Vector2(p.x,p.z),new Vector2(-7.8f,0)),Is.GreaterThanOrEqualTo(4.1f));
+            }
         }
 
         private static Transform[] Corners() => Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)

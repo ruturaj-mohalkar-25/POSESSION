@@ -31,7 +31,7 @@ namespace Possession
             {
                 ("USC","UNIVERSITY OF","SOUTHERN CALIFORNIA"),
                 ("FIGHT\nON","SOUTHERN CALIFORNIA","TROJANS"),
-                ("TROJANS","UNIVERSITY OF","SOUTHERN CALIFORNIA"),
+                ("TROJANS","USC","FIGHT ON"),
                 ("SC","SOUTHERN CALIFORNIA","LOS ANGELES"),
                 ("LA","LOS ANGELES","SOUTHERN CALIFORNIA"),
                 ("BEAT\nUCLA","SOUTHERN CALIFORNIA","FIGHT ON"),
@@ -61,7 +61,7 @@ namespace Possession
             renderer.sharedMaterial = textMaterial;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
-            Vector3 size = renderer.bounds.size;
+            Vector3 size = renderer.localBounds.size;
             float fit = Mathf.Min(box.x/Mathf.Max(.01f,size.x),box.y/Mathf.Max(.01f,size.y));
             go.transform.localScale = Vector3.one*fit;
         }
