@@ -214,6 +214,7 @@ namespace Possession.Tests
                 foreach(var r in crate.GetComponentsInChildren<Renderer>())
                 {
                     Assert.That(cover.Contains(r.bounds.min)&&cover.Contains(r.bounds.max),Is.True,r.name+" must fit solid cover collider");
+                    if(r.name=="Lid plank")Assert.That(r.bounds.min.y,Is.GreaterThanOrEqualTo(wood.max.y-.001f));
                     if(r.name=="Horizontal brace")Assert.That(r.bounds.min.z,Is.LessThan(wood.min.z-.04f));
                     if(r.name=="Corner batten")
                     {
