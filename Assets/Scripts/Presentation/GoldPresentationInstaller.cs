@@ -30,7 +30,8 @@ namespace Possession
             foreach (var door in roots.SelectMany(r => r.GetComponentsInChildren<SlidingDoorView>(true)))
                 if (door.GetComponent<GoldDoorPresentation>() == null)
                     door.gameObject.AddComponent<GoldDoorPresentation>().Build();
-            host.AddComponent<GoldContactShadows>().Build(scene);
+            if(!scene.GetRootGameObjects().Any(r=>r.GetComponent<GoldContactShadows>()!=null))
+                host.AddComponent<GoldContactShadows>().Build(scene);
             GoldRoomDecor.Install(scene);
         }
     }

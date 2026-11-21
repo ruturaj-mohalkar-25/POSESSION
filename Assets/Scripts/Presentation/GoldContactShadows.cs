@@ -14,17 +14,22 @@ namespace Possession
         {
             public Renderer Body, Shadow;
             public PlayerIdentityView Player;
+            public EnemyBase Enemy;
         }
         private readonly List<Stamp> stamps = new();
         private MaterialPropertyBlock block;
         private MeshRenderer[] floors;
         private Mesh mesh;
+        private float nextScan;
+        private Scene scene;
         public Renderer PlayerShadow { get; private set; }
 
         public void Build(Scene scene)
         {
+            if(mesh != null)return;
+            this.scene=scene;
             var renderers = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<MeshRenderer>(true)).ToArray();
-            floors = renderers.Where(GoldRoomPresentation.IsFloor).ToArray();
+            floors = renderers.Where(r=>r.GetComponent<Collider>()!=null && r.bounds.size.y<.6f && r.name.ToLowerInvariant().Contains("floor")).ToArray();
             var material = Resources.Load<Material>("Gold/ContactShadow");
             if (material == null) return;
             block = new MaterialPropertyBlock();
@@ -33,6 +38,7 @@ namespace Possession
                 PlayerShadow = Add("Gold_PlayerContactShadow", null, player, material);
             foreach (var cabinet in renderers.Where(r => r.name == "Gold_CornerCabinet"))
                 Add("Gold_CabinetContactShadow", cabinet, null, material);
+            ReconcileActors(material);
             Refresh();
         }
 
@@ -48,7 +54,23 @@ namespace Possession
             return renderer;
         }
 
-        private void LateUpdate() => Refresh();
+        private void ReconcileActors(Material material)
+        {
+            foreach(var root in scene.GetRootGameObjects())foreach(var enemy in root.GetComponentsInChildren<EnemyBase>(true))
+            {
+                var body=enemy.GetComponent<Renderer>();
+                if(body==null||stamps.Any(s=>s.Body==body))continue;
+                var renderer=Add("Gold_EnemyContactShadow",body,null,material);
+                stamps[stamps.Count-1].Enemy=enemy;
+            }
+        }
+        private void LateUpdate()
+        {
+            if(Time.unscaledTime>=nextScan){nextScan=Time.unscaledTime+.5f;ReconcileActors(Resources.Load<Material>("Gold/ContactShadow"));}
+            Refresh();
+        }
+        private void OnDisable(){foreach(var stamp in stamps)if(stamp.Shadow!=null)stamp.Shadow.enabled=false;}
+
 
         public void Refresh()
         {
@@ -57,7 +79,8 @@ namespace Possession
                 var body = stamp.Player != null && stamp.Player.TrackedBody != null
                     ? stamp.Player.TrackedBody.GetComponent<Renderer>() : stamp.Body;
                 bool visible = body != null && body.enabled && body.gameObject.activeInHierarchy
-                    && (stamp.Player == null || stamp.Player.IsShowing);
+                    && (stamp.Player == null || stamp.Player.IsShowing)
+                    && (stamp.Enemy==null || !Application.isPlaying || !stamp.Enemy.IsPossessed && stamp.Enemy.CurrentHP>0);
                 Bounds bounds = visible ? body.bounds : default;
                 float surface = float.NegativeInfinity;
                 if (visible) foreach (var floor in floors)
@@ -71,9 +94,9 @@ namespace Possession
                 stamp.Shadow.enabled = visible;
                 if (!visible) continue;
                 stamp.Shadow.transform.position = new Vector3(bounds.center.x, surface + .025f, bounds.center.z);
-                stamp.Shadow.transform.localScale = new Vector3(Mathf.Max(.6f, bounds.size.x * 1.45f), 1,
-                    Mathf.Max(.6f, bounds.size.z * 1.45f));
-                float opacity = .24f * Mathf.Clamp01(1f - Mathf.Max(0, bounds.min.y - surface) / 4f);
+                stamp.Shadow.transform.localScale = new Vector3(Mathf.Max(.6f, bounds.size.x * 1.8f), 1,
+                    Mathf.Max(.6f, bounds.size.z * 1.8f));
+                float opacity = .50f * Mathf.Clamp01(1f - Mathf.Max(0, bounds.min.y - surface) / 4f);
                 block.SetColor("_Color", new Color(.07f, .09f, .11f, opacity));
                 stamp.Shadow.SetPropertyBlock(block);
             }
@@ -89,7 +112,7 @@ namespace Possession
             {
                 float angle = i * Mathf.PI * 2f / segments, radius = ring == 0 ? .22f : .5f;
                 vertices.Add(new Vector3(Mathf.Cos(angle) * radius, 0, Mathf.Sin(angle) * radius));
-                colors.Add(new Color(1, 1, 1, ring == 0 ? .48f : 0));
+                colors.Add(new Color(1, 1, 1, ring == 0 ? .72f : 0));
             }
             for (int i = 0; i < segments; i++)
             {

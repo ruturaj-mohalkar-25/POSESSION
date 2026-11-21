@@ -126,7 +126,7 @@ namespace Possession.Tests
                 var shadows = Object.FindFirstObjectByType<GoldContactShadows>();
                 AssertGroundedShadow(shadows.PlayerShadow, Object.FindFirstObjectByType<PlayerIdentityView>().TrackedBody.GetComponent<Renderer>());
                 var stamps = shadows.GetComponentsInChildren<MeshRenderer>().Where(r => r.name.Contains("ContactShadow")).ToArray();
-                Assert.That(stamps.Length, Is.InRange(1, 4), "Only the player and up to three cabinets get a contact stamp.");
+                Assert.That(stamps.Length, Is.GreaterThanOrEqualTo(1 + Object.FindObjectsByType<EnemyBase>(FindObjectsSortMode.None).Length), "Every character needs a ground shadow, including autonomous enemies.");
                 Assert.That(stamps.All(r => r.GetComponent<Collider>() == null && r.sharedMaterial.shader.isSupported), Is.True);
             }
         }
