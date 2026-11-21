@@ -1,33 +1,19 @@
-# Main goal: character shadows and avatars
+# Main goal: shadows, readable characters and solid cover
 
-Approved style F: soft directional silhouette plus stronger floor contact. Covers Spirit, autonomous Guards and Heavies, controlled hosts, runtime-spawned enemies and Tutorial. The NPC stamp is hidden while its host is possessed so it does not double the player shadow.
+Approved F shadows combine directional silhouettes and soft floor contact for Spirit and all enemies. Police have a navy uniform, cap, badge and visible sidearm. Spirit is white/teal. Heavy has an orange work uniform, hardhat and hammer.
 
-The Spirit has a white/teal humanoid avatar. Guards have navy clothing, a peaked cap, gold badges, duty belt/radio and a visible sidearm. Only clothing turns white in possession. Existing root renderers remain as logical visibility/bounds proxies; gameplay transforms, colliders and abilities are retained.
+Spirit, police and Heavy have two visible legs and boots. Feet alternate with actual distance travelled, settle when movement stops and freeze during pause. Animation moves only visual pieces. Possession colours, visible-body countdown blink, combat warning tint and Heavy smash guide stay connected to gameplay.
 
-Countdown blink targets visible body pieces; equipment retains visibility. Attack warning property blocks bind to the new model. Hide/show follows possession, death, component enable/disable and scene transitions. Global lighting settings restore after the final owner leaves, including additive scenes.
+Flat mat-like props are replaced by **2.8 × 2.2 × 1.8 m solid wooden hiding crates**. Each intentionally adds one enabled blocking BoxCollider. Cover stops movement, actual enemy sight and the rendered red vision cone, and avoids full patrol segments and objectives. Crates join camera occlusion fading. Original authored colliders are unchanged. Vision cones use 96 ray samples and an expanding hit buffer.
 
-## Review order
+## Validation
 
-This is a focused followup to existing PR84 (base branch codex/playtest-feedback). The USC stretch PR is stacked above this main PR and contains its own room-art/corner changes. Neither PR is merged automatically.
+The corrected main build passed **310/310 PlayMode tests**, zero failures/skips. New tests exercise actual sight and cone obstruction, distance-driven stride/idle/pause and retained Heavy guide visibility. Existing full campaign solution, patrol, possession/ejection, combat, jumping and occlusion tests also passed.
 
-## Verification
+Scene captures use an inspection camera with HUD hidden. Closeups temporarily hide intervening walls/world labels. Stride images advance the same distance-driven pose by small staged root movements; they are inspection poses rather than recordings of human play. The runtime build uses normal cameras and visibility.
 
-Full gameplay suite: **304 passed, 0 failed**. After the additional fallback lifecycle edge fix, **31/31 avatar, visible-body blink, proportion and level-presentation checks passed**. The final combined stretch suite will include these same runtime changes. Build and browser evidence follow. New regression coverage exercises real possession/ejection and shield retention, visible uniform versus cap colours, every stage/Tutorial avatar/shadow installation, no new colliders, component lifecycle, cloned actors, death, attack warning tint and additive lighting restoration. Existing countdown-blink timing/pause/restoration tests now observe the visible torso instead of the hidden legacy capsule.
+![Solid cover](Level_03-hiding-crate.png)
+![Police stride](Level_03-police-stride2.png)
+![Heavy](Level_03-heavy.png)
 
-Native closeups are inspection camera renders; any wall between the camera and character is temporarily hidden for the capture only. Gameplay overview and browser evidence are recorded separately.
-
-The approved preview used Unity primitives; built-in FBX capsule/sphere meshes have different unit bounds. Runtime pieces explicitly normalize those mesh dimensions, and the identity collar fits the humanoid torso/head instead of the legacy capsule.
-
-Release WebGL build succeeded (`Builds/MainGoal`). Collider fingerprints matched in all three campaign stages and Tutorial. These are actual Unity level renders.
-
-![Police and F shadow](Level_03-police.png)
-![Spirit avatar](Level_03-player.png)
-![Campaign camera overview](Level_03-overview.png)
-
-The combined main+USC regression run passed **312/312 tests, 0 skipped**. Main-only review build: https://utkarsh-landge.github.io/posession-gold-playtest-2026/playtest-feedback/main-goal/ . Editor inspection lighting is explicitly released before changing scenes/building, retaining project quality settings.
-
-## November 21 corrections
-
-The flat floor mats now become solid 2.8 × 2.2 × 1.8 m wooden hiding crates. Each intentionally adds exactly one enabled BoxCollider, blocking movement and enemy sight. Original scene colliders are unchanged. Crates keep clear of complete patrol segments and gameplay objectives and join camera occlusion fading.
-
-Spirit, police and Heavy now have distance-driven alternating feet. Walking stops when actual movement stops; pause freezes the pose. Heavy retains an orange work uniform, hardhat and visible hammer. Red vision cones use 96 ray samples and an expanding hit buffer, and stop at solid cover. New regression checks cover stride/idle/pause, Heavy smash-guide visibility and actual detection plus rendered-cone obstruction.
+Review order: existing #84 → main #85 → USC stretch #86. Main playable build: https://utkarsh-landge.github.io/posession-gold-playtest-2026/playtest-feedback/main-goal/
