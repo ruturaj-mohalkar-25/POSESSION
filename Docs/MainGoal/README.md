@@ -23,3 +23,5 @@ Release WebGL build succeeded (`Builds/MainGoal`). Collider fingerprints matched
 ![Police and F shadow](Level_03-police.png)
 ![Spirit avatar](Level_03-player.png)
 ![Campaign camera overview](Level_03-overview.png)
+
+The combined main+USC regression run passed **312/312 tests, 0 skipped**. Main-only review build: https://utkarsh-landge.github.io/posession-gold-playtest-2026/playtest-feedback/main-goal/ . Editor inspection lighting is explicitly released before changing scenes/building, retaining project quality settings.
