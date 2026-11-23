@@ -131,6 +131,25 @@ namespace Possession.Tests
             }
         }
 
+        [UnityTest] public IEnumerator RoomDecorRemainsVisualAndInstallsOnlyOnceAcrossCampaign()
+        {
+            foreach(string name in CampaignLevels.SceneNames)
+            {
+                yield return Load(name);
+                var decor=Object.FindFirstObjectByType<GoldRoomDecor>();
+                Assert.That(decor,Is.Not.Null,name);
+                var props=Object.FindObjectsByType<Transform>(FindObjectsSortMode.None).Where(t=>t.name.StartsWith("Decor_")).ToArray();
+                Assert.That(props.Length,Is.GreaterThan(0),name);
+                foreach(string kind in new[]{"Decor_Painting","Decor_WallTV","Decor_CornerPlant","Decor_CornerVase","Decor_FloorMat"})
+                    Assert.That(props.Any(t=>t.name==kind),Is.True,name+" missing "+kind);
+                Assert.That(props.SelectMany(t=>t.GetComponentsInChildren<Collider>(true)),Is.Empty);
+                Assert.That(props.Any(t=>t.name.ToLowerInvariant().Contains("sofa")),Is.False);
+                GoldRoomDecor.Install(SceneManager.GetActiveScene());
+                Assert.That(Object.FindObjectsByType<GoldRoomDecor>(FindObjectsSortMode.None),Has.Length.EqualTo(1));
+                Assert.That(Object.FindObjectsByType<Transform>(FindObjectsSortMode.None).Count(t=>t.name.StartsWith("Decor_")),Is.EqualTo(props.Length));
+            }
+        }
+
         private static void AssertGroundedShadow(Renderer shadow, Renderer body)
         {
             Assert.That(shadow, Is.Not.Null); Assert.That(shadow.enabled, Is.True);

@@ -91,7 +91,10 @@ namespace Possession.Tests
         }
         [UnityTest] public IEnumerator ReformingSourcesPermitRetriesAndTheOptionalShardIsOneUse()
         {
-            var c=Pickup("C1");Set(c,"cooldown",0.05f);Collect("C1");charge.Clear();
+            var c=Pickup("C1");Set(c,"cooldown",0.05f);
+            // This checks cooldown/reuse, not random relocation: a nearby respawn can auto-collect
+            // during the wait and start a second cooldown before the readiness assertion.
+            Set(c,"respawnInRoom",false);Collect("C1");charge.Clear();
             Assert.That(c.IsReady,Is.False);level.Spirit.RestoreAt(Map(10,14));
             yield return new WaitForSeconds(0.08f);Assert.That(c.IsReady,Is.True);Collect("C1");charge.Clear();
             Collect("C4");charge.Clear();yield return new WaitForSeconds(0.08f);

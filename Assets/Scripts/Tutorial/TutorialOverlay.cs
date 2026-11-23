@@ -343,19 +343,15 @@ namespace Possession
             if (current != lastPopup && current != TutorialGuide.PopupState.None) hintVisible = 0.4f; // small pop for a new tip
             lastPopup = current;
 
-            string tip = current switch
-            {
-                TutorialGuide.PopupState.Possessing => "<color=#FFD060>E</color> - eject",
-                _ => null
-            };
+            string tip = "WASD - move  |  SPACE - jump";
             // While inside any body, always remind how to get out
             bool possessing = guide.Possession != null && guide.Possession.CurrentState != PlayerState.Spirit;
-            bool timedTip = tip != null && !possessing;
-            if (possessing) tip = "<color=#FFD060>E</color> - eject";
+            bool timedTip = current != TutorialGuide.PopupState.None && !possessing;
+            if (possessing) tip = "<color=#FFD060>E</color> - eject early\nEmpty ring = forced eject";
             string step = guide.Title;
             bool danger = guide.UnderAttack;
-            if (danger) tip = "Leave the <color=#FF6B6B>red zone</color>!";
-            string text = (danger ? "<color=#FF5555>UNDER ATTACK - HP DROPPING</color>" : "<color=#FFD060>" + step + "</color>")
+            if (danger) tip = "Leave the <color=#FF6B6B>red zone</color>! SPACE - jump";
+            string text = (danger ? "<color=#FF5555>DANGER - KEEP MOVING</color>" : "<color=#FFD060>" + step + "</color>")
                 + (tip != null ? "\n<size=21><b>" + tip + "</b></size>" : "");
             if (text != lastBubbleText)
             {

@@ -10,6 +10,7 @@ namespace Possession
         private const int Segments = 64;
         private const float Thickness = 5f;
         private static readonly Color TrackColor = new Color(0.06f, 0.08f, 0.1f, 0.85f);
+        private static readonly Color OutlineColor = new Color(0.82f, 0.88f, 0.94f, 0.9f);
         public float Fraction { get; private set; } = 1f;
 
         public void SetProgress(float fraction, Color tint)
@@ -31,6 +32,8 @@ namespace Possession
             float inner = Mathf.Max(0f, outer - Thickness);
             AddArc(vh, rect.center, outer, inner, 1f, TrackColor);
             AddArc(vh, rect.center, outer, inner, Fraction, color);
+            // A stationary rim keeps the full circle visible as the coloured countdown recedes.
+            AddArc(vh, rect.center, outer, Mathf.Max(0f, outer - 1.25f), 1f, OutlineColor);
         }
 
         private static void AddArc(VertexHelper vh, Vector2 center, float outer,
