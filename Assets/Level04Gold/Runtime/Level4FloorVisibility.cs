@@ -40,7 +40,11 @@ namespace Possession.Level04Gold
             // at runtime. Include them immediately instead of flashing them for a frame.
             renderers.Clear();upperRoot.GetComponentsInChildren(true,renderers);
             foreach(var renderer in renderers)
-                if(renderer!=null&&!originalForceOff.ContainsKey(renderer))originalForceOff.Add(renderer,renderer.forceRenderingOff);
+                if(renderer!=null&&!originalForceOff.ContainsKey(renderer))
+                {
+                    var avatar=renderer.GetComponent<CharacterAvatarView>();
+                    originalForceOff.Add(renderer,avatar!=null?avatar.OriginalBodyRenderingOff:renderer.forceRenderingOff);
+                }
             removed.Clear();
             foreach(var pair in originalForceOff)
             {
@@ -52,14 +56,19 @@ namespace Possession.Level04Gold
                 var enemy=renderer.GetComponentInParent<EnemyBase>();
                 if(enemy!=null)hidden=!UpperVisible&&enemy.transform.position.y>3.1f;
                 if(renderer.transform.IsChildOf(TrackedTarget))hidden=false;
-                renderer.forceRenderingOff=hidden||pair.Value;
+                var avatar=renderer.GetComponent<CharacterAvatarView>();
+                renderer.forceRenderingOff=hidden||pair.Value||avatar!=null&&avatar.isActiveAndEnabled;
             }
             foreach(var renderer in removed)originalForceOff.Remove(renderer);
         }
 
         private void Restore()
         {
-            foreach(var pair in originalForceOff)if(pair.Key!=null)pair.Key.forceRenderingOff=pair.Value;
+            foreach(var pair in originalForceOff)if(pair.Key!=null)
+            {
+                var avatar=pair.Key.GetComponent<CharacterAvatarView>();
+                pair.Key.forceRenderingOff=pair.Value||avatar!=null&&avatar.isActiveAndEnabled;
+            }
             originalForceOff.Clear();renderers.Clear();
         }
         private void OnDisable() => Restore();

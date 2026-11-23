@@ -103,12 +103,21 @@ namespace Possession.Level04Gold
                 if (renderer.name.StartsWith("Vault frame ", StringComparison.Ordinal)) renderer.sharedMaterial = frame;
 
             StyleSigns(roots, renderers);
-            var shadows = GetComponent<GoldContactShadows>();
+            var keepouts = roots.SelectMany(r => r.GetComponentsInChildren<Level4AccessGate>(true))
+                .SelectMany(g => new[] { g.transform, g.EngineerPoint, g.ReleasePoint })
+                .Concat(roots.SelectMany(r => r.GetComponentsInChildren<Level4Cipher>(true))
+                    .SelectMany(c => new[] { c.transform, c.RecoveryPoint }))
+                .Concat(roots.SelectMany(r => r.GetComponentsInChildren<Level4Vault>(true))
+                    .SelectMany(v => new[] { v.transform, v.OperatorPoint }))
+                .Where(t => t != null).ToArray();
+            foreach (string storey in new[] { "Lower floor", "Upper floor" })
+                GoldRoomDecor.Install(scene, geometry.Find(storey), keepouts, false);
+
+            // The shared character installer already owns scene-wide stamps on normal entry.
+            var shadows = roots.SelectMany(r => r.GetComponentsInChildren<GoldContactShadows>(true)).FirstOrDefault();
             if (shadows == null)
-            {
                 shadows = gameObject.AddComponent<GoldContactShadows>();
-                shadows.Build(scene);
-            }
+            shadows.Build(scene);
             shadows.Refresh();
             IsApplied = true;
         }

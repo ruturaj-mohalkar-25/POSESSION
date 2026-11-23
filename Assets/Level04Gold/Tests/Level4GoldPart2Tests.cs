@@ -46,14 +46,14 @@ namespace Possession.Level04Gold.Tests
         }
 
         [UnityTest]
-        public IEnumerator ActualUpperGuardWarningHidesItsCapBrimAndBadgeWithTheBody()
+        public IEnumerator ActualUpperGuardWarningBlinksAvatarBodyAndPreservesItsEquipment()
         {
             var guard = All<GuardEnemy>().Single(e => e.name == "Guard_ArchiveEast");
             yield return CheckPossessedWarning(guard, Plan(70f, 6.4f, 25f));
         }
 
         [UnityTest]
-        public IEnumerator ActualUpperHeavyWarningHidesEveryArmourPieceWithTheBody()
+        public IEnumerator ActualUpperHeavyWarningBlinksAvatarBodyAndPreservesItsEquipment()
         {
             var heavy = All<HeavyEnemy>().Single(e => e.name == "Heavy_UpperWatch");
             yield return CheckPossessedWarning(heavy, Plan(70f, 6.775f, 25f));
@@ -77,7 +77,8 @@ namespace Possession.Level04Gold.Tests
                 foreach (var enemy in upperEnemies)
                 {
                     var body = enemy.GetComponent<Renderer>();
-                    Assert.That(body.forceRenderingOff, Is.EqualTo(!upstairs), enemy.name + " body cutaway.");
+                    Assert.That(body.forceRenderingOff, Is.True,
+                        enemy.name + " must not show the replaced capsule alongside its avatar.");
                     foreach (var piece in OwnedPieces(enemy))
                     {
                         Assert.That(piece.enabled && piece.gameObject.activeInHierarchy, Is.True);
@@ -93,6 +94,9 @@ namespace Possession.Level04Gold.Tests
             var body = enemy.GetComponent<Renderer>();
             AssertOwnedPieces(enemy);
             var pieces = OwnedPieces(enemy);
+            var avatar = enemy.GetComponent<CharacterAvatarView>();
+            var equipment = pieces.Where(p => !CharacterAvatarView.IsBodyPiece(p)).ToArray();
+            var equipmentColors = equipment.Select(p => p.sharedMaterial.color).ToArray();
             Position(enemy, position, Vector3.right);
             spirit.RestoreAt(position + Vector3.left * 2.5f);
             enemy.enabled = true;
@@ -100,7 +104,7 @@ namespace Possession.Level04Gold.Tests
             yield return null;
             Physics.SyncTransforms();
             Assert.That(floorVisibility.UpperVisible, Is.True);
-            Assert.That(body.forceRenderingOff, Is.False);
+            Assert.That(body.forceRenderingOff, Is.True);
             Assert.That(pieces.All(p => !p.forceRenderingOff), Is.True,
                 "The complete host silhouette must be visible before possession.");
             Assert.That(player.TryPossess(enemy), Is.True, "Use the saved player's real possession rules.");
@@ -115,15 +119,21 @@ namespace Possession.Level04Gold.Tests
                 Assert.That(player.PossessedEnemy, Is.SameAs(enemy));
                 Assert.That(floorVisibility.UpperVisible, Is.True);
                 Assert.That(body.enabled && body.gameObject.activeInHierarchy, Is.True);
-                bodyHidden |= body.forceRenderingOff;
-                bodyVisible |= !body.forceRenderingOff;
+                bodyHidden |= avatar.WarningHidden;
+                bodyVisible |= !avatar.WarningHidden;
+                Assert.That(body.forceRenderingOff, Is.True,
+                    "Both warning phases must keep the replaced capsule suppressed.");
                 foreach (var piece in pieces)
                 {
                     Assert.That(piece.enabled && piece.gameObject.activeInHierarchy, Is.True,
                         "The warning changes rendering without disabling or deleting the presentation.");
-                    Assert.That(piece.forceRenderingOff, Is.EqualTo(body.forceRenderingOff),
-                        enemy.name + "/" + piece.name + " must follow every visible and hidden warning phase.");
+                    Assert.That(piece.forceRenderingOff,
+                        Is.EqualTo(CharacterAvatarView.IsBodyPiece(piece) && avatar.WarningHidden),
+                        enemy.name + "/" + piece.name + " must follow the shared avatar warning rules.");
                 }
+                for (int i = 0; i < equipment.Length; i++)
+                    Assert.That(equipment[i].sharedMaterial.color, Is.EqualTo(equipmentColors[i]),
+                        "Warning blinking must preserve each equipment colour.");
             }
             Assert.That(bodyVisible && bodyHidden, Is.True,
                 "The live possession countdown must produce both warning phases during this check.");
@@ -139,9 +149,10 @@ namespace Possession.Level04Gold.Tests
             yield return null;
             Assert.That(player.CurrentState, Is.EqualTo(PlayerState.Spirit));
             Assert.That(enemy.IsPossessed, Is.False);
-            Assert.That(body.forceRenderingOff, Is.False);
+            Assert.That(body.forceRenderingOff, Is.True);
+            Assert.That(avatar.WarningHidden, Is.False);
             Assert.That(pieces.All(p => !p.forceRenderingOff), Is.True,
-                "Ejection must restore all cap and armour pieces on the visible upper floor.");
+                "Ejection must restore the complete avatar on the visible upper floor.");
         }
 
         private static void AssertOwnedPieces(EnemyBase enemy)
@@ -149,20 +160,28 @@ namespace Possession.Level04Gold.Tests
             var look = enemy.GetComponent<GoldEnemyPresentation>();
             Assert.That(look, Is.Not.Null, enemy.name + " should use the newly merged shared Gold presentation.");
             Assert.That(look.IsBuilt, Is.True);
+            var avatar = enemy.GetComponent<CharacterAvatarView>();
+            Assert.That(avatar, Is.Not.Null, "Level 4 must use the campaign's current character model.");
+            Assert.That(avatar.IsShowing, Is.True);
             var pieces = OwnedPieces(enemy);
-            Assert.That(pieces.Length, Is.EqualTo(look.VisualPieceCount));
-            Assert.That(pieces.Length, Is.EqualTo(enemy is GuardEnemy ? 3 : 5));
+            Assert.That(pieces.Count(CharacterAvatarView.IsBodyPiece), Is.GreaterThanOrEqualTo(8));
+            Assert.That(pieces.Any(r => r.name == (enemy is GuardEnemy ? "Cap crown" : "Hardhat crown")), Is.True);
             Assert.That(pieces.All(p => p.GetComponent<Collider>() == null), Is.True);
+            var legacyPieces = enemy.GetComponentsInChildren<Renderer>(true)
+                .Where(r => r.transform.parent == enemy.transform && LegacyNames(enemy).Contains(r.name)).ToArray();
+            Assert.That(legacyPieces.Length, Is.EqualTo(look.VisualPieceCount));
+            Assert.That(legacyPieces.All(r => !r.gameObject.activeInHierarchy), Is.True,
+                "The old cap and armour must not overlap the new shared character model.");
         }
 
         private static Renderer[] OwnedPieces(EnemyBase enemy)
         {
-            string[] names = enemy is GuardEnemy
-                ? new[] { "Guard Cap", "Guard Cap Brim", "Guard Badge" }
-                : new[] { "Heavy Left Shoulder", "Heavy Right Shoulder", "Heavy Chest Plate", "Heavy Chest Mark", "Heavy Belt" };
-            return enemy.GetComponentsInChildren<Renderer>(true)
-                .Where(r => r.transform.parent == enemy.transform && names.Contains(r.name)).ToArray();
+            return enemy.GetComponent<CharacterAvatarView>().Model.GetComponentsInChildren<Renderer>(true);
         }
+
+        private static string[] LegacyNames(EnemyBase enemy) => enemy is GuardEnemy
+            ? new[] { "Guard Cap", "Guard Cap Brim", "Guard Badge" }
+            : new[] { "Heavy Left Shoulder", "Heavy Right Shoulder", "Heavy Chest Plate", "Heavy Chest Mark", "Heavy Belt" };
 
         private void SetPossessionTimer(float seconds) => typeof(PossessionController)
             .GetField("possessTimer", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(player, seconds);

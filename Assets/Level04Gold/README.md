@@ -15,7 +15,7 @@ Registered in local Build Settings for menu selection, progression and Retry. Th
 
 ## Campaign presentation
 
-The level uses the same shared HUD, textured floors, wall palette, paneled target doors, possession collar and contact shadows as Levels 1–3. Floor surfaces are resolved separately on each storey so the upper-floor cutaway still works. Engineer access doors keep their amber interaction cues and their existing unlock rules.
+The level uses the same shared HUD, walking avatars, textured floors, wall palette, paneled target doors, possession collar and contact shadows as Levels 1–3. Floor surfaces and room decoration are resolved separately on each storey so the upper-floor cutaway hides its props and character shadows too. Room decoration protects the Engineer controls and adds no new movement blockers; the authored cover remains in place. Engineer access doors keep their amber interaction cues and their existing unlock rules.
 
 Floor and recovered-cipher information sits in a compact top-right badge. Short action prompts stay above the shared health, time and objective row; the vault controls use the campaign typography and colors. The possession warning remains visible on either floor and while operating the vault.
 

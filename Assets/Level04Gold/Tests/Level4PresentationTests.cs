@@ -81,6 +81,7 @@ namespace Possession.Level04Gold.Tests
             Assert.That(All<GoldFloorSurface>().Length, Is.EqualTo(2), "Each physical floor owns its rendering.");
             Assert.That(player.GetComponents<PlayerIdentityView>().Length, Is.EqualTo(1));
             Assert.That(All<GoldContactShadows>().Length, Is.EqualTo(1));
+            Assert.That(All<GoldRoomDecor>().Length, Is.EqualTo(2));
             Assert.That(All<GoldDoorPresentation>().Length, Is.EqualTo(2));
             foreach (var gate in All<Level4AccessGate>())
             {
@@ -111,12 +112,46 @@ namespace Possession.Level04Gold.Tests
             Assert.That(All<GoldFloorSurface>().Length, Is.EqualTo(2));
             Assert.That(player.GetComponents<PlayerIdentityView>().Length, Is.EqualTo(1));
             Assert.That(All<GoldContactShadows>().Length, Is.EqualTo(1));
+            Assert.That(All<GoldRoomDecor>().Length, Is.EqualTo(2));
             for (int i = 0; i < structure.Length; i++)
             {
                 Assert.That(structure[i].bounds, Is.EqualTo(bounds[i]), structure[i].name);
                 Assert.That(structure[i].transform.localToWorldMatrix, Is.EqualTo(transforms[i]), structure[i].name);
             }
             yield return null;
+        }
+
+        [Test]
+        public void EngineerEquipmentFitsTheSharedHeadWithoutTheLegacySquareHelmet()
+        {
+            var engineers = All<EngineerEnemy>();
+            Assert.That(engineers.Length, Is.EqualTo(2));
+            foreach (var engineer in engineers)
+            {
+                var avatar = engineer.GetComponent<CharacterAvatarView>();
+                Assert.That(avatar, Is.Not.Null);
+                var head = avatar.Model.Find("Head").GetComponent<Renderer>().bounds;
+                var crown = avatar.Model.Find("Hardhat crown");
+                var rim = avatar.Model.Find("Hardhat rim");
+                Assert.That(crown, Is.Not.Null);
+                Assert.That(rim, Is.Not.Null);
+                Assert.That(avatar.Model.Find("Engineer toolkit"), Is.Not.Null);
+                Assert.That(avatar.Model.Find("Engineer toolkit handle"), Is.Not.Null);
+                Assert.That(avatar.Model.Find("Face panel"), Is.Null);
+                foreach (var part in new[] { crown, rim })
+                {
+                    var bounds = part.GetComponent<Renderer>().bounds;
+                    Assert.That(Mathf.Max(bounds.size.x, bounds.size.z),
+                        Is.InRange(Mathf.Max(head.size.x, head.size.z) * .9f,
+                            Mathf.Max(head.size.x, head.size.z) * 1.5f),
+                        "The Engineer's helmet should fit the new head instead of the old capsule width.");
+                    Assert.That(bounds.center.y, Is.GreaterThan(head.center.y));
+                }
+                Assert.That(avatar.Model.GetComponentsInChildren<Collider>(true), Is.Empty);
+                foreach (string name in new[] { "Equipment helmet", "Equipment toolkit" })
+                    Assert.That(engineer.transform.Find(name).gameObject.activeInHierarchy, Is.False,
+                        "Legacy equipment must not overlap the shared avatar.");
+            }
         }
 
         [Test]
@@ -206,6 +241,126 @@ namespace Possession.Level04Gold.Tests
         }
 
         [UnityTest]
+        public IEnumerator StoreyDecorIsVisualOnlyProtectsEngineerControlsAndSurvivesCampaignEntry()
+        {
+            foreach (bool afterCampaign in new[] { false, true })
+            {
+                if (afterCampaign)
+                {
+                    yield return Load(CampaignLevels.FirstScene);
+                    yield return Load(CampaignLevels.FourthScene);
+                }
+                var decorators = All<GoldRoomDecor>();
+                Assert.That(decorators.Length, Is.EqualTo(2));
+                Assert.That(decorators.Select(d => d.transform.parent.name),
+                    Is.EquivalentTo(new[] { "Lower floor", "Upper floor" }));
+                var keepouts = All<Level4AccessGate>()
+                    .SelectMany(g => new[] { g.transform, g.EngineerPoint, g.ReleasePoint })
+                    .Concat(All<Level4Cipher>().SelectMany(c => new[] { c.transform, c.RecoveryPoint }))
+                    .Concat(All<Level4Vault>().SelectMany(v => new[] { v.transform, v.OperatorPoint }))
+                    .Where(t => t != null).ToArray();
+                foreach (var decor in decorators)
+                {
+                    Assert.That(decor.GetComponentsInChildren<Renderer>(true), Is.Not.Empty,
+                        "Both storeys should receive the shared room dressing.");
+                    Assert.That(decor.GetComponentsInChildren<Collider>(true), Is.Empty,
+                        "Level 4 already has authored solid cover; added dressing must not block routes.");
+                    Assert.That(Read<bool>(decor, "includeSolidCover"), Is.False);
+                    var protectedPoints = Read<Transform[]>(decor, "objectives");
+                    float floorY = decor.transform.parent.name == "Upper floor" ? 5f : 0f;
+                    foreach (var point in keepouts.Where(t => Mathf.Abs(t.position.y - floorY) < 2.6f))
+                        Assert.That(protectedPoints.Contains(point), Is.True,
+                            point.name + " must be protected from decorative placement.");
+                    GoldRoomDecor.Install(SceneManager.GetActiveScene(), decor.transform.parent, keepouts, false);
+                }
+                Assert.That(All<GoldRoomDecor>().Length, Is.EqualTo(2), "Repeated installation must remain idempotent.");
+                var upperDecor = decorators.Single(d => d.transform.parent.name == "Upper floor");
+                foreach (bool upstairs in new[] { true, false, true })
+                {
+                    spirit.RestoreAt(upstairs ? P(70f, 6.4f, 25f) : P(9f, 1.4f, 7f));
+                    yield return null;
+                    yield return null;
+                    Assert.That(upperDecor.GetComponentsInChildren<Renderer>(true)
+                        .All(r => r.forceRenderingOff == !upstairs), Is.True,
+                        "Upper-storey dressing must follow the same cutaway as its physical room.");
+                }
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator SharedShadowsHideUpperActorsBelowAndNeverDoubleThePossessedHost()
+        {
+            var owner = All<GoldContactShadows>().Single();
+            Assert.That(owner.GetComponentsInChildren<Renderer>(true).Count(r => r.name == "Gold_PlayerContactShadow"),
+                Is.EqualTo(1));
+            var npcStamps = owner.GetComponentsInChildren<Renderer>(true)
+                .Where(r => r.name == "Gold_EnemyContactShadow").ToArray();
+            Assert.That(npcStamps.Length, Is.EqualTo(All<EnemyBase>().Length));
+            spirit.RestoreAt(P(70f, 6.4f, 25f));
+            yield return null;
+            yield return null;
+            owner.Refresh();
+            var upperActors = All<Level4FloorVisibility>().Single().UpperRoot.GetComponentsInChildren<EnemyBase>(true);
+            var upperStamps = upperActors.Select(actor => npcStamps.Single(s => s.enabled
+                && Vector2.Distance(new Vector2(s.transform.position.x, s.transform.position.z),
+                    new Vector2(actor.transform.position.x, actor.transform.position.z)) < .03f)).ToArray();
+            Assert.That(upperStamps.Length, Is.EqualTo(4));
+            Assert.That(upperStamps.All(s => Mathf.Abs(s.transform.position.y - 5.025f) < .01f), Is.True);
+            spirit.RestoreAt(P(9f, 1.4f, 7f));
+            yield return null;
+            yield return null;
+            owner.Refresh();
+            Assert.That(upperStamps.All(s => !s.enabled), Is.True,
+                "No upper actor should leave a floating contact stamp over the lower floor.");
+
+            var engineer = ArchiveEngineer();
+            yield return PossessEngineerAt(engineer, P(70f, 6.4f, 27.5f));
+            owner.Refresh();
+            Assert.That(owner.PlayerShadow.enabled, Is.True);
+            Assert.That(npcStamps.Count(s => s.enabled && Vector3.Distance(s.transform.position,
+                owner.PlayerShadow.transform.position) < .03f), Is.Zero,
+                "The controlled host receives the player stamp instead of duplicate player and NPC stamps.");
+            Assert.That(player.TryEject(false), Is.True);
+            yield return null;
+            yield return null;
+            owner.Refresh();
+            Assert.That(npcStamps.Count(s => s.enabled && Vector2.Distance(
+                new Vector2(s.transform.position.x, s.transform.position.z),
+                new Vector2(engineer.transform.position.x, engineer.transform.position.z)) < .03f), Is.EqualTo(1));
+            Assert.That(All<GoldContactShadows>().Length, Is.EqualTo(1));
+        }
+
+        [UnityTest]
+        public IEnumerator DisablingAndRestoringAnUpperAvatarKeepsFallbackBodyAndFloorMaskCorrect()
+        {
+            var engineer = ArchiveEngineer();
+            var avatar = engineer.GetComponent<CharacterAvatarView>();
+            var capsule = engineer.GetComponent<Renderer>();
+            spirit.RestoreAt(P(70f, 6.4f, 25f));
+            yield return null;
+            yield return null;
+            AssertAvatarVisible(engineer);
+            avatar.enabled = false;
+            yield return null;
+            yield return null;
+            Assert.That(avatar.Model.gameObject.activeInHierarchy, Is.False);
+            Assert.That(capsule.forceRenderingOff, Is.False,
+                "A disabled avatar must restore the original body on the visible floor.");
+            spirit.RestoreAt(P(9f, 1.4f, 7f));
+            yield return null;
+            yield return null;
+            Assert.That(capsule.forceRenderingOff, Is.True, "Fallback geometry still belongs to the upper floor.");
+            spirit.RestoreAt(P(70f, 6.4f, 25f));
+            yield return null;
+            yield return null;
+            Assert.That(capsule.forceRenderingOff, Is.False);
+            avatar.enabled = true;
+            yield return null;
+            yield return null;
+            AssertAvatarVisible(engineer);
+        }
+
+        [UnityTest]
         public IEnumerator UpperFloorWarningBlinksAfterFloorVisibilityAndRestoresOnEject()
         {
             var engineer = ArchiveEngineer();
@@ -218,7 +373,7 @@ namespace Possession.Level04Gold.Tests
             Assert.That(body.sharedMaterial, Is.SameAs(possessedMaterial));
             Assert.That(player.TryEject(false), Is.True);
             yield return null;
-            Assert.That(body.forceRenderingOff, Is.False);
+            AssertAvatarVisible(engineer);
             Assert.That(player.GetComponent<PlayerIdentityView>().TrackedBody, Is.EqualTo(spirit.transform));
         }
 
@@ -253,7 +408,7 @@ namespace Possession.Level04Gold.Tests
             yield return SampleBothBlinkStates(engineer, 60, false);
             Assert.That(player.TryEject(false), Is.True);
             yield return null;
-            Assert.That(engineer.GetComponent<Renderer>().forceRenderingOff, Is.False);
+            AssertAvatarVisible(engineer);
             Assert.That(vault.IsInteracting, Is.False);
         }
 
@@ -261,13 +416,20 @@ namespace Possession.Level04Gold.Tests
         {
             bool hidden = false, visible = false;
             var body = engineer.GetComponent<Renderer>();
+            var avatar = engineer.GetComponent<CharacterAvatarView>();
+            Assert.That(avatar, Is.Not.Null);
+            var pieces = avatar.Model.GetComponentsInChildren<Renderer>(true);
             var floor = All<Level4FloorVisibility>().Single();
             for (int frame = 0; frame < frames; frame++)
             {
                 yield return null;
-                hidden |= body.forceRenderingOff;
-                visible |= !body.forceRenderingOff;
+                hidden |= avatar.WarningHidden;
+                visible |= !avatar.WarningHidden;
                 Assert.That(body.enabled, Is.True);
+                Assert.That(body.forceRenderingOff, Is.True, "The replaced capsule stays hidden in both warning phases.");
+                foreach (var piece in pieces)
+                    Assert.That(piece.forceRenderingOff,
+                        Is.EqualTo(CharacterAvatarView.IsBodyPiece(piece) && avatar.WarningHidden), piece.name);
                 Assert.That(player.PossessedEnemy, Is.SameAs(engineer));
                 Assert.That(floor.UpperVisible, Is.EqualTo(upperFloor));
             }
@@ -289,8 +451,7 @@ namespace Possession.Level04Gold.Tests
             yield return null;
             yield return null;
             Physics.SyncTransforms();
-            Assert.That(engineer.GetComponent<Renderer>().forceRenderingOff, Is.False,
-                "The body must be on the Spirit's visible floor before actual possession.");
+            AssertAvatarVisible(engineer);
             Assert.That(player.TryPossess(engineer), Is.True);
             yield return null;
         }
@@ -322,6 +483,19 @@ namespace Possession.Level04Gold.Tests
                     + text.fontSize + text.font.name + text.color;
             }
             return signature;
+        }
+
+        private static void AssertAvatarVisible(EnemyBase enemy)
+        {
+            var avatar = enemy.GetComponent<CharacterAvatarView>();
+            Assert.That(avatar, Is.Not.Null);
+            Assert.That(avatar.IsShowing, Is.True);
+            Assert.That(avatar.WarningHidden, Is.False);
+            Assert.That(enemy.GetComponent<Renderer>().forceRenderingOff, Is.True,
+                "The visible shared avatar replaces the original capsule.");
+            Assert.That(avatar.Model.GetComponentsInChildren<Renderer>(true)
+                .All(r => r.enabled && r.gameObject.activeInHierarchy && !r.forceRenderingOff), Is.True,
+                "The avatar must be visible on the Spirit's current floor.");
         }
 
         private static void AssertNoSharedStatusOverlap(RectTransform custom, HUDManager hud)
