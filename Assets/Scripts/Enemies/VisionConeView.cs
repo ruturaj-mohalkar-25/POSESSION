@@ -9,7 +9,7 @@ namespace Possession
     // Installed at runtime on every enemy so scenes and prefabs stay untouched.
     public sealed class VisionConeView : MonoBehaviour
     {
-        private const int Segments = 24;
+        private const int Segments = 96;
         private const float GroundOffset = 0.04f;
         private const string ShaderName = "Possession/P3/ReadabilityDust";
 
@@ -17,7 +17,7 @@ namespace Possession
         private static readonly Color AlertColor = new Color(1f, 0.1f, 0.08f, 0.34f);
         private static readonly int ColorId = Shader.PropertyToID("_Color");
 
-        private readonly RaycastHit[] hits = new RaycastHit[8];
+        private RaycastHit[] hits = new RaycastHit[32];
         private EnemyBase enemy;
         private CharacterController body;
         private GameObject cone;
@@ -114,8 +114,13 @@ namespace Possession
         // Enemies and the Spirit do not cut the cone short.
         private float VisibleDistance(Vector3 eye, Vector3 direction, float range)
         {
-            int count = Physics.RaycastNonAlloc(eye, direction, hits, range, ~0,
-                QueryTriggerInteraction.Ignore);
+            int count;
+            do
+            {
+                count=Physics.RaycastNonAlloc(eye,direction,hits,range,~0,QueryTriggerInteraction.Ignore);
+                if(count<hits.Length)break;
+                System.Array.Resize(ref hits,hits.Length*2);
+            } while(true);
             float nearest = range;
             for (int i = 0; i < count; i++)
             {

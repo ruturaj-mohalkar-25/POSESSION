@@ -37,6 +37,7 @@ namespace Possession
         private PossessionController player;
         private EnemyBase host;
         private Renderer body;
+        private CharacterAvatarView avatar;
         private bool originalForceRenderingOff;
         private float fraction = 1f;
         private float phase;
@@ -81,10 +82,11 @@ namespace Possession
             Clear();
             ended = false;
             host = enemy;
+            avatar = enemy.GetComponent<CharacterAvatarView>();
             body = enemy.GetComponent<Renderer>();
             if (body == null) body = enemy.GetComponentInChildren<SkinnedMeshRenderer>();
             if (body == null) body = enemy.GetComponentInChildren<MeshRenderer>();
-            if (body != null) originalForceRenderingOff = body.forceRenderingOff;
+            if (body != null) originalForceRenderingOff = avatar != null && avatar.isActiveAndEnabled ? avatar.OriginalBodyRenderingOff : body.forceRenderingOff;
         }
 
         private void OnEjected(EnemyBase enemy, bool forced)
@@ -127,12 +129,14 @@ namespace Possession
             // Integrate cycles so changing the rate never jumps the blink phase.
             phase = Mathf.Repeat(phase + Time.deltaTime * rate, 1f);
             // Start with a brief pulse immediately, then leave the body mostly visible.
-            body.forceRenderingOff = originalForceRenderingOff || phase < hiddenFraction;
+            body.forceRenderingOff = originalForceRenderingOff || avatar != null && avatar.isActiveAndEnabled || phase < hiddenFraction;
+            avatar?.SetWarningHidden(phase < hiddenFraction);
         }
 
         private void RestoreVisibility()
         {
-            if (body != null) body.forceRenderingOff = originalForceRenderingOff;
+            if (body != null) body.forceRenderingOff = originalForceRenderingOff || avatar != null && avatar.isActiveAndEnabled;
+            avatar?.SetWarningHidden(false);
         }
 
         private void Clear()
@@ -140,6 +144,7 @@ namespace Possession
             RestoreVisibility();
             host = null;
             body = null;
+            avatar = null;
             fraction = 1f;
             phase = 0f;
         }

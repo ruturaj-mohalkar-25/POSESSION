@@ -126,7 +126,7 @@ namespace Possession.Tests
                 var shadows = Object.FindFirstObjectByType<GoldContactShadows>();
                 AssertGroundedShadow(shadows.PlayerShadow, Object.FindFirstObjectByType<PlayerIdentityView>().TrackedBody.GetComponent<Renderer>());
                 var stamps = shadows.GetComponentsInChildren<MeshRenderer>().Where(r => r.name.Contains("ContactShadow")).ToArray();
-                Assert.That(stamps.Length, Is.InRange(1, 4), "Only the player and up to three cabinets get a contact stamp.");
+                Assert.That(stamps.Length, Is.GreaterThanOrEqualTo(1 + Object.FindObjectsByType<EnemyBase>(FindObjectsSortMode.None).Length), "Every character needs a ground shadow, including autonomous enemies.");
                 Assert.That(stamps.All(r => r.GetComponent<Collider>() == null && r.sharedMaterial.shader.isSupported), Is.True);
             }
         }
@@ -140,9 +140,10 @@ namespace Possession.Tests
                 Assert.That(decor,Is.Not.Null,name);
                 var props=Object.FindObjectsByType<Transform>(FindObjectsSortMode.None).Where(t=>t.name.StartsWith("Decor_")).ToArray();
                 Assert.That(props.Length,Is.GreaterThan(0),name);
-                foreach(string kind in new[]{"Decor_Painting","Decor_WallTV","Decor_CornerPlant","Decor_CornerVase","Decor_FloorMat"})
+                foreach(string kind in new[]{"Decor_Painting","Decor_WallTV","Decor_CornerPlant","Decor_CornerVase","Decor_HidingCrate"})
                     Assert.That(props.Any(t=>t.name==kind),Is.True,name+" missing "+kind);
-                Assert.That(props.SelectMany(t=>t.GetComponentsInChildren<Collider>(true)),Is.Empty);
+                Assert.That(props.Where(t=>t.name!="Decor_HidingCrate").SelectMany(t=>t.GetComponentsInChildren<Collider>(true)),Is.Empty);
+                Assert.That(props.Where(t=>t.name=="Decor_HidingCrate").All(t=>t.GetComponent<BoxCollider>()!=null),Is.True);
                 Assert.That(props.Any(t=>t.name.ToLowerInvariant().Contains("sofa")),Is.False);
                 GoldRoomDecor.Install(SceneManager.GetActiveScene());
                 Assert.That(Object.FindObjectsByType<GoldRoomDecor>(FindObjectsSortMode.None),Has.Length.EqualTo(1));

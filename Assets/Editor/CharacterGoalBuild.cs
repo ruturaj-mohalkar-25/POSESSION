@@ -1,0 +1,97 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+namespace Possession.Editor
+{
+    public static class CharacterGoalBuild
+    {
+        public static void Main()=>CaptureAndBuild(false);
+        public static void Stretch()=>CaptureAndBuild(true);
+        private static void CaptureAndBuild(bool stretch)
+        {
+            string folder=stretch?"Docs/StretchGoal":"Docs/MainGoal";Directory.CreateDirectory(folder);
+            foreach(string path in CampaignLevels.ScenePaths.Concat(new[]{"Assets/Scenes/Tutorial.unity"}))
+            {
+                var scene=EditorSceneManager.OpenScene(path);
+                try
+                {
+                Func<string> geometry=()=>string.Join("\n",scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<Collider>(true))
+                    .Where(c=>c.GetComponent<HidingCrate>()==null).OrderBy(c=>c.GetInstanceID()).Select(c=>c.GetInstanceID()+"|"+EditorJsonUtility.ToJson(c)+"|"+c.transform.position.ToString("R")+"|"+c.transform.lossyScale.ToString("R")));
+                string before=geometry();GoldPresentationInstaller.Install(scene);GoldRoomDecor.Install(scene);CharacterPresentationInstaller.Install(scene);
+                foreach(var root in scene.GetRootGameObjects())foreach(var view in root.GetComponentsInChildren<CharacterAvatarView>(true))view.Refresh();
+                foreach(var root in scene.GetRootGameObjects())foreach(var identity in root.GetComponentsInChildren<PlayerIdentityView>(true))identity.Refresh();
+                foreach(var root in scene.GetRootGameObjects())foreach(var shadows in root.GetComponentsInChildren<GoldContactShadows>(true))shadows.Refresh();
+                if(before!=geometry())throw new InvalidOperationException("Character presentation changed colliders: "+scene.name);
+                var camera=Camera.main;camera.cullingMask&=~(1<<5);
+                var spirit=UnityEngine.Object.FindFirstObjectByType<SpiritController>();
+                camera.transform.position=spirit.transform.position+new Vector3(0,25,-18);camera.transform.LookAt(spirit.transform.position);
+                Save(camera,folder+"/"+scene.name+"-overview.png");
+                if(!stretch)
+                {
+                    foreach(var actor in new Component[]{spirit,UnityEngine.Object.FindFirstObjectByType<GuardEnemy>(),UnityEngine.Object.FindFirstObjectByType<HeavyEnemy>()})
+                    {
+                        if(actor==null)continue;
+                        var body=actor.GetComponent<Renderer>();var point=body.bounds.center;
+                        var front=actor is EnemyBase?actor.transform.forward:Vector3.back;
+                        camera.transform.position=point+front*4+Vector3.up*3.5f;camera.transform.LookAt(point);
+                        string role=actor is GuardEnemy?"police":actor is HeavyEnemy?"heavy":"player";
+                        SaveClear(camera,point,folder+"/"+scene.name+"-"+role+".png");
+                        var avatar=actor.GetComponent<CharacterAvatarView>();var original=actor.transform.position;
+                        for(int step=0;step<2;step++)
+                        {
+                            for(int frame=0;frame<8;frame++){actor.transform.position+=Vector3.forward*.045f;avatar.AdvanceGait(.02f);}
+                            SaveClear(camera,point,folder+"/"+scene.name+"-"+role+"-stride"+(step+1)+".png");
+                        }
+                        actor.transform.position=original;avatar.AdvanceGait(0);
+                    }
+                }
+                else
+                {
+                    var props=UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsSortMode.None).Where(t=>t.name=="Decor_Painting"||t.name=="Decor_WallTV"||t.name=="Decor_CornerVase"||t.name=="Decor_CornerPlant").ToArray();
+                    foreach(string kind in new[]{"Decor_Painting","Decor_WallTV","Decor_CornerVase","Decor_CornerPlant"})
+                    {
+                        var prop=props.FirstOrDefault(t=>t.name==kind);if(prop==null)continue;
+                        camera.transform.position=prop.position-prop.forward*5+Vector3.up*3;camera.transform.LookAt(prop.position+Vector3.up*.4f);
+                        SaveClear(camera,prop.position,folder+"/"+scene.name+"-"+kind+".png");
+                    }
+                }
+                var crate=UnityEngine.Object.FindFirstObjectByType<HidingCrate>();
+                if(crate!=null)
+                {var point=crate.GetComponent<Collider>().bounds.center;camera.transform.position=point+new Vector3(4,4,-6);camera.transform.LookAt(point);SaveClear(camera,point,folder+"/"+scene.name+"-hiding-crate.png");}
+                Debug.Log("CHARACTER_GOAL_GEOMETRY_OK "+scene.name);
+                }
+                finally
+                {
+                    // Edit-mode inspection components do not receive normal play-mode teardown.
+                    foreach(var root in scene.GetRootGameObjects())
+                        foreach(var lighting in root.GetComponentsInChildren<CharacterShadowLighting>(true))
+                            typeof(CharacterShadowLighting).GetMethod("Release",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(lighting,null);
+                }
+            }
+            EditorSceneManager.OpenScene("Assets/Scenes/MainMenu.unity");PlaytestFeedbackBuild.WebGL();
+        }
+        private static void SaveClear(Camera camera,Vector3 point,string path)
+        {
+            var hidden=new List<Renderer>();var direction=point-camera.transform.position;
+            foreach(var hit in Physics.RaycastAll(camera.transform.position,direction.normalized,direction.magnitude,~0,QueryTriggerInteraction.Ignore))
+            {
+                if(hit.collider.GetComponentInParent<EnemyBase>()!=null||hit.collider.GetComponentInParent<SpiritController>()!=null)continue;
+                var renderer=hit.collider.GetComponent<Renderer>();if(renderer!=null&&renderer.enabled){renderer.enabled=false;hidden.Add(renderer);}
+            }
+            foreach(var label in UnityEngine.Object.FindObjectsByType<WorldLabel>(FindObjectsSortMode.None))
+                foreach(var renderer in label.GetComponentsInChildren<Renderer>())if(renderer.enabled){renderer.enabled=false;hidden.Add(renderer);}
+            try{Save(camera,path);}finally{foreach(var renderer in hidden)if(renderer!=null)renderer.enabled=true;}
+        }
+        private static void Save(Camera camera,string path)
+        {
+            var rt=new RenderTexture(1440,900,24);var image=new Texture2D(1440,900,TextureFormat.RGB24,false);
+            var target=camera.targetTexture;var active=RenderTexture.active;
+            try{camera.targetTexture=rt;camera.Render();RenderTexture.active=rt;image.ReadPixels(new Rect(0,0,1440,900),0,0);image.Apply();File.WriteAllBytes(path,image.EncodeToPNG());}
+            finally{camera.targetTexture=target;RenderTexture.active=active;UnityEngine.Object.DestroyImmediate(rt);UnityEngine.Object.DestroyImmediate(image);}
+        }
+    }
+}
