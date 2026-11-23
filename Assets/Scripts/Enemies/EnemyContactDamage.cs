@@ -63,6 +63,8 @@ namespace Possession
             else attack = Attack.Touch;
         }
 
+        public void RefreshPresentationRenderers() => renderers = GetComponentsInChildren<Renderer>(true);
+
         private void OnEnable()
         {
             EventBus.Ejected += OnEjected;

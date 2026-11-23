@@ -72,14 +72,14 @@ namespace Possession.Tests
             foreach (var enemy in new EnemyBase[] { Find<GuardEnemy>(), Find<HeavyEnemy>() })
             {
                 host = enemy;
-                body = host.GetComponent<Renderer>();
+                body = VisibleBody(host);
                 Material normal = body.sharedMaterial;
                 Possess(host);
                 var block = new MaterialPropertyBlock();
                 block.SetFloat("_Glossiness", 0.123f);
                 body.SetPropertyBlock(block);
                 Material white = body.sharedMaterial;
-                var parts = host.GetComponentsInChildren<Renderer>().Where(r => r != body).ToArray();
+                var parts = host.GetComponentsInChildren<Renderer>().Where(r => r != body && !CharacterAvatarView.IsBodyPiece(r)).ToArray();
                 var materials = parts.Select(r => r.sharedMaterial).ToArray();
                 var hidden = parts.Select(r => r.forceRenderingOff).ToArray();
                 int slow = 0, fast = 0;
@@ -124,7 +124,7 @@ namespace Possession.Tests
             foreach (var enemy in new EnemyBase[] { Find<GuardEnemy>(), Find<HeavyEnemy>() })
             {
                 host = enemy;
-                body = host.GetComponent<Renderer>();
+                body = VisibleBody(host);
                 player.enabled = false;
                 Possess(host);
                 player.enabled = true;
@@ -349,7 +349,7 @@ namespace Possession.Tests
             foreach (var enemy in FindAll<EnemyBase>()) enemy.MoveSpeed = 0f;
             foreach (var attack in FindAll<EnemyContactDamage>()) attack.enabled = false;
             host = Find<GuardEnemy>();
-            body = host.GetComponent<Renderer>();
+            body = VisibleBody(host);
             blink = player.GetComponent<PossessedBodyBlink>();
             Assert.That(blink, Is.Not.Null, "The scene installer must attach the warning at runtime.");
             yield return null;
@@ -389,6 +389,11 @@ namespace Possession.Tests
             Assert.That(body.forceRenderingOff, Is.True, "Low possession time must visibly blink the body.");
         }
 
+        private static Renderer VisibleBody(EnemyBase enemy)
+        {
+            var view=enemy.GetComponent<CharacterAvatarView>();
+            return view!=null&&view.Model!=null?view.Model.Find("Torso").GetComponent<Renderer>():enemy.GetComponent<Renderer>();
+        }
         private T Find<T>() where T : Component => FindAll<T>().First();
         private T[] FindAll<T>() where T : Component => level.GetRootGameObjects()
             .SelectMany(r => r.GetComponentsInChildren<T>(true)).ToArray();
