@@ -7,13 +7,14 @@ namespace Possession
 {
     // Adds silhouette-only visual pieces at runtime. The visuals use no colliders and
     // do not alter the enemy transform, renderer, movement, vision, or abilities.
-    [DisallowMultipleComponent]
+    [DefaultExecutionOrder(2200), DisallowMultipleComponent]
     [RequireComponent(typeof(EnemyBase))]
     public sealed class GoldEnemyPresentation : MonoBehaviour
     {
         private readonly List<Renderer> pieces = new List<Renderer>();
         private readonly List<Material> materials = new List<Material>();
         private EnemyBase enemy;
+        private Renderer body;
         private bool built;
 
         public bool IsBuilt => built;
@@ -22,7 +23,20 @@ namespace Possession
         private void Awake()
         {
             enemy = GetComponent<EnemyBase>();
+            body = GetComponent<Renderer>();
+            if (body == null) body = GetComponentInChildren<SkinnedMeshRenderer>(true);
+            if (body == null) body = GetComponentInChildren<MeshRenderer>(true);
             Build();
+        }
+
+        private void LateUpdate()
+        {
+            // Floor cutaways and possession warnings resolve the body first. Keep
+            // its attached cap and armour in the same final visibility state.
+            bool hidden = body != null && (!body.enabled || body.forceRenderingOff
+                || !body.gameObject.activeInHierarchy);
+            foreach (var piece in pieces)
+                if (piece != null) piece.forceRenderingOff = hidden;
         }
 
         public void Build()

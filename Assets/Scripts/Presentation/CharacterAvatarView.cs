@@ -79,7 +79,8 @@ namespace Possession
             if(enemy!=null)
             {
                 foreach(Transform old in transform)
-                    if(old.name=="Guard Cap"||old.name=="Guard Cap Brim"||old.name=="Guard Badge"||old.name=="Heavy Left Shoulder"||old.name=="Heavy Right Shoulder"||old.name=="Heavy Chest Plate"||old.name=="Heavy Chest Mark"||old.name=="Heavy Belt")
+                    if(old.name=="Guard Cap"||old.name=="Guard Cap Brim"||old.name=="Guard Badge"||old.name=="Heavy Left Shoulder"||old.name=="Heavy Right Shoulder"||old.name=="Heavy Chest Plate"||old.name=="Heavy Chest Mark"||old.name=="Heavy Belt"
+                        || (enemy is EngineerEnemy && (old.name=="Equipment helmet"||old.name=="Equipment toolkit")))
                     {if(!legacyPieces.ContainsKey(old.gameObject))legacyPieces[old.gameObject]=old.gameObject.activeSelf;old.gameObject.SetActive(false);}
                 // Preserve the established white-body possession cue; equipment keeps its own colours.
                 uniformNavy.color=enemy.IsPossessed?Color.white:enemy is HeavyEnemy?new Color(.95f,.39f,.055f):new Color(.055f,.12f,.23f);
@@ -148,6 +149,7 @@ namespace Possession
         {
             var root=new GameObject(officer?"Police avatar proposal":"Player avatar proposal").transform;root.SetParent(transform,false);
             bool heavy=enemy is HeavyEnemy;
+            bool engineer=enemy is EngineerEnemy;
             Material cloth=enemy!=null?uniformNavy:white;
             Part(root,"Torso",PrimitiveType.Capsule,new Vector3(0,1.38f,0),new Vector3(.85f,.57f,.55f),cloth);
             for(int side=-1;side<=1;side+=2)
@@ -174,14 +176,22 @@ namespace Possession
                 var grip=Part(root,"Sidearm grip",PrimitiveType.Cube,new Vector3(.68f,1.08f,-.2f),new Vector3(.13f,.28f,.17f),black);grip.transform.localRotation=Quaternion.Euler(-12,0,0);
                 Part(root,"Sidearm muzzle",PrimitiveType.Cube,new Vector3(.68f,1.23f,-.67f),new Vector3(.11f,.11f,.025f),navy);
             }
-            else if(heavy)
+            else if(heavy || engineer)
             {
                 Part(root,"Hardhat crown",PrimitiveType.Sphere,new Vector3(0,2.43f,0),new Vector3(.79f,.43f,.76f),gold);
                 Part(root,"Hardhat rim",PrimitiveType.Cylinder,new Vector3(0,2.35f,0),new Vector3(.91f,.035f,.87f),gold);
-                Part(root,"Hammer handle",PrimitiveType.Cylinder,new Vector3(.81f,1.22f,-.12f),new Vector3(.09f,.51f,.09f),black);
-                Part(root,"Hammer head",PrimitiveType.Cube,new Vector3(.81f,1.76f,-.12f),new Vector3(.56f,.29f,.35f),navy);
+                if(heavy)
+                {
+                    Part(root,"Hammer handle",PrimitiveType.Cylinder,new Vector3(.81f,1.22f,-.12f),new Vector3(.09f,.51f,.09f),black);
+                    Part(root,"Hammer head",PrimitiveType.Cube,new Vector3(.81f,1.76f,-.12f),new Vector3(.56f,.29f,.35f),navy);
+                }
+                else
+                {
+                    Part(root,"Engineer toolkit",PrimitiveType.Cube,new Vector3(.6f,1.04f,-.02f),new Vector3(.3f,.34f,.36f),gold);
+                    Part(root,"Engineer toolkit handle",PrimitiveType.Cube,new Vector3(.6f,1.26f,-.02f),new Vector3(.17f,.09f,.12f),black);
+                }
                 Part(root,"Work belt",PrimitiveType.Cube,new Vector3(0,1.06f,0),new Vector3(.86f,.16f,.6f),black);
-                foreach(int side in new[]{-1,1})Part(root,"Reflective vest stripe",PrimitiveType.Cube,new Vector3(side*.23f,1.48f,-.29f),new Vector3(.085f,.64f,.04f),gold);
+                if(heavy)foreach(int side in new[]{-1,1})Part(root,"Reflective vest stripe",PrimitiveType.Cube,new Vector3(side*.23f,1.48f,-.29f),new Vector3(.085f,.64f,.04f),gold);
             }
             else
             {

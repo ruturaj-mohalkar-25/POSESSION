@@ -11,11 +11,16 @@ namespace Possession
     {
         private readonly List<Material> materials = new();
         private readonly List<(Renderer wall, GameObject prop)> mounted = new();
+        private readonly List<GameObject> scopedProps = new();
         private readonly List<Vector3> occupied = new();
         private readonly List<(Vector3 from, Vector3 to)> patrolSegments = new();
         private Material cream, brass, teal, ink, clay, leaf, stem, blue, rug;
         private int cornerProps;
         private Transform[] objectives;
+        private Transform storeyRoot;
+        private Transform[] interactionKeepouts;
+        private float storeyFloorHeight;
+        private bool includeSolidCover = true;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
@@ -31,12 +36,30 @@ namespace Possession
         public static void Install(Scene scene)
         {
             if (!scene.IsValid() || !scene.isLoaded) return;
+            // The two-storey level explicitly installs one scoped dressing owner per floor.
+            if (scene.name == CampaignLevels.FourthScene) return;
             var roots = scene.GetRootGameObjects();
             if (!roots.Any(r => r.GetComponentInChildren<SpiritController>(true) != null)
                 || roots.Any(r => r.GetComponent<GoldRoomDecor>() != null)) return;
             var go = new GameObject("Gold_RoomDecor");
             SceneManager.MoveGameObjectToScene(go, scene);
             go.AddComponent<GoldRoomDecor>().Build(scene);
+        }
+
+        public static void Install(Scene scene, Transform storeyRoot, Transform[] interactionKeepouts,
+            bool includeSolidCover)
+        {
+            if (!scene.IsValid() || !scene.isLoaded || storeyRoot == null
+                || storeyRoot.gameObject.scene != scene) return;
+            if (storeyRoot.GetComponentsInChildren<GoldRoomDecor>(true)
+                .Any(owner => owner.storeyRoot == storeyRoot)) return;
+            var go = new GameObject("Gold_RoomDecor");
+            go.transform.SetParent(storeyRoot, false);
+            var owner = go.AddComponent<GoldRoomDecor>();
+            owner.storeyRoot = storeyRoot;
+            owner.interactionKeepouts = interactionKeepouts;
+            owner.includeSolidCover = includeSolidCover;
+            owner.Build(scene);
         }
 
         private Material Paint(Color color)
@@ -53,9 +76,11 @@ namespace Possession
             clay = Paint(new Color(.58f,.27f,.16f)); leaf = Paint(new Color(.19f,.40f,.24f));
             stem = Paint(new Color(.22f,.28f,.15f)); blue = Paint(new Color(.12f,.23f,.31f));
             rug = Paint(new Color(.36f,.23f,.19f));
-            var all = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<MeshRenderer>(true)).ToArray();
+            var all = storeyRoot != null ? storeyRoot.GetComponentsInChildren<MeshRenderer>(true)
+                : scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<MeshRenderer>(true)).ToArray();
             var floors = all.Where(r => r.GetComponent<Collider>() != null && r.bounds.size.y < .6f
                 && r.name.ToLowerInvariant().Contains("floor")).OrderBy(r => r.name).ToArray();
+            if (storeyRoot != null && floors.Length > 0) storeyFloorHeight = floors.Min(f => f.bounds.max.y);
             var walls = all.Where(r => r.GetComponent<Collider>() != null && r.bounds.size.y >= 3f
                 && r.GetComponentInParent<EnemyBase>() == null && r.GetComponentInParent<Door>() == null
                 && r.GetComponentInParent<BreakableWall>() == null && r.GetComponentInParent<Target>() == null).ToArray();
@@ -64,7 +89,9 @@ namespace Possession
                     || t.GetComponent<BreakableWall>() != null || t.GetComponent<LevelExit>() != null
                     || t.GetComponent<EnemyBase>() != null || t.GetComponent<SpiritController>() != null
                     || t.GetComponent<PossessionChargePickup>() != null || t.GetComponent<HealthPickup>() != null
-                    || t.name.ToLowerInvariant().Contains("waypoint")).ToArray();
+                    || t.name.ToLowerInvariant().Contains("waypoint"))
+                .Concat(interactionKeepouts ?? new Transform[0])
+                .Where(t => t != null && t.gameObject.scene == scene && OnStorey(t.position)).Distinct().ToArray();
             BuildPatrolClearance(scene);
             occupied.AddRange(all.Where(r => r.name == "Gold_CornerCabinet").Select(r => r.bounds.center));
             Physics.SyncTransforms();
@@ -82,11 +109,13 @@ namespace Possession
                 var vaseAt=leftPlant?c:a;
                 if (Corner(vaseAt,leftPlant?Vector3.right:Vector3.left) && Clear(vaseAt,2.5f)) { CornerProp(vaseAt); occupied.Add(vaseAt); }
                 var mat = new Vector3(b.min.x+2.2f,b.max.y+.035f,b.center.z);
-                if (Clear(mat,3f) && !patrolSegments.Any(s=>DistanceToSegment(mat,s.from,s.to)<2.7f) && !Physics.CheckBox(mat+Vector3.up*1.14f,new Vector3(1.51f,1.14f,1.04f),Quaternion.identity,~0,QueryTriggerInteraction.Ignore))
+                if (includeSolidCover && Clear(mat,3f) && !patrolSegments.Any(s=>DistanceToSegment(mat,s.from,s.to)<2.7f) && !Physics.CheckBox(mat+Vector3.up*1.14f,new Vector3(1.51f,1.14f,1.04f),Quaternion.identity,~0,QueryTriggerInteraction.Ignore))
                     Mat(mat);
                 room++;
             }
         }
+        // Actor centres and interaction panels sit above their own floor; the other storey is five metres away.
+        private bool OnStorey(Vector3 point) => storeyRoot == null || Mathf.Abs(point.y-storeyFloorHeight)<2.6f;
         private bool Clear(Vector3 point,float distance) => !objectives.Any(t => Flat(t.position,point)<distance)
             && !occupied.Any(p => Flat(p,point)<2.4f)
             && !patrolSegments.Any(segment=>DistanceToSegment(point,segment.from,segment.to)<2.2f);
@@ -103,15 +132,24 @@ namespace Possession
         {
             // Authored routes use either a Waypoint_* group or <enemy>_WP0/1 siblings.
             // Keep plants clear of whole route segments, not only their endpoints.
-            var points = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<Transform>(true))
-                .Where(IsWaypoint).ToArray();
-            foreach (var group in points.GroupBy(t => (t.parent,
-                t.name.Contains("_WP") ? t.name.Substring(0,t.name.LastIndexOf("_WP")) : string.Empty)))
+            var transforms = storeyRoot != null ? storeyRoot.GetComponentsInChildren<Transform>(true)
+                : scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<Transform>(true)).ToArray();
+            var points = transforms.Where(t => IsWaypoint(t) && OnStorey(t.position)).ToArray();
+            foreach (var group in points.GroupBy(t => (t.parent, PatrolGroup(t))))
             {
                 var route = group.OrderBy(t => t.GetSiblingIndex()).ToArray();
                 for (int i = 0; i < route.Length; i++)
                     patrolSegments.Add((route[i].position,route[(i + 1) % route.Length].position));
             }
+        }
+
+        private string PatrolGroup(Transform point)
+        {
+            if (point.name.Contains("_WP")) return point.name.Substring(0,point.name.LastIndexOf("_WP"));
+            // Level 4 keeps each Guard's named waypoint siblings under its storey root.
+            int suffix = storeyRoot != null
+                ? point.name.LastIndexOf("_Waypoint",System.StringComparison.Ordinal) : -1;
+            return suffix >= 0 ? point.name.Substring(0,suffix) : string.Empty;
         }
 
         private static float DistanceToSegment(Vector3 p,Vector3 a,Vector3 b)
@@ -127,6 +165,7 @@ namespace Possession
             foreach (var wall in walls.OrderBy(w => Mathf.Abs(w.bounds.center.x-room.center.x)))
             {
                 Bounds b=wall.bounds;
+                if (storeyRoot != null && (b.min.y>room.max.y+.5f || b.max.y<room.max.y+1f)) continue;
                 if (b.size.z>1.5f || b.center.z<room.center.z || Mathf.Abs(b.min.z-room.max.z)>1f) continue;
                 float left=Mathf.Max(b.min.x,room.min.x)+1.5f,right=Mathf.Min(b.max.x,room.max.x)-1.5f;
                 if(right<left)continue;
@@ -137,7 +176,7 @@ namespace Possession
                     if(wall.GetComponentsInChildren<Transform>(true).Any(t=>t.name=="Gold_RoomSign" && Mathf.Abs(t.position.x-x)<3.5f))continue;
                     bool tv=index%3==1;
                     var root=Root(tv?"Decor_WallTV":"Decor_Painting",p);
-                    root.SetParent(wall.transform,true);
+                    if (storeyRoot == null) root.SetParent(wall.transform,true);
                     if(tv)TV(root);else Painting(root,index);
                     mounted.Add((wall,root.gameObject));occupied.Add(p);return;
                 }
@@ -145,7 +184,9 @@ namespace Possession
         }
         private Transform Root(string name,Vector3 position)
         {
-            var t=new GameObject(name).transform;t.gameObject.layer=2;t.SetParent(transform,false);t.position=position;return t;
+            var t=new GameObject(name).transform;t.gameObject.layer=2;t.SetParent(transform,false);t.position=position;
+            if (storeyRoot != null) scopedProps.Add(t.gameObject);
+            return t;
         }
         private GameObject Part(Transform root,string name,PrimitiveType kind,Vector3 position,Vector3 size,Material m)
             => GoldRoomPresentation.Part(root,name,kind,root.TransformPoint(position),size,m);
@@ -214,7 +255,9 @@ namespace Possession
         }
         private void OnDestroy()
         {
-            foreach(var item in mounted)if(item.prop!=null)Dispose(item.prop);
+            if (storeyRoot != null)
+            { foreach(var prop in scopedProps)if(prop!=null)Dispose(prop); }
+            else foreach(var item in mounted)if(item.prop!=null)Dispose(item.prop);
             foreach(var material in materials)if(material!=null)Dispose(material);
         }
         private static void Dispose(Object value){if(Application.isPlaying)Destroy(value);else DestroyImmediate(value);}

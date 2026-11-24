@@ -53,6 +53,7 @@ namespace Possession
 
         public static bool IsFloor(MeshRenderer r) => r.GetComponent<Collider>() != null
             && r.bounds.size.y < .6f && (r.name.EndsWith("_Floor", StringComparison.Ordinal)
+                || r.name.StartsWith("Floor_", StringComparison.Ordinal)
                 || r.name.StartsWith("Hall_", StringComparison.Ordinal));
 
         private static bool IsWall(MeshRenderer r)
