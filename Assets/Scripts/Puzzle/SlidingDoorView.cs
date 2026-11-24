@@ -26,6 +26,13 @@ namespace Possession
             rightWidth = rightLeaf != null ? rightLeaf.localScale.x : 0f;
         }
 
+        // Wires leaves created at runtime (the tutorial borrows Level 1's door this way).
+        public void Configure(Transform left, Transform right, float doorWidth, bool clip)
+        {
+            leftLeaf = left; rightLeaf = right; width = doorWidth; clipToFrame = clip;
+            Awake();
+        }
+
         protected virtual void Update()
         {
             opening = Mathf.MoveTowards(opening, door.IsOpen ? 1f : 0f, Time.deltaTime * 2.5f);
