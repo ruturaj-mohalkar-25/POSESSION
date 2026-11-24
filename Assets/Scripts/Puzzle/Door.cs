@@ -10,6 +10,7 @@ namespace Possession
         private bool isOpen;
 
         public bool IsOpen => isOpen;
+        public bool HasTargets => requiredTargets != null && requiredTargets.Length > 0;
 
         private void OnEnable()
         {
