@@ -170,6 +170,9 @@ namespace Possession
             mat.mainTextureScale = new Vector2(4f, 3f);
             ExitPart(root, PrimitiveType.Cube, "FinishMat", new Vector3(x, floorY + 0.11f, z - 0.8f * back),
                 new Vector3(3.1f, 0.02f, 2.5f), mat);
+            // The level ends the moment the spirit steps onto any part of the mat, however fast it arrives
+            exitTrigger.center = exitTrigger.transform.InverseTransformPoint(new Vector3(x, floorY + 1f, z - 0.8f * back));
+            exitTrigger.size = new Vector3(3.1f, 2f, 2.5f);
 
             var flagMat = RuntimeMaterials.Lit(Color.white);
             flagMat.mainTexture = checker;
