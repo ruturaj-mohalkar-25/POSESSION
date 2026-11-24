@@ -19,13 +19,14 @@ namespace Possession
         {
             var roots = scene.GetRootGameObjects();
             // The tutorial owns its scene and teaching sequence, but borrows Level 1's door and floor.
-            if (CampaignLevels.NumberFor(scene.name) == 0)
+            if (scene.name == "Tutorial")
             {
-                if (scene.name != "Tutorial") return;
                 GoldTutorialPresentation.Apply(roots);
                 SkinDoors(roots);
                 return;
             }
+            // The two-storey level owns its scene composition.
+            if (!CampaignLevels.SceneNames.Contains(scene.name)) return;
             if (roots.Any(r => r.GetComponent<GoldRoomPresentation>() != null)) return;
             var host = new GameObject("Gold_RoomPresentation");
             SceneManager.MoveGameObjectToScene(host, scene);

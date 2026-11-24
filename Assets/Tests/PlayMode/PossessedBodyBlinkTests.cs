@@ -82,6 +82,10 @@ namespace Possession.Tests
                 var parts = host.GetComponentsInChildren<Renderer>().Where(r => r != body && !CharacterAvatarView.IsBodyPiece(r)).ToArray();
                 var materials = parts.Select(r => r.sharedMaterial).ToArray();
                 var hidden = parts.Select(r => r.forceRenderingOff).ToArray();
+                string[] accentNames = { "Guard Cap", "Guard Cap Brim", "Guard Badge", "Heavy Left Shoulder",
+                    "Heavy Right Shoulder", "Heavy Chest Plate", "Heavy Chest Mark", "Heavy Belt" };
+                var followsBody = parts.Select(r => r.transform.parent == host.transform
+                    && accentNames.Contains(r.name)).ToArray();
                 int slow = 0, fast = 0;
                 for (int pass = 0; pass < 2; pass++)
                 {
@@ -103,7 +107,8 @@ namespace Possession.Tests
                         for (int i = 0; i < parts.Length; i++)
                         {
                             Assert.That(parts[i].sharedMaterial, Is.SameAs(materials[i]));
-                            Assert.That(parts[i].forceRenderingOff, Is.EqualTo(hidden[i]));
+                            Assert.That(parts[i].forceRenderingOff,
+                                Is.EqualTo(followsBody[i] ? body.forceRenderingOff : hidden[i]), parts[i].name);
                         }
                     }
                     if (pass == 0) slow = transitions;
@@ -256,16 +261,16 @@ namespace Possession.Tests
         }
 
         [UnityTest]
-        public IEnumerator HostDisableAndDeathRestoreVisibility()
+        public IEnumerator HostDeactivationAndDeathRestoreVisibility()
         {
             Possess(host);
             EventBus.PossessTimerUpdated?.Invoke(2f, 10f);
             yield return WaitForHiddenBody();
-            host.enabled = false;
+            host.gameObject.SetActive(false);
             yield return null;
             Assert.That(body.forceRenderingOff, Is.False);
-            host.enabled = true;
-            EventBus.Possessed?.Invoke(host, player.CurrentState);
+            host.gameObject.SetActive(true);
+            Possess(host);
             EventBus.PossessTimerUpdated?.Invoke(2f, 10f);
             yield return WaitForHiddenBody();
             host.TakeDamage(host.CurrentHP);

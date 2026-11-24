@@ -35,7 +35,7 @@ namespace Possession.Warehouse.Tests
         }
         [Test] public void PreviewUsesSharedActorsPuzzlesHUDAndThePlannedCounts()
         {
-            Assert.That(Object.FindObjectsByType<GuardEnemy>(FindObjectsSortMode.None).Length,Is.EqualTo(4));
+            Assert.That(Object.FindObjectsByType<GuardEnemy>(FindObjectsSortMode.None).Length,Is.EqualTo(6));
             Assert.That(Object.FindObjectsByType<HeavyEnemy>(FindObjectsSortMode.None).Length,Is.EqualTo(2));
             Assert.That(Object.FindObjectsByType<Target>(FindObjectsSortMode.None).Length,Is.EqualTo(12));
             Assert.That(Object.FindObjectsByType<Door>(FindObjectsSortMode.None).Length,Is.EqualTo(4));
@@ -198,7 +198,7 @@ namespace Possession.Warehouse.Tests
             Assert.That(GameManager.Instance.CurrentState,Is.EqualTo(LevelState.Complete));
             level.RestartPreview();yield return null;yield return null;Bind();
             Assert.That(level.CanExtract,Is.False);Assert.That(GameManager.Instance.CurrentState,Is.EqualTo(LevelState.InProgress));
-            Assert.That(Object.FindObjectsByType<EnemyBase>(FindObjectsSortMode.None).Length,Is.EqualTo(6));
+            Assert.That(Object.FindObjectsByType<EnemyBase>(FindObjectsSortMode.None).Length,Is.EqualTo(8));
         }
         [TestCase(false)] [TestCase(true)]
         public void EitherOriginalWingUnlocksTheOriginalFinishWithoutAnyFinalBranch(bool right)
