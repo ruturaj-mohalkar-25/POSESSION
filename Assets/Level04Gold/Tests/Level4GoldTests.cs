@@ -407,6 +407,24 @@ namespace Possession.Level04Gold.Tests
         }
 
         [UnityTest]
+        public IEnumerator VaultExplainsEachDirectionStopAndFinalHandle()
+        {
+            yield return PrepareEngineerAtVault();
+            var vault = Vault();
+            Assert.That(vault.TryBeginInteraction(), Is.True);
+            var instruction = All<UnityEngine.UI.Text>().SingleOrDefault(t => t.name == "VaultInstruction");
+            Assert.That(instruction, Is.Not.Null, "Show the current action in plain language, not CW/CCW abbreviations alone.");
+            StringAssert.Contains("D / RIGHT", instruction.text);
+            StringAssert.Contains("TRIANGLE", instruction.text);
+            StringAssert.Contains("CONFIRM", instruction.text);
+            vault.RotateDial(60f); Assert.That(vault.TryConfirmAlignment(), Is.True);
+            StringAssert.Contains("A / LEFT", instruction.text);
+            StringAssert.Contains("SQUARE", instruction.text);
+            vault.RotateDial(-120f); Assert.That(vault.TryConfirmAlignment(), Is.True);
+            StringAssert.Contains("TURN HANDLE", instruction.text);
+        }
+
+        [UnityTest]
         public IEnumerator WrongStopsAndDirectionsLeaveTheCurrentBoltUnchanged()
         {
             yield return PrepareEngineerAtVault();

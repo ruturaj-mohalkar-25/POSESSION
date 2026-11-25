@@ -59,6 +59,22 @@ namespace Possession.Tests
         }
 
         [Test]
+        public void SolidCoverKeepsItsMaterialWhenCameraCrossesTheTopEdge()
+        {
+            var cover=Wall("Cover_0",new Vector3(0,1.1f,-.7f));
+            cover.transform.localScale=new Vector3(3,2.2f,2);
+            cover.AddComponent<VisibilityOccluder>();
+            for(int frame=0;frame<60;frame++)
+            {
+                possession.transform.position=new Vector3(0,3.2f+Mathf.Sin(frame*.6f)*.08f,0);
+                camera.transform.position=new Vector3(Mathf.Sin(frame*.3f)*.6f,5,-8);
+                camera.transform.LookAt(possession.transform.position);Physics.SyncTransforms();
+                fader.RefreshVisibility(.03f);
+                Assert.That(cover.GetComponent<Renderer>().sharedMaterial,Is.SameAs(material),"Standing on solid cover must not swap it into a transparent wall material.");
+            }
+        }
+
+        [Test]
         public void BlockingWallFadesWithoutChangingPhysicsOrSharedMaterial()
         {
             var wall = Wall("Wall_Blocker", new Vector3(0f, 2f, -4f));

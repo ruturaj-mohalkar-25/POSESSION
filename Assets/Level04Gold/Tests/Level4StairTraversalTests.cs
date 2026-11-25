@@ -115,6 +115,59 @@ namespace Possession.Level04Gold.Tests
                 + $"ramp support={input.RampSupportSamples}, height={input.LowestY:0.00}..{input.HighestY:0.00}m.");
         }
 
+        [UnityTest]
+        public IEnumerator SpiritCanStillJumpFromTheUpperFloorOntoCover()
+        {
+            var upper = GameObject.Find("Level04_Geometry").transform.Find("Upper floor");
+            var cover = upper.GetComponentsInChildren<BoxCollider>().Single(c => c.name == "Cover_03");
+            var start = cover.bounds.center;
+            start.y = 6.4f;
+            start.z = cover.bounds.max.z + 2f;
+            spirit.RestoreAt(start);
+            yield return Settle(.3f);
+            spirit.RequestJump();
+            yield return new WaitForSeconds(.3f);
+            float until = Time.time + 1.5f;
+            while (Time.time < until)
+            {
+                input.MoveInput = new Vector2(0, Mathf.Clamp((cover.bounds.center.z - body.position.z)
+                    / (spirit.MoveSpeed * Time.fixedDeltaTime), -1, 1));
+                yield return null;
+            }
+            input.MoveInput = Vector2.zero;
+            Assert.That(spirit.IsGrounded, Is.True);
+            Assert.That(capsule.bounds.min.y, Is.EqualTo(cover.bounds.max.y).Within(.12f));
+        }
+
+        [UnityTest]
+        public IEnumerator SpiritCannotJumpFromUpperCoverOntoTheBoundaryWall()
+        {
+            var upper = GameObject.Find("Level04_Geometry").transform.Find("Upper floor");
+            var cover = upper.GetComponentsInChildren<BoxCollider>().Single(c => c.name == "Cover_03");
+            // This cover is reachable from the floor; use its top as the next jump's start.
+            Vector3 start = cover.bounds.center;
+            start.y = cover.bounds.max.y + capsule.bounds.extents.y + .03f;
+            spirit.RestoreAt(start);
+            yield return Settle(.3f);
+            Assert.That(spirit.IsGrounded, Is.True);
+            float boundaryZ = P(0,0,34).z;
+            spirit.RequestJump();
+            // Delay forward movement until the capsule clears the wall edge.
+            yield return new WaitForSeconds(.35f);
+            float until = Time.time + 2f;
+            bool stoodOnWall = false;
+            while (Time.time < until)
+            {
+                float delta = boundaryZ - body.position.z;
+                input.MoveInput = new Vector2(0, Mathf.Clamp(delta / (spirit.MoveSpeed * Time.fixedDeltaTime), -1, 1));
+                if (spirit.IsGrounded && capsule.bounds.min.y > 9.3f) stoodOnWall = true;
+                yield return null;
+            }
+            input.MoveInput = Vector2.zero;
+            Assert.That(stoodOnWall, Is.False, "A second jump from upper cover must not land on the wall cap.");
+            Assert.That(body.position.z, Is.GreaterThan(boundaryZ + .4f), "The upper boundary must keep Spirit inside, not allow a drop to the lower storey.");
+        }
+
         private IEnumerator WalkTo(Vector3 target)
         {
             float startTime = Time.time, startReal = Time.realtimeSinceStartup;

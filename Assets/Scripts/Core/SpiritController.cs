@@ -18,13 +18,14 @@ namespace Possession
         [SerializeField] private int maxHP = 5;
         private Rigidbody rb;
         private Collider body;
+        private Collider groundSupport;
         private int currentHP;
         private bool isGrounded;
         private bool isVisible = true;
         private float damageProtectedUntil;
 
         public float MoveSpeed => moveSpeed;
-        public float JumpSpeed => jumpForce;
+        public float JumpSpeed => CampaignJumpRules.Speed(gameObject.scene, jumpForce);
         public bool IsGrounded => isGrounded;
         public float DamageProtectionRemaining => Mathf.Max(0f, damageProtectedUntil - Time.time);
         public bool IsDamageProtected => Time.time < damageProtectedUntil;
@@ -59,6 +60,7 @@ namespace Possession
         private void OnDisable()
         {
             moveInput = Vector2.zero;
+            groundSupport = null;
             jumpRequestedUntil = lastGroundedAt = float.NegativeInfinity;
         }
 
@@ -71,7 +73,7 @@ namespace Possession
             jumpRequestedUntil = lastGroundedAt = float.NegativeInfinity;
             isGrounded = false;
             // A consistent launch speed, independent of Rigidbody mass and downward landing velocity.
-            rb.linearVelocity = new Vector3(rb.linearVelocity.x, jumpForce, rb.linearVelocity.z);
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, CampaignJumpRules.Speed(gameObject.scene, jumpForce, groundSupport), rb.linearVelocity.z);
         }
 
         private void RefreshGrounding()
@@ -90,6 +92,7 @@ namespace Possession
                 if (hit.normal.y < .55f || hit.collider.transform.IsChildOf(transform)
                     || hit.collider.GetComponentInParent<EnemyBase>() != null
                     || hit.collider.GetComponentInParent<SpiritController>() != null) continue;
+                groundSupport = hit.collider;
                 isGrounded = true; lastGroundedAt = Time.time; return;
             }
         }
@@ -108,6 +111,7 @@ namespace Possession
         {
             isVisible = visible;
             isGrounded = false;
+            groundSupport = null;
             jumpRequestedUntil = lastGroundedAt = float.NegativeInfinity;
             moveInput = Vector2.zero;
             var renderer = GetComponent<Renderer>();
