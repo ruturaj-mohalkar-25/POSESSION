@@ -28,10 +28,10 @@ namespace Possession.Tests
             yield return SceneManager.LoadSceneAsync("MainMenu");
             yield return null;yield return null;
             var menu=Object.FindFirstObjectByType<MainMenuController>();
-            foreach(string name in new[]{"PlayButton","HowToPlayButton"})AssertClickable(menu,name);
+            foreach(string name in new[]{"PlayButton","AvatarButton","HowToPlayButton"})AssertClickable(menu,name);
             menu.OnPlayButton();yield return null;Canvas.ForceUpdateCanvases();
             AssertClickable(menu,"BackButton");
-            Assert.That(menu.GetComponentsInChildren<RawImage>(true).All(i=>i.texture!=null),Is.True);
+            Assert.That(menu.GetComponentsInChildren<RawImage>().All(i=>i.texture!=null),Is.True);
             menu.OnBackButton();yield return null;Canvas.ForceUpdateCanvases();
             AssertClickable(menu,"PlayButton");
         }

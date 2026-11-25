@@ -41,9 +41,13 @@ namespace Possession
             Label(main.transform,"Game title","POSSESSION",76,new Vector2(.035f,.72f),new Vector2(.37f,.86f),TextAnchor.MiddleLeft);
             var subtitle = Label(main.transform,"Subtitle","A possession puzzle game",29,new Vector2(.06f,.65f),new Vector2(.365f,.72f));
             subtitle.fontStyle = FontStyle.Normal;
-            StyleButton(play,"PLAY",new Vector2(.043f,.435f),new Vector2(.357f,.563f),true);
-            StyleButton(tutorial,"HOW TO PLAY",new Vector2(.043f,.277f),new Vector2(.357f,.40f),false);
-            var hint = Label(main.transform,"Controls hint","Keyboard + mouse",26,new Vector2(.05f,.195f),new Vector2(.35f,.26f));
+            StyleButton(play,"PLAY",new Vector2(.043f,.48f),new Vector2(.357f,.60f),true);
+            var avatar=GoldTheme.Button(main.transform,"AvatarButton","AVATAR",new Vector2(.043f,.33f),new Vector2(.357f,.43f),false);
+            StyleButton(avatar,"AVATAR",new Vector2(.043f,.33f),new Vector2(.357f,.43f),false);
+            var wardrobe=gameObject.AddComponent<USCAvatarWardrobe>();wardrobe.Build(owner,main,selection,rounded);
+            avatar.onClick.AddListener(wardrobe.Open);
+            StyleButton(tutorial,"HOW TO PLAY",new Vector2(.043f,.18f),new Vector2(.357f,.28f),false);
+            var hint = Label(main.transform,"Controls hint","Keyboard + mouse",26,new Vector2(.05f,.10f),new Vector2(.35f,.15f));
             hint.fontStyle = FontStyle.Normal; hint.color = new Color(.78f,.80f,.83f);
 
             var oldHeading = selection.GetComponentsInChildren<Text>(true).Where(t=>t.GetComponentInParent<Button>(true)==null).ToArray();

@@ -11,6 +11,12 @@ namespace Possession
         private readonly List<Material> owned = new();
         private readonly List<Material> uniform = new();
         private Material navy,black,gold,white,skin,teal,uniformNavy;
+        private Material playerCloth,playerSleeves,playerPants,playerBoots;
+        private Transform[] outfitDetails;
+        private bool preview;
+        private int previewOutfit,lastOutfit=-1;
+        public int EquippedOutfit => lastOutfit;
+        public void SetPreviewOutfit(int index){preview=true;previewOutfit=PlayerAvatarSelection.Valid(index);Build();Refresh();}
         private readonly Dictionary<GameObject,bool> legacyPieces=new();
         private bool warningHidden;
         public bool WarningHidden => warningHidden;
@@ -34,7 +40,7 @@ namespace Possession
             if(model != null)return;
             body=GetComponent<Renderer>();if(body==null)return;
             enemy=GetComponent<EnemyBase>();spirit=GetComponent<SpiritController>();
-            if(spirit==null && enemy==null)return;
+            if(spirit==null && enemy==null && !preview)return;
             var inherited=transform.Find("Character Avatar");
             bool cloned=inherited!=null;
             if(inherited!=null){inherited.gameObject.SetActive(false);Release(inherited.gameObject);}
@@ -44,6 +50,11 @@ namespace Possession
             white=Mat(new Color(.91f,.94f,.93f));skin=Mat(new Color(.67f,.43f,.29f));teal=Mat(new Color(.08f,.45f,.43f));
             uniformNavy=Mat(enemy is HeavyEnemy?new Color(.95f,.39f,.055f):new Color(.055f,.12f,.23f));
             uniform.Add(uniformNavy);
+            if(enemy==null)
+            {
+                playerCloth=Mat(Color.white);playerSleeves=Mat(Color.white);playerPants=Mat(Color.white);playerBoots=Mat(Color.white);
+                foreach(var material in new[]{white,playerCloth,playerSleeves,playerPants,playerBoots})if(material.HasProperty("_Glossiness"))material.SetFloat("_Glossiness",.12f);
+            }
             model=BuildModel(enemy is GuardEnemy);model.name="Character Avatar";
             var mesh=GetComponent<MeshFilter>();var bounds=mesh!=null&&mesh.sharedMesh!=null?mesh.sharedMesh.bounds:new Bounds(Vector3.zero,new Vector3(1,2,1));
             model.localPosition=new Vector3(0,bounds.min.y,0);model.localScale=Vector3.one*(bounds.size.y/2.65f);
@@ -74,6 +85,7 @@ namespace Possession
         public void Refresh()
         {
             if(model==null||body==null)return;
+            if(enemy==null)RefreshOutfit();
             body.forceRenderingOff=true;
             if(oldModel!=null)oldModel.gameObject.SetActive(false);
             if(enemy!=null)
@@ -92,7 +104,7 @@ namespace Possession
                     {var dir=ray.GetPoint(distance)-transform.position;dir.y=0;if(dir.sqrMagnitude>.01f)model.rotation=Quaternion.LookRotation(dir)*Quaternion.Euler(0,180,0);}
                 }
             }
-            bool alive=!Application.isPlaying || (enemy!=null?enemy.CurrentHP>0:spirit.CurrentHP>0);
+            bool alive=!Application.isPlaying || preview || (enemy!=null?enemy.CurrentHP>0:spirit!=null&&spirit.CurrentHP>0);
             model.gameObject.SetActive(isActiveAndEnabled && body.enabled && gameObject.activeInHierarchy && alive);
         }
         private readonly Dictionary<Renderer,bool> blinkOriginal=new();
@@ -112,13 +124,13 @@ namespace Possession
         private void OnEjected(EnemyBase host,bool forced){Refresh();}
         private void OnEnable()
         {
-            EventBus.Possessed+=OnPossessed;EventBus.Ejected+=OnEjected;
+            EventBus.Possessed+=OnPossessed;EventBus.Ejected+=OnEjected;PlayerAvatarSelection.Changed+=Refresh;
             previousPosition=transform.position;
             if(model!=null)Refresh();
         }
         private void OnDisable()
         {
-            EventBus.Possessed-=OnPossessed;EventBus.Ejected-=OnEjected;SetWarningHidden(false);
+            EventBus.Possessed-=OnPossessed;EventBus.Ejected-=OnEjected;PlayerAvatarSelection.Changed-=Refresh;SetWarningHidden(false);
             if(model!=null)model.gameObject.SetActive(false);
             if(body!=null)body.forceRenderingOff=oldForceOff;
             if(oldModel!=null)oldModel.gameObject.SetActive(oldActive);
@@ -145,23 +157,57 @@ namespace Possession
             go.transform.localScale=Vector3.Scale(size,new Vector3(expected.x/actual.x,expected.y/actual.y,expected.z/actual.z));
             var r=go.GetComponent<MeshRenderer>();r.sharedMaterial=material;r.shadowCastingMode=ShadowCastingMode.On;r.receiveShadows=true;return go;
         }
+        private void RefreshOutfit()
+        {
+            int index=preview?previewOutfit:PlayerAvatarSelection.Selected;
+            if(lastOutfit==index||outfitDetails==null)return;
+            lastOutfit=index;
+            playerCloth.color=PlayerAvatarSelection.Cloth(index);
+            playerSleeves.color=index==1?new Color(.94f,.88f,.74f):playerCloth.color;
+            playerPants.color=index==0?playerCloth.color:new Color(.055f,.065f,.09f);
+            playerBoots.color=index==0?new Color(.08f,.45f,.43f):new Color(.93f,.93f,.89f);
+            teal.color=index==0?new Color(.08f,.45f,.43f):PlayerAvatarSelection.Gold;
+            for(int i=0;i<outfitDetails.Length;i++)outfitDetails[i].gameObject.SetActive(i==index);
+        }
+        private void BuildOutfits(Transform root)
+        {
+            outfitDetails=new Transform[4];
+            string[] names={"Classic outfit","USC Varsity","Cardinal Hoodie","Sport Jacket"};
+            for(int i=0;i<4;i++){outfitDetails[i]=new GameObject(names[i]).transform;outfitDetails[i].SetParent(root,false);}
+            for(int i=1;i<4;i++)
+            {
+                var r=outfitDetails[i];
+                Part(r,"Jacket hem",PrimitiveType.Cube,new Vector3(0,.89f,0),new Vector3(.87f,.10f,.59f),i==3?white:gold);
+                Part(r,"Front seam",PrimitiveType.Cube,new Vector3(0,1.27f,-.33f),new Vector3(.035f,.68f,.045f),white);
+                var badge=new GameObject("SC chest lettering",typeof(TextMesh));badge.layer=2;badge.transform.SetParent(r,false);
+                badge.transform.localPosition=new Vector3(-.20f,1.47f,-.36f);
+                var text=badge.GetComponent<TextMesh>();text.text="SC";text.font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                text.fontSize=64;text.characterSize=.013f;text.anchor=TextAnchor.MiddleCenter;text.color=i==3?Color.white:PlayerAvatarSelection.Gold;
+                badge.GetComponent<MeshRenderer>().sharedMaterial=text.font.material;
+                foreach(int side in new[]{-1,1})Part(r,"Sleeve stripe",PrimitiveType.Cube,new Vector3(side*.60f,1.23f,-.03f),new Vector3(.28f,.065f,.34f),i==3?white:gold);
+            }
+            for(int i=0;i<4;i++)Part(outfitDetails[1],"Varsity button",PrimitiveType.Sphere,new Vector3(.05f,1.02f+i*.13f,-.37f),Vector3.one*.045f,gold);
+            Part(outfitDetails[2],"Hood",PrimitiveType.Sphere,new Vector3(0,1.80f,.16f),new Vector3(1.10f,.36f,.82f),playerCloth);
+            for(int side=-1;side<=1;side+=2)Part(outfitDetails[2],"Hood drawstring",PrimitiveType.Cylinder,new Vector3(side*.13f,1.54f,-.36f),new Vector3(.025f,.16f,.025f),white);
+            Part(outfitDetails[2],"Front pocket",PrimitiveType.Cube,new Vector3(0,1.13f,-.32f),new Vector3(.46f,.20f,.09f),playerCloth);
+        }
         private Transform BuildModel(bool officer)
         {
             var root=new GameObject(officer?"Police avatar proposal":"Player avatar proposal").transform;root.SetParent(transform,false);
             bool heavy=enemy is HeavyEnemy;
             bool engineer=enemy is EngineerEnemy;
-            Material cloth=enemy!=null?uniformNavy:white;
-            Part(root,"Torso",PrimitiveType.Capsule,new Vector3(0,1.38f,0),new Vector3(.85f,.57f,.55f),cloth);
+            Material cloth=enemy!=null?uniformNavy:playerCloth;
+            Part(root,"Torso",PrimitiveType.Capsule,enemy==null?new Vector3(0,1.28f,0):new Vector3(0,1.38f,0),enemy==null?new Vector3(.92f,.475f,.62f):new Vector3(.85f,.57f,.55f),cloth);
             for(int side=-1;side<=1;side+=2)
             {
-                var leg=Part(root,"Trouser leg",PrimitiveType.Capsule,new Vector3(side*.25f,.48f,0),new Vector3(.31f,.42f,.35f),cloth).transform;
-                var boot=Part(root,"Boot",PrimitiveType.Cube,new Vector3(side*.25f,.105f,-.16f),new Vector3(.35f,.2f,.65f),enemy!=null?black:teal).transform;
+                var leg=Part(root,"Trouser leg",PrimitiveType.Capsule,new Vector3(side*.25f,.48f,0),enemy==null?new Vector3(.35f,.36f,.38f):new Vector3(.31f,.42f,.35f),enemy!=null?cloth:playerPants).transform;
+                var boot=Part(root,"Boot",PrimitiveType.Cube,new Vector3(side*.25f,.105f,-.16f),enemy==null?new Vector3(.40f,.24f,.62f):new Vector3(.35f,.2f,.65f),enemy!=null?black:playerBoots).transform;
                 gaitParts.Add((leg,leg.localPosition,leg.localRotation,side));gaitParts.Add((boot,boot.localPosition,boot.localRotation,side));
-                var sleeve=Part(root,"Sleeve",PrimitiveType.Capsule,new Vector3(side*.56f,1.43f,0),new Vector3(.29f,.35f,.34f),cloth);
+                var sleeve=Part(root,"Sleeve",PrimitiveType.Capsule,enemy==null?new Vector3(side*.58f,1.34f,0):new Vector3(side*.56f,1.43f,0),enemy==null?new Vector3(.35f,.30f,.38f):new Vector3(.29f,.35f,.34f),enemy!=null?cloth:playerSleeves);
                 sleeve.transform.localRotation=Quaternion.Euler(0,0,side*12);
-                Part(root,"Hand",PrimitiveType.Sphere,new Vector3(side*.65f,1.1f,-.04f),Vector3.one*.25f,enemy!=null?skin:white);
+                Part(root,"Hand",PrimitiveType.Sphere,enemy==null?new Vector3(side*.65f,1.04f,-.04f):new Vector3(side*.65f,1.1f,-.04f),Vector3.one*(enemy==null?.28f:.25f),enemy!=null?skin:white);
             }
-            Part(root,"Head",PrimitiveType.Sphere,new Vector3(0,2.15f,0),new Vector3(.68f,.76f,.64f),enemy!=null?skin:white);
+            Part(root,"Head",PrimitiveType.Sphere,new Vector3(0,2.15f,0),enemy==null?new Vector3(1.02f,.94f,.9f):new Vector3(.68f,.76f,.64f),enemy!=null?skin:white);
             if(officer)
             {
                 Part(root,"Uniform belt",PrimitiveType.Cube,new Vector3(0,1.05f,0),new Vector3(.82f,.13f,.57f),black);
@@ -195,11 +241,16 @@ namespace Possession
             }
             else
             {
-                Part(root,"Face panel",PrimitiveType.Sphere,new Vector3(0,2.13f,-.24f),new Vector3(.48f,.4f,.2f),Mat(new Color(.14f,.22f,.25f)));
-                Part(root,"Teal collar",PrimitiveType.Cylinder,new Vector3(0,1.89f,0),new Vector3(.58f,.07f,.53f),teal);
-                Part(root,"Chest identity patch",PrimitiveType.Cube,new Vector3(0,1.5f,-.29f),new Vector3(.18f,.16f,.04f),teal);
+                Part(root,"Face panel",PrimitiveType.Sphere,new Vector3(0,2.13f,-.37f),new Vector3(.80f,.57f,.25f),Mat(new Color(.14f,.22f,.25f)));
+                Part(root,"Teal collar",PrimitiveType.Cylinder,new Vector3(0,1.78f,0),new Vector3(.72f,.07f,.65f),teal);
+                Part(root,"Chest identity patch",PrimitiveType.Cube,new Vector3(0,1.44f,-.33f),new Vector3(.18f,.16f,.04f),teal);
             }
-            for(int side=-1;side<=1;side+=2)Part(root,"Eye",PrimitiveType.Sphere,new Vector3(side*.13f,2.17f,-.32f),new Vector3(.065f,.085f,.04f),enemy!=null?black:white);
+            if(enemy==null)BuildOutfits(root);
+            for(int side=-1;side<=1;side+=2)
+            {
+                Part(root,"Eye",PrimitiveType.Sphere,enemy==null?new Vector3(side*.18f,2.17f,-.50f):new Vector3(side*.13f,2.17f,-.32f),enemy==null?new Vector3(.095f,.15f,.04f):new Vector3(.065f,.085f,.04f),enemy!=null?black:Mat(new Color(.2f,.95f,.95f)));
+                if(enemy==null)Part(root,"Ear unit",PrimitiveType.Sphere,new Vector3(side*.51f,2.13f,0),new Vector3(.18f,.45f,.40f),white);
+            }
             return root;
         }
     }

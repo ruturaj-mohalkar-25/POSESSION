@@ -9,6 +9,32 @@ namespace Possession.Editor
 {
     public static class MenuReferenceBuild
     {
+        public static void PrepareWardrobeArt()
+        {
+            AssetDatabase.Refresh();
+            foreach(var path in Directory.GetFiles("Assets/Resources/USCAvatar","*.png"))
+            {
+                var importer=AssetImporter.GetAtPath(path) as TextureImporter;if(importer==null)continue;
+                importer.mipmapEnabled=false;importer.npotScale=TextureImporterNPOTScale.None;importer.alphaIsTransparency=!path.Contains("LockerBackground");
+                importer.textureCompression=TextureImporterCompression.Uncompressed;
+                importer.maxTextureSize=path.Contains("LockerBackground")?2048:1024;
+                importer.wrapMode=TextureWrapMode.Clamp;importer.filterMode=FilterMode.Bilinear;importer.SaveAndReimport();
+            }
+        }
+        public static void CaptureWardrobe()
+        {
+            PrepareWardrobeArt();
+            Directory.CreateDirectory("Docs/AvatarWardrobe");
+            EditorSceneManager.OpenScene("Assets/Scenes/MainMenu.unity");
+            var menu=Object.FindFirstObjectByType<MainMenuController>();
+            TutorialMenuEntry.Install(menu.gameObject.scene);
+            typeof(MainMenuController).GetMethod("Start",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).Invoke(menu,null);
+            var wardrobe=menu.GetComponent<USCAvatarWardrobe>();wardrobe.Open();wardrobe.Choose(1);wardrobe.LayoutForAspect(16f/9f);
+            var canvas=menu.GetComponent<Canvas>();var camera=Camera.main;
+            canvas.renderMode=RenderMode.ScreenSpaceCamera;canvas.worldCamera=camera;canvas.planeDistance=1f;
+            Save(camera,"Docs/AvatarWardrobe/usc-locker.png",1600,900);
+            Debug.Log("USC_WARDROBE_CAPTURED");
+        }
         public static void CaptureUI()
         {
             Directory.CreateDirectory("Docs/MenuReference");
