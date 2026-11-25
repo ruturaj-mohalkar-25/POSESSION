@@ -61,7 +61,10 @@ namespace Possession.Warehouse.Tests
                     Assert.That(buttons[i].interactable,Is.True);
                     Assert.That(buttons[i].GetComponentInChildren<Text>().text,Is.EqualTo("LEVEL "+(i+1)));
                 }
-                buttons[selected].onClick.Invoke();yield return null;yield return null;
+                buttons[selected].onClick.Invoke();
+                Assert.That(SceneManager.GetActiveScene().name,Is.EqualTo("MainMenu"));
+                Assert.That(menu.SelectedLevelIndex,Is.EqualTo(selected));
+                menu.OnPlaySelectedLevel();yield return null;yield return null;
                 SuppressReports();
                 Assert.That(SceneManager.GetActiveScene().name,Is.EqualTo(CampaignLevels.PlayableSceneNames[selected]));
                 Assert.That(GameManager.Instance.IsLastLevel,Is.EqualTo(selected==3));

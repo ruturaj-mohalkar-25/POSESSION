@@ -64,6 +64,8 @@ namespace Possession.Level04Gold.Tests
                 Assert.That(buttons[i].GetComponentInChildren<Text>().text, Is.EqualTo("LEVEL " + (i + 1)));
             }
             buttons[3].onClick.Invoke();
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("MainMenu"), "A card selects; the Play button launches.");
+            menu.OnPlaySelectedLevel();
             yield return AwaitScene(CampaignLevels.FourthScene);
             AssertSavedLevelFourIsReady();
 
@@ -107,7 +109,7 @@ namespace Possession.Level04Gold.Tests
             Assert.That(buttons[0].interactable, Is.True);
             for (int i = 1; i < buttons.Length; i++)
                 Assert.That(buttons[i].interactable, Is.False, "An unearned stage must stay locked.");
-            Assert.That(buttons[3].GetComponentInChildren<Text>().text, Does.Contain("LOCKED"));
+            Assert.That(buttons[3].GetComponentsInChildren<Text>().Any(t => t.text == "LOCKED"), Is.True);
             // UnityEvent.Invoke bypasses the disabled Button, so the controller must also reject it.
             buttons[3].onClick.Invoke();
             yield return null;
@@ -127,6 +129,7 @@ namespace Possession.Level04Gold.Tests
             Assert.That(buttons[3].interactable, Is.True);
             Assert.That(buttons[3].GetComponentInChildren<Text>().text, Is.EqualTo("LEVEL 4"));
             buttons[3].onClick.Invoke();
+            menu.OnPlaySelectedLevel();
             yield return AwaitScene(CampaignLevels.FourthScene);
             AssertSavedLevelFourIsReady();
         }

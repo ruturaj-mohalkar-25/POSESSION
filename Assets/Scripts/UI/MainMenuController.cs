@@ -13,6 +13,9 @@ namespace Possession
         [SerializeField] private GameObject levelSelectPanel;
         [SerializeField] private Button[] levelButtons;
         private readonly string[] levelScenes = CampaignLevels.PlayableSceneNames;
+        public int SelectedLevelIndex { get; private set; }
+        private ReferenceMenuView presentation;
+        private bool loading;
 
         private void Start()
         {
@@ -25,11 +28,14 @@ namespace Possession
 
             ShowLevelSelect(false);
             RefreshLevelButtons();
+            presentation = gameObject.AddComponent<ReferenceMenuView>();
+            presentation.Build(this, mainButtons, levelSelectPanel, levelButtons);
         }
 
         public void OnPlayButton()
         {
             ShowLevelSelect(true);
+            presentation?.Refresh();
         }
 
         public void OnBackButton()
@@ -41,7 +47,16 @@ namespace Possession
         {
             if (index < 0 || index >= levelScenes.Length) return;
             if (!IsAvailable(index)) return;
-            LevelFlow.Load(levelScenes[index]);
+            SelectedLevelIndex = index;
+            presentation?.Refresh();
+        }
+
+        public bool CanPlayLevel(int index) => IsAvailable(index);
+        public void OnPlaySelectedLevel()
+        {
+            if (loading || !IsAvailable(SelectedLevelIndex)) return;
+            loading = true;
+            LevelFlow.Load(levelScenes[SelectedLevelIndex]);
         }
 
         public void OnQuitButton()
