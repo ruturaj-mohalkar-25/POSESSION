@@ -28,3 +28,11 @@ The reported finish failure has not been reproduced on current integration. No s
 - Existing full-suite stair traversal, vault completion/pause/expiry and campaign-order tests passed.
 
 ![Revised vault instructions, rendered in Editor](vault-instructions.png)
+
+## Follow-up — 25 November: Levels 1–3 and blinking boxes
+
+Levels 1–3 now use a 5 m/s ground jump (roughly 1.2 m rise), with a 2.5 m/s hop when supported by a solid crate/cover. This replaces the previous roughly 3.18 m ground jump and prevents using cover as a full-height second launch. Tutorial remains at its authored 8 m/s. Level 4 keeps the previous PR's 6.5 m/s tuning.
+
+Warehouse `Cover_*` boxes were still being treated as fading walls. A camera crossing their top edge swapped Standard materials for transparent Visibility materials, reproducing the reported blinking. All solid crate/cover colliders now stay opaque; architectural walls still fade normally. A regression exercises camera motion and small player-height changes over a cover box.
+
+Regression evidence: short-jump test failed before the fix (3.18 m vs 0.6–1.4 m target); cover-material test failed before the fix (Standard became Standard (Visibility)). The focused campaign movement/possession/visibility run passed 31/31 after tuning its existing velocity assertions to the requested lower jump speed.

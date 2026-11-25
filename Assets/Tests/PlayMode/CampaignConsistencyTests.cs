@@ -37,7 +37,7 @@ namespace Possession.Tests
                 Assert.That(spirit.GetComponents<EjectShieldVisual>().Length,Is.EqualTo(1));
                 Assert.That(spirit.GetComponent<Rigidbody>().isKinematic,Is.False);
                 float y=spirit.transform.position.y; spirit.RequestJump(); yield return new WaitForFixedUpdate();yield return new WaitForFixedUpdate();
-                Assert.That(spirit.GetComponent<Rigidbody>().linearVelocity.y,Is.GreaterThan(6f),scene+" Space after eject");
+                Assert.That(spirit.GetComponent<Rigidbody>().linearVelocity.y,Is.GreaterThan(spirit.JumpSpeed-1f),scene+" Space after eject");
                 yield return new WaitForSeconds(.15f);
                 Assert.That(spirit.transform.position.y,Is.GreaterThan(y+.5f),scene+" actual jump height");
             }
@@ -53,14 +53,14 @@ namespace Possession.Tests
                     // Reset visibility in an existing floor contact, like possession/ejection.
                     spirit.RestoreAt(spirit.transform.position);spirit.RequestJump();
                     yield return new WaitForFixedUpdate();yield return new WaitForFixedUpdate();
-                    Assert.That(rb.linearVelocity.y,Is.GreaterThan(6f),scene+" repeat "+i);
+                    Assert.That(rb.linearVelocity.y,Is.GreaterThan(spirit.JumpSpeed-1f),scene+" repeat "+i);
                     float deadline=Time.time+2.5f;
                     while(!spirit.IsGrounded&&Time.time<deadline)yield return null;
                     Assert.That(spirit.IsGrounded,Is.True,scene+" must land again");
                 }
                 var at=spirit.transform.position;spirit.RestoreAt(at+Vector3.up*.25f);rb.linearVelocity=Vector3.down*2f;
                 spirit.RequestJump();yield return new WaitForSeconds(.15f);
-                Assert.That(rb.linearVelocity.y,Is.GreaterThan(5f),scene+" buffered press just before landing");
+                Assert.That(rb.linearVelocity.y,Is.GreaterThan(spirit.JumpSpeed-2f),scene+" buffered press just before landing");
             }
         }
 
@@ -137,7 +137,7 @@ namespace Possession.Tests
             foreach(string scene in CampaignLevels.SceneNames)
             {
                 yield return Load(scene);var spirit=Spirit();var pc=spirit.GetComponent<PossessionController>();
-                Assert.That(spirit.MoveSpeed,Is.EqualTo(8f));Assert.That(spirit.JumpSpeed,Is.EqualTo(8f));
+                Assert.That(spirit.MoveSpeed,Is.EqualTo(8f));Assert.That(spirit.JumpSpeed,Is.EqualTo(CampaignJumpRules.GroundSpeed));
                 Assert.That(spirit.MaxHP,Is.EqualTo(5));Assert.That(pc.PossessRange,Is.EqualTo(5f));
                 Assert.That(Read<Vector3>(Camera.main.GetComponent<CameraFollow>(),"offset"),Is.EqualTo(new Vector3(0,25,-18)));
                 foreach(var e in Object.FindObjectsByType<EnemyBase>(FindObjectsSortMode.None))
