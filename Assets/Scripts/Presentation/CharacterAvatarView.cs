@@ -11,6 +11,8 @@ namespace Possession
         private readonly List<Material> owned = new();
         private readonly List<Material> uniform = new();
         private Material navy,black,gold,white,skin,teal,uniformNavy;
+        private Color IdleUniformColor => enemy is EngineerEnemy ? new Color(.055f,.43f,.64f)
+            : enemy is HeavyEnemy ? new Color(.95f,.39f,.055f) : new Color(.055f,.12f,.23f);
         private Material playerCloth,playerSleeves,playerPants,playerBoots;
         private Transform[] outfitDetails;
         private bool preview;
@@ -48,7 +50,7 @@ namespace Possession
             oldModel=transform.Find("P5_Model");if(oldModel!=null){oldActive=cloned||oldModel.gameObject.activeSelf;oldModel.gameObject.SetActive(false);}
             navy=Mat(new Color(.055f,.12f,.23f));black=Mat(new Color(.035f,.045f,.06f));gold=Mat(new Color(.88f,.65f,.16f));
             white=Mat(new Color(.91f,.94f,.93f));skin=Mat(new Color(.67f,.43f,.29f));teal=Mat(new Color(.08f,.45f,.43f));
-            uniformNavy=Mat(enemy is HeavyEnemy?new Color(.95f,.39f,.055f):new Color(.055f,.12f,.23f));
+            uniformNavy=Mat(IdleUniformColor);
             uniform.Add(uniformNavy);
             if(enemy==null)
             {
@@ -95,7 +97,7 @@ namespace Possession
                         || (enemy is EngineerEnemy && (old.name=="Equipment helmet"||old.name=="Equipment toolkit")))
                     {if(!legacyPieces.ContainsKey(old.gameObject))legacyPieces[old.gameObject]=old.gameObject.activeSelf;old.gameObject.SetActive(false);}
                 // Preserve the established white-body possession cue; equipment keeps its own colours.
-                uniformNavy.color=enemy.IsPossessed?Color.white:enemy is HeavyEnemy?new Color(.95f,.39f,.055f):new Color(.055f,.12f,.23f);
+                uniformNavy.color=enemy.IsPossessed?Color.white:IdleUniformColor;
                 if(!enemy.IsPossessed)model.localRotation=Quaternion.Euler(0,180,0);
                 if(enemy.IsPossessed && Time.timeScale>0f && Camera.main!=null)
                 {
@@ -224,8 +226,8 @@ namespace Possession
             }
             else if(heavy || engineer)
             {
-                Part(root,"Hardhat crown",PrimitiveType.Sphere,new Vector3(0,2.43f,0),new Vector3(.79f,.43f,.76f),gold);
-                Part(root,"Hardhat rim",PrimitiveType.Cylinder,new Vector3(0,2.35f,0),new Vector3(.91f,.035f,.87f),gold);
+                Part(root,"Hardhat crown",PrimitiveType.Sphere,new Vector3(0,2.43f,0),new Vector3(.79f,.43f,.76f),engineer?white:gold);
+                Part(root,"Hardhat rim",PrimitiveType.Cylinder,new Vector3(0,2.35f,0),new Vector3(.91f,.035f,.87f),engineer?white:gold);
                 if(heavy)
                 {
                     Part(root,"Hammer handle",PrimitiveType.Cylinder,new Vector3(.81f,1.22f,-.12f),new Vector3(.09f,.51f,.09f),black);
@@ -233,8 +235,20 @@ namespace Possession
                 }
                 else
                 {
-                    Part(root,"Engineer toolkit",PrimitiveType.Cube,new Vector3(.6f,1.04f,-.02f),new Vector3(.3f,.34f,.36f),gold);
+                    var safety=Mat(new Color(.79f,.94f,.22f));
+                    var metal=Mat(new Color(.52f,.62f,.68f));
+                    // White headwear, blue workwear and a lime tool vest read as a different role
+                    // from the navy officer and orange/yellow Heavy, including from above.
+                    foreach(int side in new[]{-1,1})
+                        Part(root,"Engineer safety vest",PrimitiveType.Cube,new Vector3(side*.23f,1.46f,-.29f),new Vector3(.23f,.62f,.08f),safety);
+                    Part(root,"Engineer reflective band",PrimitiveType.Cube,new Vector3(0,1.32f,-.345f),new Vector3(.73f,.075f,.035f),white);
+                    Part(root,"Engineer helmet lamp",PrimitiveType.Cube,new Vector3(0,2.43f,-.385f),new Vector3(.22f,.14f,.09f),black);
+                    Part(root,"Engineer helmet lens",PrimitiveType.Cube,new Vector3(0,2.43f,-.44f),new Vector3(.15f,.08f,.025f),safety);
+                    Part(root,"Engineer toolkit",PrimitiveType.Cube,new Vector3(.6f,1.04f,-.02f),new Vector3(.3f,.34f,.36f),metal);
                     Part(root,"Engineer toolkit handle",PrimitiveType.Cube,new Vector3(.6f,1.26f,-.02f),new Vector3(.17f,.09f,.12f),black);
+                    Part(root,"Engineer wrench handle",PrimitiveType.Cylinder,new Vector3(.77f,1.25f,-.22f),new Vector3(.07f,.30f,.07f),metal);
+                    Part(root,"Engineer wrench bridge",PrimitiveType.Cube,new Vector3(.77f,1.56f,-.22f),new Vector3(.20f,.08f,.10f),metal);
+                    foreach(float x in new[]{.70f,.84f})Part(root,"Engineer wrench jaw",PrimitiveType.Cube,new Vector3(x,1.64f,-.22f),new Vector3(.07f,.16f,.10f),metal);
                 }
                 Part(root,"Work belt",PrimitiveType.Cube,new Vector3(0,1.06f,0),new Vector3(.86f,.16f,.6f),black);
                 if(heavy)foreach(int side in new[]{-1,1})Part(root,"Reflective vest stripe",PrimitiveType.Cube,new Vector3(side*.23f,1.48f,-.29f),new Vector3(.085f,.64f,.04f),gold);
