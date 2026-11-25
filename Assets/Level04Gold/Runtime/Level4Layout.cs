@@ -8,6 +8,8 @@ namespace Possession.Level04Gold
     {
         public const float GeometryScale = 1.25f;
         public const float CorridorWidth = 6f;
+        // Clears 1.7 m cover while keeping a second jump below the 4.5 m room boundary.
+        public const float SpiritJumpSpeed = 6.5f;
 
         public static Vector3 Map(Vector3 point) =>
             new Vector3(point.x * GeometryScale, point.y, point.z * GeometryScale);

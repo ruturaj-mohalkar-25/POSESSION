@@ -18,7 +18,7 @@ namespace Possession.Level04Gold
         private float lastDirection;
         private Canvas overlay;
         private RectTransform dialPointer;
-        private Text progressText, feedbackText, hostTime;
+        private Text progressText, feedbackText, hostTime, instructionText;
         private Image boltOne, boltTwo, cipherFirst, cipherSecond;
         private Button rotateLeft, rotateRight, confirmButton, handleButton;
         private static readonly Color ObjectiveGold = new Color(.95f, .75f, .2f);
@@ -104,9 +104,14 @@ namespace Possession.Level04Gold
             }
             float target = AlignedSteps == 0 ? firstStop : secondStop;
             float direction = AlignedSteps == 0 ? 1f : -1f;
-            if (Mathf.Abs(Mathf.DeltaAngle(DialAngle, target)) > tolerance || lastDirection != direction)
+            if (Mathf.Abs(Mathf.DeltaAngle(DialAngle, target)) > tolerance)
             {
-                ShowFeedback("BOLT STILL LOCKED", DangerRed);
+                ShowFeedback(AlignedSteps == 0 ? "ALIGN POINTER WITH TRIANGLE" : "ALIGN POINTER WITH SQUARE", DangerRed);
+                return false;
+            }
+            if (lastDirection != direction)
+            {
+                ShowFeedback(AlignedSteps == 0 ? "TURN RIGHT / CLOCKWISE, THEN CONFIRM" : "TURN LEFT / COUNTERCLOCKWISE, THEN CONFIRM", DangerRed);
                 return false;
             }
             DialAngle = target;
@@ -198,6 +203,11 @@ namespace Possession.Level04Gold
             if (wheelPointer != null) wheelPointer.localRotation = Quaternion.Euler(0f, 0f, -DialAngle);
             if (dialPointer != null) dialPointer.localRotation = Quaternion.Euler(0f, 0f, -DialAngle);
             if (progressText != null) progressText.text = $"BOLTS {AlignedSteps} / 2";
+            if (instructionText != null) instructionText.text = AlignedSteps == 0
+                ? "1/3  HOLD D / RIGHT: CLOCKWISE TO TRIANGLE\nRELEASE, THEN PRESS ENTER / CONFIRM"
+                : AlignedSteps == 1
+                    ? "2/3  HOLD A / LEFT: COUNTERCLOCKWISE TO SQUARE\nRELEASE, THEN PRESS ENTER / CONFIRM"
+                    : "BOTH BOLTS RELEASED\n3/3  CLICK TURN HANDLE OR PRESS ENTER";
             if (boltOne != null) boltOne.color = AlignedSteps >= 1 ? SuccessGreen : GoldTheme.Secondary;
             if (boltTwo != null) boltTwo.color = AlignedSteps >= 2 ? SuccessGreen : GoldTheme.Secondary;
             if (cipherFirst != null) cipherFirst.color = AlignedSteps == 0 ? GoldTheme.Teal : GoldTheme.Secondary;
@@ -232,19 +242,20 @@ namespace Possession.Level04Gold
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
             scaler.matchWidthOrHeight = .5f;
-            var panel = ImageNode(root.transform, "Mechanical lock", new Vector2(0, 30), new Vector2(720, 700), GoldTheme.Panel);
+            var panel = ImageNode(root.transform, "Mechanical lock", new Vector2(0, 30), new Vector2(720, 820), GoldTheme.Panel);
             panel.raycastTarget = true;
             GoldTheme.Box(panel.transform, "Accent", new Vector2(0, .994f), Vector2.one, GoldTheme.Teal);
-            var title = Label(panel.transform, "VAULT • ENGINEER", new Vector2(-110, 301), new Vector2(410, 42), 30, GoldTheme.TextColor, "VaultTitle");
+            var title = Label(panel.transform, "VAULT • ENGINEER", new Vector2(-110, 361), new Vector2(410, 42), 30, GoldTheme.TextColor, "VaultTitle");
             title.alignment = TextAnchor.MiddleLeft;
-            hostTime = Label(panel.transform, "", new Vector2(230, 301), new Vector2(170, 38), 24, GoldTheme.TextColor, "HostTime");
+            hostTime = Label(panel.transform, "", new Vector2(230, 361), new Vector2(170, 38), 24, GoldTheme.TextColor, "HostTime");
             hostTime.alignment = TextAnchor.MiddleRight;
 
-            cipherFirst = ImageNode(panel.transform, "CipherStepOne", new Vector2(-160, 243), new Vector2(300, 40), GoldTheme.Teal);
-            cipherSecond = ImageNode(panel.transform, "CipherStepTwo", new Vector2(160, 243), new Vector2(300, 40), GoldTheme.Secondary);
+            cipherFirst = ImageNode(panel.transform, "CipherStepOne", new Vector2(-160, 303), new Vector2(300, 40), GoldTheme.Teal);
+            cipherSecond = ImageNode(panel.transform, "CipherStepTwo", new Vector2(160, 303), new Vector2(300, 40), GoldTheme.Secondary);
             Label(cipherFirst.transform, "1  CW • TRIANGLE", Vector2.zero, new Vector2(276, 34), 21, GoldTheme.TextColor);
             Label(cipherSecond.transform, "2  CCW • SQUARE", Vector2.zero, new Vector2(276, 34), 21, GoldTheme.TextColor);
 
+            instructionText = Label(panel.transform, "", new Vector2(0, 243), new Vector2(660, 58), 20, GoldTheme.TextColor, "VaultInstruction");
             var dial = ImageNode(panel.transform, "Dial plate", new Vector2(0, 50), new Vector2(300, 300), GoldTheme.Secondary);
             for (int i = 0; i < 12; i++)
             {

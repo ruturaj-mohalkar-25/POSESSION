@@ -107,6 +107,69 @@ namespace Possession.Warehouse.Tests
             Assert.That(SceneManager.GetActiveScene().name,Is.EqualTo(CampaignLevels.FirstScene));
             Assert.That(Time.timeScale,Is.EqualTo(1f));
         }
+        [UnityTest] public IEnumerator WalkingIntoReadyWarehouseExitShowsNextAndLoadsLevelFour()
+        {
+            yield return Load(CampaignLevels.ThirdScene);
+            foreach(var enemy in Object.FindObjectsByType<EnemyBase>(FindObjectsSortMode.None)) enemy.enabled=false;
+            foreach(var contact in Object.FindObjectsByType<EnemyContactDamage>(FindObjectsSortMode.None)) contact.enabled=false;
+            var level=Object.FindFirstObjectByType<WarehouseLevel>();
+            foreach(var key in new[]{"inspection","exit-passage"})
+                foreach(var target in GameObject.Find(key+"_Door").GetComponent<WarehouseDoorView>().Targets)target.OnHit();
+            var exit=level.GetComponent<Collider>().bounds;
+            var spirit=level.Spirit;
+            spirit.RestoreAt(new Vector3(exit.center.x,1.4f,exit.max.z+1.5f));
+            var driver=spirit.gameObject.AddComponent<WarehouseExitInputDriver>();driver.Spirit=spirit;
+            float until=Time.time+2f;
+            while(Time.time<until&&GameManager.Instance.CurrentState==LevelState.InProgress) yield return null;
+            driver.enabled=false;
+            Assert.That(GameManager.Instance.CurrentState,Is.EqualTo(LevelState.Complete),"Real Rigidbody movement must trigger extraction, without a direct TryFinish call.");
+            var hud=Object.FindFirstObjectByType<HUDManager>();
+            var label=(Text)typeof(HUDManager).GetField("nextButtonLabel",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(hud);
+            Assert.That(label.GetComponentInParent<Button>().gameObject.activeInHierarchy,Is.True);
+            label.GetComponentInParent<Button>().onClick.Invoke();yield return null;yield return null;
+            SuppressReports();
+            Assert.That(SceneManager.GetActiveScene().name,Is.EqualTo(CampaignLevels.FourthScene));
+        }
+
+        [UnityTest] public IEnumerator PossessedGuardWalkingIntoReadyExitCanUseNextLevelButton()
+        {
+            yield return Load(CampaignLevels.ThirdScene);
+            foreach(var enemy in Object.FindObjectsByType<EnemyBase>(FindObjectsSortMode.None)) enemy.enabled=false;
+            foreach(var contact in Object.FindObjectsByType<EnemyContactDamage>(FindObjectsSortMode.None)) contact.enabled=false;
+            var level=Object.FindFirstObjectByType<WarehouseLevel>();
+            foreach(var key in new[]{"inspection","exit-passage"})
+                foreach(var target in GameObject.Find(key+"_Door").GetComponent<WarehouseDoorView>().Targets)target.OnHit();
+            var exit=level.GetComponent<Collider>().bounds;
+            var guard=Object.FindObjectsByType<GuardEnemy>(FindObjectsSortMode.None).First();
+            var body=guard.GetComponent<CharacterController>();
+            body.enabled=false;
+            guard.transform.SetPositionAndRotation(new Vector3(exit.center.x,1.4f,exit.max.z+.8f),Quaternion.LookRotation(Vector3.back));
+            body.enabled=true;
+            level.Spirit.GetComponent<PossessionCharge>().TryCollect();
+            level.Spirit.RestoreAt(guard.transform.position+Vector3.forward*1.4f);
+            Assert.That(level.Possession.TryPossess(guard),Is.True);
+            float until=Time.time+2f;
+            while(Time.time<until&&GameManager.Instance.CurrentState==LevelState.InProgress)
+            {
+                body.Move((Vector3.back*guard.MoveSpeed+Vector3.down*2f)*Time.deltaTime);
+                yield return null;
+            }
+            Assert.That(GameManager.Instance.CurrentState,Is.EqualTo(LevelState.Complete),"CharacterController host must physically trigger extraction too.");
+            var hud=Object.FindFirstObjectByType<HUDManager>();
+            var label=(Text)typeof(HUDManager).GetField("nextButtonLabel",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(hud);
+            yield return null;
+            Canvas.ForceUpdateCanvases();
+            var button=label.GetComponentInParent<Button>();
+            var rect=button.GetComponent<RectTransform>();
+            var hits=new System.Collections.Generic.List<UnityEngine.EventSystems.RaycastResult>();
+            UnityEngine.EventSystems.EventSystem.current.RaycastAll(new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current)
+                {position=RectTransformUtility.WorldToScreenPoint(null,rect.TransformPoint(rect.rect.center))},hits);
+            Assert.That(hits.Count,Is.GreaterThan(0));
+            Assert.That(hits[0].gameObject.transform.IsChildOf(button.transform),Is.True,"Results decoration must not cover Next Level.");
+            button.onClick.Invoke();yield return null;yield return null;SuppressReports();
+            Assert.That(SceneManager.GetActiveScene().name,Is.EqualTo(CampaignLevels.FourthScene));
+        }
+
         [UnityTest] public IEnumerator TutorialPlayLevelOneStartsThePromotedFirstStage()
         {
             yield return Load(TutorialScene.Name);
@@ -122,6 +185,13 @@ namespace Possession.Warehouse.Tests
                 Object.DestroyImmediate(reporter.gameObject);
             foreach(var tracker in Object.FindObjectsByType<P5TimingTracker>(FindObjectsSortMode.None))tracker.PersistReports=false;
         }
+    }
+    [DefaultExecutionOrder(-10000)]
+    public sealed class WarehouseExitInputDriver : MonoBehaviour
+    {
+        public SpiritController Spirit;
+        private void FixedUpdate() => typeof(SpiritController).GetField("moveInput",BindingFlags.Instance|BindingFlags.NonPublic)
+            .SetValue(Spirit,Vector2.down);
     }
 }
 #endif

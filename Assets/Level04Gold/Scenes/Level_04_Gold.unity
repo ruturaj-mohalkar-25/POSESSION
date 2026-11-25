@@ -46944,6 +46944,10 @@ PrefabInstance:
       propertyPath: moveSpeed
       value: 8
       objectReference: {fileID: 0}
+    - target: {fileID: 1163164391160891401, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
+      propertyPath: jumpForce
+      value: 6.5
+      objectReference: {fileID: 0}
     - target: {fileID: 3635890944769277190, guid: 2d73480040aec4ff18d76140124fd493, type: 3}
       propertyPath: m_Name
       value: Spirit

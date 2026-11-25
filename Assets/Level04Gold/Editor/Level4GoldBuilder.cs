@@ -54,7 +54,7 @@ namespace Possession.Level04Gold.Editor
             Possession.Editor.LevelBuildKit.ApplyConfig(config, manager, spirit.gameObject);
             spirit.transform.position = Level4Geometry.Spawn;
             spirit.transform.localScale = Vector3.one * 1.25f;
-            Set(spirit, "moveSpeed", 8f); Set(spirit, "jumpForce", 8f); Set(spirit, "maxHP", 5);
+            Set(spirit, "moveSpeed", 8f); Set(spirit, "jumpForce", Level4Layout.SpiritJumpSpeed); Set(spirit, "maxHP", 5);
             var possession = spirit.GetComponent<PossessionController>(); Set(possession, "possessRange", 5f); Set(possession, "ejectCooldown", 2f);
             var charge = spirit.GetComponent<PossessionCharge>() ?? spirit.gameObject.AddComponent<PossessionCharge>();
             Set(charge, "maxCharges", 3); Set(charge, "startingCharges", 1);
