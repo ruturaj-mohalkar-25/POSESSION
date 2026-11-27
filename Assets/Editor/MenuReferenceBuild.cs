@@ -9,6 +9,56 @@ namespace Possession.Editor
 {
     public static class MenuReferenceBuild
     {
+        public static void CaptureRolePortraits()
+        {
+            Directory.CreateDirectory("Assets/Resources/CharacterGuide");
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            RenderSettings.ambientMode=UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight=new Color(.72f,.75f,.82f);
+            var light=new GameObject("Portrait key").AddComponent<Light>();
+            light.type=LightType.Directional;light.intensity=1.3f;
+            light.transform.rotation=Quaternion.Euler(35,-25,0);
+            var camera=new GameObject("Portrait camera").AddComponent<Camera>();
+            camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=GoldTheme.Panel;
+            camera.orthographic=true;camera.orthographicSize=1.28f;
+            camera.transform.position=new Vector3(3,2.2f,-7);
+            camera.transform.LookAt(new Vector3(0,.94f,0));
+            foreach(var role in new[]{"GUARD","HEAVY","ENGINEER"})
+            {
+                var host=GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                if(role=="GUARD")host.AddComponent<GuardEnemy>();
+                else if(role=="HEAVY")host.AddComponent<HeavyEnemy>();
+                else host.AddComponent<EngineerEnemy>();
+                var view=host.AddComponent<CharacterAvatarView>();view.Build();view.Refresh();
+                view.Model.localRotation=Quaternion.identity;
+                host.transform.position=Vector3.up;
+                Save(camera,"Assets/Resources/CharacterGuide/"+role+".png",768,768);
+                Object.DestroyImmediate(host);
+            }
+            AssetDatabase.Refresh();
+            foreach(var path in Directory.GetFiles("Assets/Resources/CharacterGuide","*.png"))
+            {
+                var importer=(TextureImporter)AssetImporter.GetAtPath(path);
+                importer.mipmapEnabled=false;importer.npotScale=TextureImporterNPOTScale.None;
+                importer.textureCompression=TextureImporterCompression.Uncompressed;importer.SaveAndReimport();
+            }
+            CaptureCharacterGuide();
+        }
+
+        public static void CaptureCharacterGuide()
+        {
+            Directory.CreateDirectory("Docs/CharacterGuide");
+            EditorSceneManager.OpenScene("Assets/Scenes/MainMenu.unity");
+            var menu=Object.FindFirstObjectByType<MainMenuController>();
+            TutorialMenuEntry.Install(menu.gameObject.scene);
+            typeof(MainMenuController).GetMethod("Start",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).Invoke(menu,null);
+            var canvas=menu.GetComponent<Canvas>();var camera=Camera.main;
+            canvas.renderMode=RenderMode.ScreenSpaceCamera;canvas.worldCamera=camera;canvas.planeDistance=1f;
+            menu.GetComponent<CharacterGuideView>().Open();
+            Save(camera,"Docs/CharacterGuide/character-guide.png",1600,900);
+            Debug.Log("CHARACTER_GUIDE_CAPTURED");
+        }
+
         public static void PrepareWardrobeArt()
         {
             AssetDatabase.Refresh();
