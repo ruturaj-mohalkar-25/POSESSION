@@ -1,0 +1,10 @@
+/* Fit desktop previews to laptop windows while preserving the gameplay aspect ratio. */
+#unity-container.unity-desktop {
+  width: min(1280px, 100vw, calc(177.7778vh - 85.3333px));
+}
+#unity-container.unity-desktop #unity-canvas {
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 16 / 9;
+}
+#unity-container.unity-desktop #unity-footer { width: 100%; }

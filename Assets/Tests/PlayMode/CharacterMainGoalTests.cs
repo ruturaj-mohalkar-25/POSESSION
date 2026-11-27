@@ -149,9 +149,10 @@ namespace Possession.Tests
             {
                 var torso=avatar.Model.Find("Torso");var mesh=torso.GetComponent<MeshFilter>().sharedMesh;
                 var size=Vector3.Scale(mesh.bounds.size,torso.localScale);
-                Assert.That(size.x,Is.EqualTo(.85f).Within(.001f));Assert.That(size.y,Is.EqualTo(1.14f).Within(.001f));
+                bool player=avatar.GetComponent<SpiritController>()!=null;
+                Assert.That(size.x,Is.EqualTo(player?.92f:.85f).Within(.001f));Assert.That(size.y,Is.EqualTo(player?.95f:1.14f).Within(.001f));
                 var head=avatar.Model.Find("Head");size=Vector3.Scale(head.GetComponent<MeshFilter>().sharedMesh.bounds.size,head.localScale);
-                Assert.That(size.y,Is.EqualTo(.76f).Within(.001f));
+                Assert.That(size.y,Is.EqualTo(player?.94f:.76f).Within(.001f));
             }
         }
         [UnityTest] public IEnumerator AllActorsHaveDistanceDrivenFeetThatStopAndPause()

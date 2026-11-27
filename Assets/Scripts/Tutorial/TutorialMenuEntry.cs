@@ -27,6 +27,7 @@ namespace Possession
             var play = buttons.FirstOrDefault(b => b.name == "PlayButton");
             if (play == null) return null;
             var button = buttons.FirstOrDefault(b => b.name == "HowToPlayButton");
+            if (button != null && controller.GetComponent<ReferenceMenuView>() != null) return button;
             if (button == null)
             {
                 button = Object.Instantiate(play, play.transform.parent);
